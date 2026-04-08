@@ -1389,10 +1389,25 @@ function renderRec(){
     <td>${fmtD(r.data)}</td><td><strong>${r.orcNum||'—'}</strong></td><td>${r.cliente||'—'}</td>
     <td><span class="chip badge-navy">${r.parcela||'—'}</span></td>
     <td><strong style="color:var(--green)">${fmtM(r.valor)}</strong></td><td>${r.forma}</td>
-    <td>${r.temRecibo?`<button class="btn btn-green btn-sm" onclick='printRecibo(${JSON.stringify(r).replace(/'/g,"\\'")})'>🧾</button>`:'<span style="color:var(--gray-300)">—</span>'}</td>
+    <td><div style="display:flex;gap:3px;align-items:center">
+      ${r.temRecibo?`<button class="btn btn-green btn-sm" onclick='printRecibo(${JSON.stringify(r).replace(/'/g,"\\'")})' title="Reimprimir recibo">🧾</button>`:`<button class="btn btn-outline btn-sm" onclick='gerarReciboRetro("${r.id}")' title="Gerar recibo">🧾</button>`}
+      <button class="btn btn-danger btn-sm" onclick='excluirRec("${r.id}")' title="Excluir">✕</button>
+    </div></td>
   </tr>`).join('');
 }
 
+function excluirRec(id){
+  if(!confirm('Excluir este recebimento? Esta ação não pode ser desfeita.'))return;
+  ST.recebimentos=ST.recebimentos.filter(r=>r.id!==id);
+  save();renderRec();renderDash();
+}
+function gerarReciboRetro(id){
+  const r=ST.recebimentos.find(x=>x.id===id);
+  if(!r)return;
+  r.temRecibo=true;
+  save();renderRec();
+  printRecibo(r);
+}
 // ===== CUSTOS =====
 function abrirCusto(){
   document.getElementById('cus-data').value=today();
