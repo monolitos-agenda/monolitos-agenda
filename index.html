@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Monólitos Agenda</title>
+<title>Top-Agenda</title>
 <meta name="description" content="Sistema de gestão de orçamentos — Monólitos Topografia">
 <meta name="theme-color" content="#0f2240">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -164,6 +164,9 @@ select.form-control{cursor:pointer}
 .tipo-btn{flex:1;padding:7px 10px;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:500;color:var(--gray-500);background:none;transition:all .2s;text-align:center}
 .tipo-btn.active{background:white;color:var(--navy);box-shadow:0 1px 4px rgba(15,34,64,.12);font-weight:600}
 </style>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <div class="app">
@@ -171,8 +174,8 @@ select.form-control{cursor:pointer}
 
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <div class="logo-brand">Monólitos Topografia</div>
-    <div class="logo-tagline">Regularização Imobiliária</div>
+    <div class="logo-brand">Top-Agenda</div>
+    <div class="logo-tagline" style="color:var(--gold-light);opacity:.8;font-size:10px">Monólitos Topografia</div>
     <div class="logo-tagline" style="margin-top:2px;font-size:8.5px">CNPJ 60.694.439/0001-93</div>
     <div class="logo-person">
       <div class="logo-person-name">José Airton Santiago Pereira</div>
@@ -181,16 +184,19 @@ select.form-control{cursor:pointer}
   </div>
   <nav class="sidebar-nav">
     <div class="nav-label">Principal</div>
-    <button class="nav-item active" onclick="nav('dashboard')"><span class="nav-icon">◈</span>Dashboard</button>
+    <button class="nav-item active" onclick="nav('painel')"><span class="nav-icon">◈</span>Painel</button>
     <button class="nav-item" onclick="nav('orcamentos')"><span class="nav-icon">◷</span>Orçamentos</button>
     <button class="nav-item" onclick="nav('clientes')"><span class="nav-icon">◉</span>Clientes</button>
     <div class="nav-label">Financeiro</div>
     <button class="nav-item" onclick="nav('recebimentos')"><span class="nav-icon">◈</span>Recebimentos</button>
     <button class="nav-item" onclick="nav('financeiro')"><span class="nav-icon">◉</span>Por Orçamento</button>
     <button class="nav-item" onclick="nav('custos')"><span class="nav-icon">◷</span>Custos</button>
+    <div class="nav-label">Agenda</div>
+    <button class="nav-item" onclick="nav('agenda')"><span class="nav-icon">📅</span>Compromissos</button>
     <div class="nav-label">Configurações</div>
     <button class="nav-item" onclick="nav('configuracoes')"><span class="nav-icon">◉</span>Dados Bancários</button>
     <button class="nav-item" onclick="nav('sincronizar')"><span class="nav-icon">↕</span>Sincronizar</button>
+    <button class="nav-item" onclick="nav('servicos')"><span class="nav-icon">◈</span>Serviços</button>
     <div class="nav-label">Relatórios</div>
     <button class="nav-item" onclick="nav('relatorios')"><span class="nav-icon">◈</span>Faturamento</button>
   </nav>
@@ -200,9 +206,18 @@ select.form-control{cursor:pointer}
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:10px">
       <button class="mob-toggle" onclick="toggleSB()">☰</button>
-      <div class="page-title" id="page-title">Dashboard</div>
+      <div class="page-title" id="page-title">Painel</div>
     </div>
     <div class="topbar-right">
+      <div class="search-bar hide-mob" id="global-search-wrap" style="position:relative">
+        <span class="search-icon" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--gray-400);font-size:13px;pointer-events:none">⌕</span>
+        <input class="form-control" id="global-search" placeholder="Buscar cliente ou nº..." 
+          style="padding-left:32px;width:220px;height:36px" 
+          oninput="globalSearch(this.value)"
+          onfocus="document.getElementById('global-results').style.display='block'"
+          onblur="setTimeout(()=>document.getElementById('global-results').style.display='none',200)">
+        <div id="global-results" style="display:none;position:absolute;top:42px;right:0;width:340px;background:white;border:1px solid var(--gray-200);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:500;max-height:320px;overflow-y:auto"></div>
+      </div>
       <button class="btn btn-outline btn-sm hide-mob" onclick="openClonar()">⎘ Clonar</button>
       <button class="btn btn-gold" onclick="novoOrc()">+ Orçamento</button>
     </div>
@@ -211,17 +226,23 @@ select.form-control{cursor:pointer}
   <div class="content">
 
     <!-- DASHBOARD -->
-    <div class="view active" id="view-dashboard">
+    <div class="view active" id="view-painel">
       <div class="metrics-grid">
         <div class="metric-card"><div class="metric-label">Faturamento do Mês</div><div class="metric-value" id="m-fat">R$ 0</div><span class="metric-badge badge-green">▲</span></div>
-        <div class="metric-card"><div class="metric-label">Orçamentos Abertos</div><div class="metric-value" id="m-ab">0</div><span class="metric-badge badge-amber">Aguardando</span></div>
+        <div class="metric-card" onclick="nav('agenda')" style="cursor:pointer">
+          <div class="metric-label">Compromissos Hoje</div>
+          <div class="metric-value" id="m-agenda">0</div>
+          <span class="metric-badge badge-blue">📅 Ver agenda</span>
+        </div>
+        <div class="metric-card"><div class="metric-label">Aguardando Aprovação</div><div class="metric-value" id="m-ab">0</div><span class="metric-badge badge-amber">Abertos</span></div>
+        <div class="metric-card"><div class="metric-label">Em Andamento</div><div class="metric-value" id="m-emand">0</div><span class="metric-badge badge-navy">Ativos</span></div>
         <div class="metric-card"><div class="metric-label">A Receber</div><div class="metric-value" id="m-ar">R$ 0</div><span class="metric-badge badge-blue">Pendente</span></div>
         <div class="metric-card"><div class="metric-label">Concluídos</div><div class="metric-value" id="m-co">0</div><span class="metric-badge badge-navy">Este mês</span></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 320px;gap:16px">
         <div class="card">
-          <div class="card-header"><span class="card-title">Orçamentos Recentes</span><button class="btn btn-ghost btn-sm" onclick="nav('orcamentos')">Ver todos →</button></div>
-          <div class="table-wrap"><table><thead><tr><th>Nº</th><th>Cliente</th><th>Valor</th><th>Status</th></tr></thead><tbody id="tbody-dash"></tbody></table></div>
+          <div class="card-header"><span class="card-title">Em Andamento</span><button class="btn btn-ghost btn-sm" onclick="nav('orcamentos')">Ver todos →</button></div>
+          <div class="table-wrap"><table><thead><tr><th>Nº</th><th>Cliente / Andamento</th><th>Recebido / Saldo</th><th>📋</th></tr></thead><tbody id="tbody-dash"></tbody></table></div>
         </div>
         <div class="card">
           <div class="card-header"><span class="card-title">Faturamento</span></div>
@@ -289,6 +310,21 @@ select.form-control{cursor:pointer}
       </div>
     </div>
 
+    <!-- AGENDA / COMPROMISSOS -->
+    <div class="view" id="view-agenda">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:9px">
+        <div style="font-size:13px;color:var(--gray-500)">Seus compromissos e lembretes</div>
+        <button class="btn btn-gold" onclick="abrirNovoCompromisso()">+ Novo Compromisso</button>
+      </div>
+      <!-- Hoje -->
+      <div id="agenda-hoje" style="margin-bottom:16px"></div>
+      <!-- Próximos -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">📅 Próximos Compromissos</span></div>
+        <div id="agenda-lista" class="card-body" style="padding:0"></div>
+      </div>
+    </div>
+
     <!-- DADOS BANCÁRIOS -->
     <div class="view" id="view-configuracoes">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:840px">
@@ -314,6 +350,18 @@ select.form-control{cursor:pointer}
       </div>
     </div>
 
+    <!-- SERVIÇOS -->
+    <div class="view" id="view-servicos">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:9px">
+        <div style="font-size:13px;color:var(--gray-500)">Cadastre seus serviços padrão para usar nos orçamentos</div>
+        <button class="btn btn-gold" onclick="abrirNovoServico()">+ Novo Serviço</button>
+      </div>
+      <div class="card"><div class="table-wrap">
+        <table><thead><tr><th>Nome do Serviço</th><th>Descrição padrão</th><th>Valor padrão</th><th>Ações</th></tr></thead>
+        <tbody id="tbody-servicos"></tbody></table>
+      </div></div>
+    </div>
+
     <!-- SINCRONIZAR -->
     <div class="view" id="view-sincronizar">
       <div style="max-width:660px">
@@ -332,6 +380,25 @@ select.form-control{cursor:pointer}
               <button class="btn btn-gold" onclick="document.getElementById('import-file').click()">⬆ Selecionar Arquivo</button>
               <div id="import-res" style="margin-top:9px;font-size:11.5px"></div>
             </div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:15px">
+          <div class="card-header"><span class="card-title">📂 Importar do Agenda Boa</span></div>
+          <div class="card-body">
+            <p style="font-size:12.5px;color:var(--gray-500);margin-bottom:13px;line-height:1.6">Importe seus clientes e pedidos exportados do Agenda Boa em formato CSV.</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+              <div>
+                <label style="font-size:11px;font-weight:500;color:var(--gray-500);text-transform:uppercase;display:block;margin-bottom:5px">CSV de Clientes</label>
+                <input type="file" id="csv-clientes" accept=".csv" style="display:none" onchange="importarCSVClientes(event)">
+                <button class="btn btn-outline btn-sm" onclick="document.getElementById('csv-clientes').click()">⬆ Selecionar CSV</button>
+              </div>
+              <div>
+                <label style="font-size:11px;font-weight:500;color:var(--gray-500);text-transform:uppercase;display:block;margin-bottom:5px">CSV de Pedidos</label>
+                <input type="file" id="csv-pedidos" accept=".csv" style="display:none" onchange="importarCSVPedidos(event)">
+                <button class="btn btn-outline btn-sm" onclick="document.getElementById('csv-pedidos').click()">⬆ Selecionar CSV</button>
+              </div>
+            </div>
+            <div id="csv-result" style="font-size:12px"></div>
           </div>
         </div>
         <div class="card"><div class="card-header"><span class="card-title">ℹ Como usar no celular</span></div>
@@ -391,7 +458,10 @@ select.form-control{cursor:pointer}
     <div style="margin-bottom:11px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
         <label style="font-size:10.5px;font-weight:500;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em">Serviços</label>
-        <button class="btn btn-outline btn-xs" onclick="addSrv()">+ Adicionar Serviço</button>
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-green btn-xs" onclick="abrirSeletorServico()">📋 Do Cadastro</button>
+          <button class="btn btn-outline btn-xs" onclick="addSrv()">+ Adicionar</button>
+        </div>
       </div>
       <div id="srvs"></div>
       <div style="display:flex;justify-content:flex-end;margin-top:7px;padding-top:7px;border-top:1px solid var(--gray-100)">
@@ -425,6 +495,125 @@ select.form-control{cursor:pointer}
     <button class="btn btn-primary" onclick="imprimir()">🖨 Imprimir</button>
     <button class="btn btn-gold" onclick="salvarOrc()">Salvar</button>
     <button class="btn btn-gold" style="background:var(--navy);color:white" onclick="salvarOrc(true)">Salvar e Fechar</button>
+  </div>
+</div></div>
+
+<!-- MODAL SERVIÇO SELETOR -->
+<div class="modal-overlay" id="modal-srv-sel" style="display:none">
+<div class="modal" style="max-width:560px">
+  <div class="modal-header"><div class="modal-title">📋 Selecionar Serviço do Cadastro</div><button class="btn btn-ghost" onclick="closeM('modal-srv-sel')">✕</button></div>
+  <div class="modal-body">
+    <div class="search-bar" style="margin-bottom:12px"><span class="search-icon">⌕</span><input class="form-control search-input" id="search-srv-sel" placeholder="Buscar serviço..." oninput="filtrarSrvSel()" style="width:100%"></div>
+    <div id="lista-srv-sel" style="max-height:340px;overflow-y:auto"></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-outline" onclick="closeM('modal-srv-sel')">Cancelar</button></div>
+</div></div>
+
+<!-- MODAL NOVO SERVIÇO -->
+<div class="modal-overlay" id="modal-novo-srv" style="display:none">
+<div class="modal" style="max-width:520px">
+  <div class="modal-header"><div class="modal-title" id="msrv-title">Novo Serviço</div><button class="btn btn-ghost" onclick="closeM('modal-novo-srv')">✕</button></div>
+  <div class="modal-body">
+    <input type="hidden" id="srv-id">
+    <div class="form-grid">
+      <div class="form-group"><label>Nome do Serviço</label><input class="form-control" id="srv-nome" placeholder="Ex: Levantamento planimétrico georreferenciado"></div>
+      <div class="form-group"><label>Descrição Padrão</label><textarea class="form-control" id="srv-desc" rows="4" placeholder="Descrição completa que aparecerá no orçamento..." style="text-align:justify"></textarea></div>
+      <div class="form-group"><label>Valor Padrão (R$)</label><input class="form-control" type="number" id="srv-valor" placeholder="0.00"></div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-outline" onclick="closeM('modal-novo-srv')">Cancelar</button>
+    <button class="btn btn-gold" onclick="salvarServico()">Salvar Serviço</button>
+  </div>
+</div></div>
+
+<!-- MODAL COMPROMISSO -->
+<div class="modal-overlay" id="modal-comp" style="display:none">
+<div class="modal" style="max-width:520px">
+  <div class="modal-header">
+    <div class="modal-title" id="mcomp-title">Novo Compromisso</div>
+    <button class="btn btn-ghost" onclick="closeM('modal-comp')">✕</button>
+  </div>
+  <div class="modal-body">
+    <input type="hidden" id="comp-id">
+    <div class="form-grid form-grid-2" style="margin-bottom:12px">
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Título</label>
+        <input class="form-control" id="comp-titulo" placeholder="Ex: Visita ao imóvel, Reunião com cliente...">
+      </div>
+      <div class="form-group">
+        <label>Data</label>
+        <input class="form-control" type="date" id="comp-data">
+      </div>
+      <div class="form-group">
+        <label>Horário</label>
+        <input class="form-control" type="time" id="comp-hora">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Cliente / Orçamento (opcional)</label>
+        <input class="form-control" id="comp-cliente" placeholder="Nome do cliente ou nº do orçamento" list="dl-comp-cli">
+        <datalist id="dl-comp-cli"></datalist>
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Observações</label>
+        <textarea class="form-control" id="comp-obs" rows="2" placeholder="Detalhes do compromisso..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Lembrete</label>
+        <select class="form-control" id="comp-lembrete">
+          <option value="0">Sem lembrete</option>
+          <option value="15">15 minutos antes</option>
+          <option value="30">30 minutos antes</option>
+          <option value="60">1 hora antes</option>
+          <option value="1440">1 dia antes</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tipo</label>
+        <select class="form-control" id="comp-tipo">
+          <option value="visita">🏠 Visita ao imóvel</option>
+          <option value="reuniao">🤝 Reunião com cliente</option>
+          <option value="entrega">📋 Entrega de documentos</option>
+          <option value="campo">📍 Trabalho de campo</option>
+          <option value="cartorio">🏛 Cartório / Órgão público</option>
+          <option value="outro">📌 Outro</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-danger btn-sm" id="comp-del-btn" onclick="excluirCompromisso()" style="display:none;margin-right:auto">Excluir</button>
+    <button class="btn btn-outline" onclick="closeM('modal-comp')">Cancelar</button>
+    <button class="btn btn-gold" onclick="salvarCompromisso()">Salvar</button>
+  </div>
+</div></div>
+
+<!-- MODAL ANDAMENTO -->
+<div class="modal-overlay" id="modal-andamento" style="display:none">
+<div class="modal" style="max-width:540px">
+  <div class="modal-header">
+    <div>
+      <div class="modal-title" id="mand-title">📋 Anotações de Andamento</div>
+      <div id="mand-sub" style="font-size:12px;color:var(--gray-400);margin-top:3px"></div>
+    </div>
+    <button class="btn btn-ghost" onclick="closeM('modal-andamento')">✕</button>
+  </div>
+  <div class="modal-body">
+    <input type="hidden" id="mand-orc-id">
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Status atual do serviço</label>
+      <textarea class="form-control" id="mand-texto" rows="5" 
+        placeholder="Ex: Levantamento de campo concluído em 01/04. Aguardando memorial descritivo. Entrega prevista para 10/04..."
+        style="text-align:left;line-height:1.7"></textarea>
+    </div>
+    <div id="mand-historico" style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px;max-height:160px;overflow-y:auto">
+      <div style="font-size:10.5px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Histórico de Anotações</div>
+      <div id="mand-historico-list" style="font-size:12px;color:var(--gray-600);line-height:1.8"></div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-outline" onclick="closeM('modal-andamento')">Fechar</button>
+    <button class="btn btn-gold" onclick="salvarAndamento()">Salvar Anotação</button>
   </div>
 </div></div>
 
@@ -529,6 +718,32 @@ select.form-control{cursor:pointer}
 </div></div>
 
 <script>
+// ===== FIREBASE INIT =====
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCaJiO8XARNpC2mAaMTVWG7wFnKn2IR7TI",
+  authDomain: "mt-agenda.firebaseapp.com",
+  projectId: "mt-agenda",
+  storageBucket: "mt-agenda.firebasestorage.app",
+  messagingSenderId: "10217074325",
+  appId: "1:10217074325:web:2c8d6d8beb0a4009ab759c"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ===== LOADING OVERLAY =====
+function showLoading(msg){
+  let el=document.getElementById('fb-loading');
+  if(!el){el=document.createElement('div');el.id='fb-loading';
+    el.style.cssText='position:fixed;inset:0;background:rgba(15,34,64,.7);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px';
+    el.innerHTML='<div style="width:40px;height:40px;border:3px solid rgba(255,255,255,.2);border-top-color:#e8c96a;border-radius:50%;animation:spin 0.8s linear infinite"></div><div style="color:white;font-size:13px;font-family:DM Sans,sans-serif">'+(msg||'Carregando...')+'</div>';
+    document.head.insertAdjacentHTML('beforeend','<style>@keyframes spin{to{transform:rotate(360deg)}}</style>');
+    document.body.appendChild(el);}
+  else{el.querySelector('div:last-child').textContent=msg||'Carregando...';el.style.display='flex';}
+}
+function hideLoading(){const el=document.getElementById('fb-loading');if(el)el.style.display='none';}
+
 // ===== CONSTANTES DA EMPRESA =====
 const EMP={
   razao:'F de Oliveira Topografia e Regularização de Imóveis Ltda',
@@ -549,8 +764,102 @@ let ST={
     banco:'Banco do Brasil',agencia:'3472-0',conta:'322243-8',titular:'60.694.439/0001-93',
     pix:'60.694.439/0001-93',formas:'Transferência bancária, dinheiro, cartão de crédito ou PIX'}
 };
-function load(){try{const s=localStorage.getItem('monolitos_v3');if(s)ST=JSON.parse(s)}catch(e){}}
-function save(){try{localStorage.setItem('monolitos_v3',JSON.stringify(ST))}catch(e){}}
+
+// ===== FIREBASE SYNC =====
+const DOC_ID = 'dados-monolitos'; // single document stores all data
+
+async function load(){
+  showLoading('Sincronizando dados...');
+  try {
+    // Always fetch from Firestore first (authoritative source)
+    const snap = await db.collection('agenda').doc(DOC_ID).get();
+    if(snap.exists){
+      const remote = snap.data();
+      const local = localStorage.getItem('monolitos_v3');
+      const localData = local ? JSON.parse(local) : null;
+      // Use remote if it has more data or higher nextNum
+      if(!localData || remote.nextNum >= (localData.nextNum||0) ||
+         (remote.orcamentos||[]).length >= (localData.orcamentos||[]).length){
+        ST = remote;
+      } else {
+        // Local is newer - push it to Firebase
+        ST = localData;
+        await db.collection('agenda').doc(DOC_ID).set(ST);
+      }
+    } else {
+      // First time - check localStorage and push to Firebase
+      const local = localStorage.getItem('monolitos_v3');
+      if(local){
+        ST = JSON.parse(local);
+        await db.collection('agenda').doc(DOC_ID).set(ST);
+      }
+    }
+    // Always update localStorage with latest
+    localStorage.setItem('monolitos_v3', JSON.stringify(ST));
+  } catch(e){
+    console.warn('Firebase load error, using local:', e);
+    const local = localStorage.getItem('monolitos_v3');
+    if(local) ST = JSON.parse(local);
+  }
+  hideLoading();
+}
+
+async function save(){
+  // Save locally immediately
+  try { localStorage.setItem('monolitos_v3', JSON.stringify(ST)); } catch(e){}
+  // Then sync to Firestore
+  try {
+    await db.collection('agenda').doc(DOC_ID).set(ST);
+    showSyncBadge();
+  } catch(e){
+    console.warn('Firebase save error:', e);
+    showSyncBadge(true);
+  }
+}
+
+function showSyncBadge(error){
+  let b = document.getElementById('sync-badge');
+  if(!b){
+    b = document.createElement('div');
+    b.id = 'sync-badge';
+    b.style.cssText = 'position:fixed;bottom:16px;right:16px;padding:8px 14px;border-radius:20px;font-size:12px;font-weight:500;font-family:DM Sans,sans-serif;z-index:999;transition:opacity .3s;box-shadow:0 2px 8px rgba(0,0,0,.2)';
+    document.body.appendChild(b);
+  }
+  if(error){
+    b.style.background='#fce8e8';b.style.color='#8b2020';
+    b.textContent='⚠ Sem conexão — salvo localmente';
+  } else {
+    b.style.background='#e8f4ee';b.style.color='#2d6a4f';
+    b.textContent='✓ Sincronizado';
+  }
+  b.style.opacity='1';
+  setTimeout(()=>{ b.style.opacity='0'; }, 3000);
+}
+
+// Real-time listener: update UI when data changes on another device
+function startRealtimeSync(){
+  db.collection('agenda').doc(DOC_ID).onSnapshot(snap => {
+    if(snap.exists){
+      const remote = snap.data();
+      // Only update if remote is newer (higher nextNum or more records)
+      if(remote.nextNum > ST.nextNum ||
+         remote.orcamentos?.length > ST.orcamentos?.length ||
+         remote.recebimentos?.length > ST.recebimentos?.length){
+        ST = remote;
+        try{ localStorage.setItem('monolitos_v3', JSON.stringify(ST)); }catch(e){}
+        // Refresh current view silently
+        const active = document.querySelector('.view.active');
+        if(active){
+          const id = active.id.replace('view-','');
+          const refreshMap = {painel:renderDash,orcamentos:renderOrc,clientes:renderCli,
+            recebimentos:renderRec,custos:renderCus,relatorios:renderRel};
+          if(refreshMap[id]) refreshMap[id]();
+        }
+        showSyncBadge();
+      }
+    }
+  }, err => console.warn('Realtime sync error:', err));
+}
 
 // ===== UTILS =====
 function fmtM(v){return'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
@@ -566,10 +875,10 @@ function nav(n){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-'+n).classList.add('active');
-  const T={dashboard:'Dashboard',orcamentos:'Orçamentos',clientes:'Clientes',recebimentos:'Recebimentos',custos:'Custos',configuracoes:'Dados Bancários',sincronizar:'Sincronizar',relatorios:'Faturamento'};
+  const T={painel:'Painel',orcamentos:'Orçamentos',clientes:'Clientes',recebimentos:'Recebimentos',custos:'Custos',configuracoes:'Dados Bancários',sincronizar:'Sincronizar',relatorios:'Faturamento'};
   document.getElementById('page-title').textContent=T[n]||n;
   document.querySelectorAll('.nav-item').forEach(b=>{if(b.textContent.trim().startsWith((T[n]||'').slice(0,5)))b.classList.add('active')});
-  const R={dashboard:renderDash,orcamentos:renderOrc,clientes:renderCli,recebimentos:renderRec,custos:renderCus,relatorios:renderRel,configuracoes:renderCfg,financeiro:()=>{}};
+  const R={painel:renderDash,agenda:renderAgenda,servicos:renderServicos,orcamentos:renderOrc,clientes:renderCli,recebimentos:renderRec,custos:renderCus,relatorios:renderRel,configuracoes:renderCfg,financeiro:()=>{}};
   if(R[n])R[n]();
 }
 function closeM(id){document.getElementById(id).style.display='none'}
@@ -642,8 +951,23 @@ function novoOrc(){
   document.getElementById('orc-id').value='';
   document.getElementById('morc-title').textContent='Novo Orçamento';
   document.getElementById('orc-data').value=today();
-  ST.nextNum++;
-  document.getElementById('orc-num').value=String(ST.nextNum).padStart(3,'0')+'-'+new Date().getFullYear();
+  // Always recalculate from valid orçamentos of CURRENT YEAR only
+  const anoCorrente=new Date().getFullYear();
+  const validNums2=ST.orcamentos
+    .filter(o=>{
+      if(!o.num||o.num.length>12)return false;
+      const partes=o.num.split('-');
+      return partes.length===2&&parseInt(partes[1])===anoCorrente;
+    })
+    .map(o=>{
+      const n=parseInt(o.num.split('-')[0]);
+      return (isNaN(n)||n>9999)?0:n;
+    })
+    .filter(n=>n>0);
+  const maxValid=validNums2.length>0?Math.max(...validNums2):0;
+  ST.nextNum=maxValid+1;
+  save();
+  document.getElementById('orc-num').value=String(ST.nextNum).padStart(3,'0')+'-'+anoCorrente;
   document.getElementById('orc-cli').value='';
   document.getElementById('orc-mat').value='';
   document.getElementById('orc-obs').value='';
@@ -811,20 +1135,91 @@ function printById(id){editarOrc(id);setTimeout(()=>imprimir(),250)}
 // ===== DASHBOARD =====
 function renderDash(){
   const now=new Date(),mes=now.getMonth(),ano=now.getFullYear();
-  const tRec=ST.recebimentos.reduce((a,r)=>a+parseFloat(r.valor||0),0);
-  const ab=ST.orcamentos.filter(o=>o.status==='Aberto'||o.status==='Aprovado').length;
-  const aR=ST.orcamentos.reduce((a,o)=>a+Math.max(0,parseFloat(o.valor||0)-recPorOrc(o.id)),0);
-  const co=ST.orcamentos.filter(o=>o.status==='Concluído'&&o.data&&new Date(o.data).getMonth()===mes).length;
+  const now2=new Date(),mes2=now2.getMonth(),ano2=now2.getFullYear();
+  // Faturamento: APENAS recebimentos do mês e ano correntes
+  const recDoMes=ST.recebimentos.filter(r=>{
+    if(!r.data)return false;
+    try{
+      const d=new Date(r.data+'T12:00:00');
+      return d.getMonth()===mes2&&d.getFullYear()===ano2;
+    }catch(e){return false;}
+  });
+  const tRec=recDoMes.reduce((a,r)=>a+parseFloat(r.valor||0),0);
+  const ab=ST.orcamentos.filter(o=>
+    (o.status==='Aberto'||o.status==='Aprovado') &&
+    o.num && o.num.length<30
+  ).length;
+  const emAndamento=ST.orcamentos.filter(o=>
+    o.status==='Em andamento' &&
+    o.status!=='Concluído' &&
+    o.status!=='Cancelado' &&
+    o.num && o.num.length < 30  // exclude corrupted records
+  );
+  const emAnd=emAndamento.length;
+  // A receber: soma saldo pendente dos orçamentos Em andamento do ano atual
+  const anoAtual=new Date().getFullYear();
+  const aR=emAndamento
+    .filter(o=>{
+      if(!o.num||o.num.length>=30)return false;
+      const anoOrc=o.data?parseInt(o.data.split('-')[0]):0;
+      return anoOrc>=anoAtual;
+    })
+    .reduce((a,o)=>{
+      const recebido=recPorOrc(o.id);
+      const saldo=Math.max(0,parseFloat(o.valor||0)-recebido);
+      return a+saldo;
+    },0);
+  const co=ST.orcamentos.filter(o=>o.status==='Concluído'&&o.data&&new Date(o.data+'T12:00:00').getMonth()===mes&&new Date(o.data+'T12:00:00').getFullYear()===ano).length;
   document.getElementById('m-fat').textContent=fmtM(tRec);
   document.getElementById('m-ab').textContent=ab;
+  // Update Em andamento badge in metric if element exists
+  const mEmAnd=document.getElementById('m-emand');
+  if(mEmAnd)mEmAnd.textContent=emAnd;
+  // Agenda hoje count
+  const mAgenda=document.getElementById('m-agenda');
+  if(mAgenda){
+    const hojeAgenda=(ST.compromissos||[]).filter(c=>c.data===today()&&!c.concluido).length;
+    mAgenda.textContent=hojeAgenda;
+    mAgenda.style.color=hojeAgenda>0?'var(--blue)':'var(--navy)';
+  }
   document.getElementById('m-ar').textContent=fmtM(aR);
   document.getElementById('m-co').textContent=co;
-  const list=ST.orcamentos.slice(0,5);
-  document.getElementById('tbody-dash').innerHTML=!list.length?'<tr><td colspan="4"><div class="empty-state" style="padding:18px"><div class="empty-text">Nenhum orçamento</div></div></td></tr>':
-    list.map(o=>`<tr><td><strong>${o.num}</strong></td><td>${o.cliente}</td><td><strong>${fmtM(o.valor)}</strong></td><td>${stB(o.status)}</td></tr>`).join('');
+  // Show only Em andamento in painel (already computed above)
+  const tbody_dash = document.getElementById('tbody-dash');
+  if(tbody_dash){
+    if(!emAndamento.length){
+      tbody_dash.innerHTML='<tr><td colspan="4"><div class="empty-state" style="padding:18px"><div class="empty-icon">⚙</div><div class="empty-title">Nenhum serviço em andamento</div></div></td></tr>';
+    } else {
+      tbody_dash.innerHTML=emAndamento
+        .filter(o=>o.num&&o.num.length<30)
+        .map(o=>{
+          const rec=recPorOrc(o.id);
+          const pct=o.valor>0?Math.min(Math.round((rec/o.valor)*100),100):0;
+          const saldo=Math.max(0,parseFloat(o.valor||0)-rec);
+          return`<tr>
+          <td><strong style="color:var(--navy)">${o.num}</strong></td>
+          <td>
+            <div>${o.cliente}</div>
+            ${o.andamento?`<div style="font-size:11px;color:var(--blue);margin-top:2px">📌 ${o.andamento.slice(0,60)}${o.andamento.length>60?'...':''}</div>`:''}
+          </td>
+          <td>
+            <div style="font-size:12px;color:var(--green)">${fmtM(rec)}</div>
+            <div class="progress-bar" style="margin-top:3px;width:80px"><div class="progress-fill" style="width:${pct}%"></div></div>
+            <div style="font-size:10.5px;color:var(--gray-400)">${pct}% · falta ${fmtM(saldo)}</div>
+          </td>
+          <td>
+            <button class="btn btn-ghost btn-sm" onclick="abrirAndamento('${o.id}')" title="Anotações de andamento" style="font-size:16px;padding:4px 6px">📋</button>
+          </td>
+        </tr>`;}).join('');
+    }
+  }
   const ms=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   const cd=[];for(let i=5;i>=0;i--){const d=new Date(ano,mes-i,1);const m2=d.getMonth();const y=d.getFullYear();
-    const v=ST.recebimentos.filter(r=>{if(!r.data)return false;const rd=new Date(r.data);return rd.getMonth()===m2&&rd.getFullYear()===y}).reduce((a,r)=>a+parseFloat(r.valor||0),0);
+    const v=ST.recebimentos.filter(r=>{
+      if(!r.data)return false;
+      const rd=new Date(r.data+'T12:00:00');
+      return rd.getMonth()===m2&&rd.getFullYear()===y;
+    }).reduce((a,r)=>a+parseFloat(r.valor||0),0);
     cd.push({l:ms[m2],v,c:m2===mes&&y===ano});}
   const mx=Math.max(...cd.map(c=>c.v),1);
   document.getElementById('chart-m').innerHTML=cd.map(c=>{const p=Math.max(Math.round((c.v/mx)*100),3);
@@ -843,12 +1238,13 @@ function renderOrc(){
   const tbody=document.getElementById('tbody-orc');
   if(!list.length){tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Nenhum orçamento</div></div></td></tr>';return}
   tbody.innerHTML=list.map(o=>{const r=recPorOrc(o.id);const p=o.valor>0?Math.round((r/o.valor)*100):0;
-    return`<tr><td><strong style="color:var(--navy)">${o.num}</strong>${o.tipo==='os'?'<br><span class="chip" style="background:#e6f0fb;color:#1a4a7a;font-size:9.5px;margin-top:2px">OS</span>':''}</td>
+    const dispNum=o.num&&o.num.length<20?o.num:(o.num?o.num.slice(-8):'—');
+    return`<tr><td><strong style="color:var(--navy)">${dispNum}</strong>${o.tipo==='os'?'<br><span class="chip" style="background:#e6f0fb;color:#1a4a7a;font-size:9.5px;margin-top:2px">OS</span>':''}</td>
     <td style="font-size:11px;color:var(--gray-500)">${fmtD(o.data)}</td><td>${o.cliente}</td>
     <td><strong>${fmtM(o.valor)}</strong></td>
     <td><div style="min-width:78px"><div style="font-size:11px;color:var(--green);margin-bottom:3px">${fmtM(r)} (${p}%)</div><div class="progress-bar"><div class="progress-fill" style="width:${p}%"></div></div></div></td>
     <td>${stB(o.status)}</td>
-    <td><div style="display:flex;gap:2px"><button class="btn btn-ghost btn-sm" onclick="abrirFinanceiro('${o.id}')" title="Financeiro">💰</button><button class="btn btn-ghost btn-sm" onclick="editarOrc('${o.id}')">✏</button><button class="btn btn-ghost btn-sm" onclick="printById('${o.id}')">🖨</button><button class="btn btn-danger btn-sm" onclick="excluirOrc('${o.id}')">✕</button></div></td></tr>`;
+    <td><div style="display:flex;gap:2px"><button class="btn btn-ghost btn-sm" onclick="abrirFinanceiro('${o.id}')" title="Financeiro">💰</button><button class="btn btn-ghost btn-sm" onclick="abrirNovoCompromisso('${o.num}')" title="Agendar">📅</button><button class="btn btn-ghost btn-sm" onclick="editarOrc('${o.id}')">✏</button><button class="btn btn-ghost btn-sm" onclick="printById('${o.id}')">🖨</button><button class="btn btn-danger btn-sm" onclick="excluirOrc('${o.id}')">✕</button></div></td></tr>`;
   }).join('');
 }
 
@@ -929,7 +1325,16 @@ function salvarRec(){
     desc:document.getElementById('rec-desc').value,valor:parseFloat(document.getElementById('rec-valor').value)||0,
     forma:document.getElementById('rec-forma').value,temRecibo:gr};
   if(!r.valor){alert('Informe o valor.');return}
-  ST.recebimentos.push(r);save();closeM('modal-rec');renderRec();renderDash();
+  ST.recebimentos.push(r);
+  // Auto-update status to Em andamento on first payment
+  const orcIdx = ST.orcamentos.findIndex(o=>o.id===orcId);
+  if(orcIdx>=0){
+    const orc = ST.orcamentos[orcIdx];
+    if(orc.status==='Aberto'||orc.status==='Aprovado'){
+      ST.orcamentos[orcIdx].status='Em andamento';
+    }
+  }
+  save();closeM('modal-rec');renderRec();renderDash();
   if(gr)printRecibo(r);
   // Return to financeiro panel if opened from there
   if(window._recAfterSave){
@@ -1043,6 +1448,8 @@ function renderBancoPrev(){
 
 // ===== SINCRONIZAÇÃO =====
 function exportar(){
+  // Update Firebase before exporting
+  db.collection('agenda').doc(DOC_ID).set(ST).catch(e=>console.warn(e));
   const blob=new Blob([JSON.stringify(ST,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);const a=document.createElement('a');
   a.href=url;a.download='monolitos_backup_'+new Date().toISOString().slice(0,10)+'.json';
@@ -1060,9 +1467,9 @@ function importar(event){
       (imp.recebimentos||[]).forEach(r=>{if(!ST.recebimentos.find(x=>x.id===r.id)){ST.recebimentos.push(r);nR++}});
       (imp.custos||[]).forEach(c=>{if(!ST.custos.find(x=>x.id===c.id)){ST.custos.push(c);nCu++}});
       const maxN=Math.max(ST.nextNum,imp.nextNum||0,...ST.orcamentos.map(o=>parseInt(o.num)||0));
-      ST.nextNum=maxN;if(imp.banco)ST.banco=imp.banco;
+      ST.nextNum=maxN;if(imp.banco)ST.banco=imp.banco;if(imp.servicos&&!ST.servicos)ST.servicos=imp.servicos;
       save();renderDash();
-      document.getElementById('import-res').innerHTML=`<div style="color:var(--green);background:var(--green-light);padding:9px;border-radius:8px;line-height:1.7">✓ Concluído! +${nO} orçamentos · +${nC} clientes · +${nR} recebimentos · +${nCu} custos<br><strong>Próximo nº: ${maxN+1}</strong></div>`;
+      document.getElementById('import-res').innerHTML=`<div style="color:var(--green);background:var(--green-light);padding:9px;border-radius:8px;line-height:1.7">✓ Concluído! +${nO} orçamentos · +${nC} clientes · +${nR} recebimentos · +${nCu} custos<br><strong>Próximo nº: ${maxN+1}</strong><br><small>Sincronizando com a nuvem...</small></div>`;
     }catch(err){document.getElementById('import-res').innerHTML='<div style="color:var(--red)">Erro ao importar. Verifique o arquivo.</div>';}
     event.target.value='';
   };reader.readAsText(file);
@@ -1200,8 +1607,454 @@ function abrirRec_orc(orcId){
   openM('modal-rec');
 }
 
+// ===== SERVIÇOS CADASTRO =====
+function renderServicos(){
+  if(!ST.servicos)ST.servicos=[];
+  const tbody=document.getElementById('tbody-servicos');
+  if(!tbody)return;
+  if(!ST.servicos.length){
+    tbody.innerHTML='<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Nenhum serviço cadastrado</div><div class="empty-text">Cadastre serviços padrão para agilizar seus orçamentos</div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML=ST.servicos.map(s=>`<tr>
+    <td><strong>${s.nome}</strong></td>
+    <td style="font-size:12px;color:var(--gray-500);max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.desc?s.desc.slice(0,80)+'...':''}</td>
+    <td><strong style="color:var(--navy)">${fmtM(s.valor)}</strong></td>
+    <td><div style="display:flex;gap:3px">
+      <button class="btn btn-ghost btn-sm" onclick="editarServico('${s.id}')">✏</button>
+      <button class="btn btn-danger btn-sm" onclick="excluirServico('${s.id}')">✕</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function abrirNovoServico(){
+  document.getElementById('srv-id').value='';
+  document.getElementById('msrv-title').textContent='Novo Serviço';
+  document.getElementById('srv-nome').value='';
+  document.getElementById('srv-desc').value='';
+  document.getElementById('srv-valor').value='';
+  openM('modal-novo-srv');
+}
+
+function salvarServico(){
+  if(!ST.servicos)ST.servicos=[];
+  const id=document.getElementById('srv-id').value||Date.now().toString();
+  const s={id,nome:document.getElementById('srv-nome').value,
+    desc:document.getElementById('srv-desc').value,
+    valor:parseFloat(document.getElementById('srv-valor').value)||0};
+  if(!s.nome){alert('Informe o nome do serviço.');return}
+  const idx=ST.servicos.findIndex(x=>x.id===id);
+  if(idx>=0)ST.servicos[idx]=s;else ST.servicos.push(s);
+  save();closeM('modal-novo-srv');renderServicos();
+}
+
+function editarServico(id){
+  const s=ST.servicos?.find(x=>x.id===id);if(!s)return;
+  document.getElementById('srv-id').value=s.id;
+  document.getElementById('msrv-title').textContent='Editar Serviço';
+  document.getElementById('srv-nome').value=s.nome;
+  document.getElementById('srv-desc').value=s.desc||'';
+  document.getElementById('srv-valor').value=s.valor||'';
+  openM('modal-novo-srv');
+}
+
+function excluirServico(id){
+  if(!confirm('Excluir serviço?'))return;
+  ST.servicos=ST.servicos.filter(x=>x.id!==id);
+  save();renderServicos();
+}
+
+function abrirSeletorServico(){
+  if(!ST.servicos||!ST.servicos.length){
+    alert('Nenhum serviço cadastrado. Vá em "Serviços" no menu para cadastrar.');return;
+  }
+  filtrarSrvSel();
+  openM('modal-srv-sel');
+}
+
+function filtrarSrvSel(){
+  const q=(document.getElementById('search-srv-sel')?.value||'').toLowerCase();
+  const lista=document.getElementById('lista-srv-sel');
+  const srvs=(ST.servicos||[]).filter(s=>!q||s.nome.toLowerCase().includes(q)||s.desc?.toLowerCase().includes(q));
+  if(!srvs.length){lista.innerHTML='<div class="empty-state" style="padding:20px"><div class="empty-text">Nenhum serviço encontrado</div></div>';return}
+  lista.innerHTML=srvs.map(s=>`
+    <div onclick="selecionarServico('${s.id}')" style="padding:12px 14px;border-bottom:1px solid var(--gray-100);cursor:pointer;border-radius:var(--radius);margin-bottom:4px" onmouseover="this.style.background='var(--gray-50)'" onmouseout="this.style.background=''">
+      <div style="font-size:13px;font-weight:500;color:var(--navy)">${s.nome}</div>
+      <div style="font-size:11.5px;color:var(--gray-500);margin-top:2px">${s.desc?s.desc.slice(0,100)+'...':''}</div>
+      <div style="font-size:12px;color:var(--green);font-weight:600;margin-top:4px">${fmtM(s.valor)}</div>
+    </div>`).join('');
+}
+
+function selecionarServico(id){
+  const s=ST.servicos?.find(x=>x.id===id);if(!s)return;
+  addSrv(s.desc,s.valor);
+  closeM('modal-srv-sel');
+}
+
+// ===== CSV IMPORT AGENDA BOA =====
+function parseMoneyCSV(s){
+  if(!s)return 0;
+  s=String(s).replace('R$','').replace(/ /g,'').replace(/\./g,'').replace(',','.').trim();
+  try{return parseFloat(s)||0}catch(e){return 0}
+}
+function parseDateCSV(s){
+  if(!s)return'';
+  const p=s.trim().split('/');
+  if(p.length===3)return`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+  return'';
+}
+
+function importarCSVClientes(event){
+  const file=event.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const lines=e.target.result.split('\n');
+    const headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
+    let novos=0;
+    for(let i=1;i<lines.length;i++){
+      if(!lines[i].trim())continue;
+      const vals=lines[i].split(',').map(v=>v.trim().replace(/^"|"$/g,''));
+      const row={};headers.forEach((h,j)=>row[h]=vals[j]||'');
+      const id='ab_'+(row['id']||Date.now()+i);
+      if(ST.clientes.find(c=>c.id===id))continue;
+      const phones=(row['phones']||'').replace(/\|/g,', ');
+      const endParts=[row['street'],row['streetNumber']||row['number'],row['district'],row['city'],row['state'],row['cep']];
+      const end=endParts.filter(Boolean).join(', ');
+      ST.clientes.push({id,nome:(row['name']||'').trim(),cpf:(row['cpf']||row['cnpj']||'').trim(),
+        tel:phones,email:(row['email']||'').trim(),end,inter:'',interTel:'',
+        obs:(row['corporateName']||'').trim(),fonte:'AgendaBoa'});
+      novos++;
+    }
+    save();renderCli();
+    document.getElementById('csv-result').innerHTML=`<div style="color:var(--green);background:var(--green-light);padding:9px;border-radius:8px">✓ ${novos} clientes importados do Agenda Boa!</div>`;
+    event.target.value='';
+  };
+  reader.readAsText(file,'utf-8');
+}
+
+function importarCSVPedidos(event){
+  const file=event.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const lines=e.target.result.split('\n');
+    const headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
+    let novos=0;let maxN=ST.nextNum;
+    for(let i=1;i<lines.length;i++){
+      if(!lines[i].trim())continue;
+      const vals=lines[i].split(',').map(v=>v.trim().replace(/^"|"$/g,''));
+      const row={};headers.forEach((h,j)=>row[h]=vals[j]||'');
+      const id='ab_'+(row['id']||Date.now()+i);
+      if(ST.orcamentos.find(o=>o.id===id))continue;
+      const valor=parseMoneyCSV(row['totalPrice']);
+      const rawNum=row['jobNumber']||'';
+      // Skip records with no valid job number or with ID-like numbers
+      const num=rawNum&&!isNaN(parseInt(rawNum))?parseInt(rawNum):null;
+      const year=row['jobYear']||new Date().getFullYear();
+      const numFmt=num?String(num).padStart(3,'0')+'-'+year:'AB-'+String(i).padStart(4,'0')+'-'+year;
+      const jtype=row['jobType']||'1';
+      const stMap={'1':'Aberto','2':'Em andamento','3':'Concluído','4':'Cancelado','5':'Aberto'};
+      const status=stMap[jtype]||'Aberto';
+      const pc=row['pc_id']||'';const upfront=parseInt(row['pc_upfront']||'50')||50;
+      let parcelas=[];
+      if(pc==='immediate')parcelas=[{label:'Pagamento à vista',tipo:'%',val:100}];
+      else if(pc.includes('upfront'))parcelas=[{label:'Sinal (entrada)',tipo:'%',val:upfront},{label:'Valor restante (conclusão)',tipo:'%',val:100-upfront}];
+      else parcelas=[{label:'Sinal (entrada)',tipo:'%',val:50},{label:'Valor restante (conclusão)',tipo:'%',val:50}];
+      try{const n=parseInt(num);if(n>maxN)maxN=n;}catch(e){}
+      ST.orcamentos.push({id,num:numFmt,data:parseDateCSV(row['jobDate']),
+        cliente:(row['clientName']||'').trim(),matricula:(row['jobTitle']||'').trim(),
+        servicos:[{desc:(row['descriptions.description']||'').trim(),valor}],
+        parcelas,valor,obs:(row['jobAdditionalInfo']||'').trim(),
+        status,tipo:'orcamento',fonte:'AgendaBoa'});
+      novos++;
+    }
+    ST.nextNum=maxN;
+    save();renderOrc();renderDash();
+    document.getElementById('csv-result').innerHTML=`<div style="color:var(--green);background:var(--green-light);padding:9px;border-radius:8px">✓ ${novos} pedidos importados! Próximo nº: ${maxN+1}</div>`;
+    event.target.value='';
+  };
+  reader.readAsText(file,'utf-8');
+}
+
+// ===== AGENDA / COMPROMISSOS =====
+const TIPO_ICON={'visita':'🏠','reuniao':'🤝','entrega':'📋','campo':'📍','cartorio':'🏛','outro':'📌'};
+
+function abrirNovoCompromisso(orcNum){
+  document.getElementById('comp-id').value='';
+  document.getElementById('mcomp-title').textContent='Novo Compromisso';
+  document.getElementById('comp-data').value=today();
+  document.getElementById('comp-hora').value='09:00';
+  document.getElementById('comp-titulo').value='';
+  document.getElementById('comp-cliente').value=orcNum||'';
+  document.getElementById('comp-obs').value='';
+  document.getElementById('comp-lembrete').value='0';
+  document.getElementById('comp-tipo').value='outro';
+  document.getElementById('comp-del-btn').style.display='none';
+  const dl=document.getElementById('dl-comp-cli');
+  dl.innerHTML=ST.clientes.map(c=>`<option value="${c.nome}">`).join('')+
+    ST.orcamentos.filter(o=>o.num&&o.num.length<20).map(o=>`<option value="${o.num} — ${o.cliente}">`).join('');
+  openM('modal-comp');
+}
+
+function editarCompromisso(id){
+  const comp=(ST.compromissos||[]).find(x=>x.id===id);if(!comp)return;
+  document.getElementById('comp-id').value=comp.id;
+  document.getElementById('mcomp-title').textContent='Editar Compromisso';
+  document.getElementById('comp-data').value=comp.data;
+  document.getElementById('comp-hora').value=comp.hora;
+  document.getElementById('comp-titulo').value=comp.titulo;
+  document.getElementById('comp-cliente').value=comp.cliente||'';
+  document.getElementById('comp-obs').value=comp.obs||'';
+  document.getElementById('comp-lembrete').value=comp.lembrete||'0';
+  document.getElementById('comp-tipo').value=comp.tipo||'outro';
+  document.getElementById('comp-del-btn').style.display='inline-flex';
+  openM('modal-comp');
+}
+
+function salvarCompromisso(){
+  if(!ST.compromissos)ST.compromissos=[];
+  const id=document.getElementById('comp-id').value||Date.now().toString();
+  const comp={id,
+    titulo:document.getElementById('comp-titulo').value,
+    data:document.getElementById('comp-data').value,
+    hora:document.getElementById('comp-hora').value,
+    cliente:document.getElementById('comp-cliente').value,
+    obs:document.getElementById('comp-obs').value,
+    lembrete:document.getElementById('comp-lembrete').value,
+    tipo:document.getElementById('comp-tipo').value,
+    concluido:false
+  };
+  if(!comp.titulo){alert('Informe o título do compromisso.');return}
+  const idx=ST.compromissos.findIndex(x=>x.id===id);
+  if(idx>=0)ST.compromissos[idx]=comp;else ST.compromissos.push(comp);
+  save();closeM('modal-comp');renderAgenda();renderDash();
+  // Schedule notification if lembrete set
+  agendarLembrete(comp);
+}
+
+function excluirCompromisso(){
+  const id=document.getElementById('comp-id').value;
+  if(!confirm('Excluir compromisso?'))return;
+  ST.compromissos=(ST.compromissos||[]).filter(x=>x.id!==id);
+  save();closeM('modal-comp');renderAgenda();renderDash();
+}
+
+function toggleCompromisso(id){
+  const idx=(ST.compromissos||[]).findIndex(x=>x.id===id);if(idx<0)return;
+  ST.compromissos[idx].concluido=!ST.compromissos[idx].concluido;
+  save();renderAgenda();renderDash();
+}
+
+function agendarLembrete(comp){
+  if(!comp.lembrete||comp.lembrete==='0')return;
+  if(!('Notification' in window))return;
+  Notification.requestPermission().then(perm=>{
+    if(perm!=='granted')return;
+    const dataHora=new Date(comp.data+'T'+comp.hora+':00');
+    const lembreteMs=parseInt(comp.lembrete)*60*1000;
+    const agora=new Date();
+    const diff=dataHora.getTime()-lembreteMs-agora.getTime();
+    if(diff>0&&diff<86400000*2){ // only schedule if within 2 days
+      setTimeout(()=>{
+        new Notification('Top-Agenda — Lembrete',{
+          body:`${TIPO_ICON[comp.tipo]||'📌'} ${comp.titulo}${comp.cliente?' — '+comp.cliente:''}`,
+          icon:'./icon-192.png'
+        });
+      },diff);
+    }
+  });
+}
+
+function renderAgenda(){
+  if(!ST.compromissos)ST.compromissos=[];
+  const hoje=today();
+  const todos=[...ST.compromissos].sort((a,b)=>(a.data+a.hora).localeCompare(b.data+b.hora));
+  const hojeList=todos.filter(c=>c.data===hoje&&!c.concluido);
+  const proxList=todos.filter(c=>c.data>hoje&&!c.concluido).slice(0,20);
+  const passadoList=todos.filter(c=>(c.data<hoje||c.concluido)).slice(0,10);
+
+  // Hoje card
+  const hojeEl=document.getElementById('agenda-hoje');
+  if(hojeEl){
+    if(hojeList.length){
+      hojeEl.innerHTML=`<div class="card" style="border:2px solid var(--gold);margin-bottom:0">
+        <div class="card-header" style="background:var(--gold-pale)">
+          <span class="card-title" style="color:var(--navy)">📅 Hoje — ${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})}</span>
+          <span class="metric-badge badge-amber">${hojeList.length} compromisso(s)</span>
+        </div>
+        <div>${hojeList.map(comp=>compCard(comp,true)).join('')}</div>
+      </div>`;
+    } else {
+      hojeEl.innerHTML=`<div style="text-align:center;padding:16px;background:var(--gray-50);border-radius:var(--radius-lg);margin-bottom:0;color:var(--gray-400);font-size:13px">
+        ✓ Nenhum compromisso para hoje
+        <button class="btn btn-gold btn-sm" style="margin-left:12px" onclick="abrirNovoCompromisso()">+ Agendar</button>
+      </div>`;
+    }
+  }
+
+  // Lista
+  const listaEl=document.getElementById('agenda-lista');
+  if(listaEl){
+    const all=[...proxList,...passadoList];
+    if(!all.length){
+      listaEl.innerHTML='<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-title">Nenhum compromisso agendado</div><div class="empty-text">Clique em "+ Novo Compromisso" para começar</div></div>';
+    } else {
+      let html='';
+      if(proxList.length){
+        html+='<div style="padding:10px 18px 4px;font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.06em">Próximos</div>';
+        html+=proxList.map(c=>compCard(c)).join('');
+      }
+      if(passadoList.length){
+        html+='<div style="padding:10px 18px 4px;font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.06em;border-top:1px solid var(--gray-100)">Anteriores / Concluídos</div>';
+        html+=passadoList.map(c=>compCard(c)).join('');
+      }
+      listaEl.innerHTML=html;
+    }
+  }
+}
+
+function compCard(comp,destaque){
+  const icon=TIPO_ICON[comp.tipo]||'📌';
+  const dataFmt=new Date(comp.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});
+  const passado=comp.data<today();
+  return`<div style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--gray-100);${comp.concluido?'opacity:.5':''}">
+    <div style="font-size:22px;flex-shrink:0">${icon}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:500;color:var(--navy);${comp.concluido?'text-decoration:line-through':''}">${comp.titulo}</div>
+      <div style="font-size:11.5px;color:var(--gray-500);margin-top:2px">
+        ${dataFmt} às ${comp.hora}
+        ${comp.cliente?` · <span style="color:var(--blue)">${comp.cliente}</span>`:''}
+      </div>
+      ${comp.obs?`<div style="font-size:11px;color:var(--gray-400);margin-top:2px">${comp.obs.slice(0,80)}</div>`:''}
+      ${comp.lembrete&&comp.lembrete!=='0'?`<span style="font-size:10px;color:var(--amber);background:var(--amber-light);padding:1px 7px;border-radius:10px;margin-top:3px;display:inline-block">🔔 Lembrete ${comp.lembrete==='1440'?'1 dia':comp.lembrete+'min'} antes</span>`:''}
+    </div>
+    <div style="display:flex;gap:4px;flex-shrink:0">
+      <button class="btn btn-ghost btn-sm" onclick="toggleCompromisso('${comp.id}')" title="${comp.concluido?'Reabrir':'Concluir'}" style="font-size:16px">${comp.concluido?'↩':'✓'}</button>
+      <button class="btn btn-ghost btn-sm" onclick="editarCompromisso('${comp.id}')" title="Editar">✏</button>
+    </div>
+  </div>`;
+}
+
+// ===== ANDAMENTO =====
+function abrirAndamento(id){
+  const o=ST.orcamentos.find(x=>x.id===id);if(!o)return;
+  document.getElementById('mand-orc-id').value=id;
+  document.getElementById('mand-title').textContent='📋 Andamento — '+o.num;
+  document.getElementById('mand-sub').textContent=o.cliente+' · '+fmtM(o.valor);
+  document.getElementById('mand-texto').value='';
+  // Show history
+  const hist=(o.andamentoHist||[]);
+  const listEl=document.getElementById('mand-historico-list');
+  if(!hist.length){
+    listEl.innerHTML='<span style="color:var(--gray-400)">Nenhuma anotação ainda</span>';
+  } else {
+    listEl.innerHTML=[...hist].reverse().map(h=>
+      `<div style="padding:6px 0;border-bottom:1px solid var(--gray-100)">
+        <div style="font-size:10px;color:var(--gray-400)">${h.data} — ${h.hora}</div>
+        <div style="margin-top:2px">${h.texto}</div>
+      </div>`
+    ).join('');
+  }
+  // Show last note in textarea
+  if(o.andamento) document.getElementById('mand-texto').value=o.andamento;
+  openM('modal-andamento');
+}
+
+function salvarAndamento(){
+  const id=document.getElementById('mand-orc-id').value;
+  const texto=document.getElementById('mand-texto').value.trim();
+  if(!texto){alert('Escreva uma anotação.');return}
+  const idx=ST.orcamentos.findIndex(x=>x.id===id);if(idx<0)return;
+  const agora=new Date();
+  const dataFmt=agora.toLocaleDateString('pt-BR');
+  const horaFmt=agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  if(!ST.orcamentos[idx].andamentoHist)ST.orcamentos[idx].andamentoHist=[];
+  ST.orcamentos[idx].andamentoHist.push({data:dataFmt,hora:horaFmt,texto});
+  ST.orcamentos[idx].andamento=texto; // latest note
+  save();closeM('modal-andamento');renderDash();
+  // Show success
+  const badge=document.createElement('div');
+  badge.style.cssText='position:fixed;bottom:16px;right:16px;background:var(--green-light);color:var(--green);padding:8px 14px;border-radius:20px;font-size:12px;font-weight:500;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,.15)';
+  badge.textContent='✓ Anotação salva';
+  document.body.appendChild(badge);
+  setTimeout(()=>badge.remove(),3000);
+}
+
+// ===== BUSCA GLOBAL =====
+function globalSearch(q){
+  const res=document.getElementById('global-results');
+  if(!q||q.length<2){res.innerHTML='';return}
+  q=q.toLowerCase();
+
+  // Search orçamentos
+  const orcResults=ST.orcamentos.filter(o=>
+    o.num?.toLowerCase().includes(q)||
+    o.cliente?.toLowerCase().includes(q)||
+    o.matricula?.toLowerCase().includes(q)
+  ).slice(0,5);
+
+  // Search clientes
+  const cliResults=ST.clientes.filter(c=>
+    c.nome?.toLowerCase().includes(q)||
+    c.tel?.toLowerCase().includes(q)||
+    c.cpf?.toLowerCase().includes(q)
+  ).slice(0,5);
+
+  if(!orcResults.length&&!cliResults.length){
+    res.innerHTML='<div style="padding:16px;text-align:center;font-size:12.5px;color:var(--gray-400)">Nenhum resultado encontrado</div>';
+    return;
+  }
+
+  let html='';
+  if(orcResults.length){
+    html+=`<div style="padding:8px 14px 4px;font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.06em">Orçamentos</div>`;
+    html+=orcResults.map(o=>`
+      <div onclick="abrirOrcResult('${o.id}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--gray-100);display:flex;justify-content:space-between;align-items:center" onmouseover="this.style.background='var(--gray-50)'" onmouseout="this.style.background=''">
+        <div>
+          <div style="font-size:12.5px;font-weight:500;color:var(--navy)">${o.num&&o.num.length<20?o.num:o.num?.slice(-8)||'—'} — ${o.cliente}</div>
+          <div style="font-size:11px;color:var(--gray-400)">${fmtM(o.valor)}</div>
+        </div>
+        <span class="status-badge ${o.status==='Em andamento'?'badge-navy':o.status==='Concluído'?'badge-green':o.status==='Cancelado'?'badge-red':'badge-amber'}" style="font-size:10px">${o.status}</span>
+      </div>`).join('');
+  }
+  if(cliResults.length){
+    html+=`<div style="padding:8px 14px 4px;font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.06em;border-top:${orcResults.length?'1px solid var(--gray-100)':'none'}">Clientes</div>`;
+    html+=cliResults.map(cl=>{
+      const qtd=ST.orcamentos.filter(o=>o.cliente===cl.nome).length;
+      return`<div onclick="abrirCliResult('${cl.id}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--gray-100);display:flex;justify-content:space-between;align-items:center" onmouseover="this.style.background='var(--gray-50)'" onmouseout="this.style.background=''">
+        <div>
+          <div style="font-size:12.5px;font-weight:500;color:var(--navy)">${cl.nome}</div>
+          <div style="font-size:11px;color:var(--gray-400)">${cl.tel||cl.email||cl.cpf||'—'}</div>
+        </div>
+        <span class="chip badge-navy" style="font-size:10px">${qtd} orç.</span>
+      </div>`;
+    }).join('');
+  }
+  res.innerHTML=html;
+}
+
+function abrirOrcResult(id){
+  document.getElementById('global-search').value='';
+  document.getElementById('global-results').style.display='none';
+  editarOrc(id);
+}
+
+function abrirCliResult(id){
+  document.getElementById('global-search').value='';
+  document.getElementById('global-results').style.display='none';
+  nav('clientes');
+  setTimeout(()=>{
+    const inp=document.getElementById('search-cli');
+    const cli=ST.clientes.find(c=>c.id===id);
+    if(inp&&cli){inp.value=cli.nome;renderCli();}
+  },200);
+}
+
 // ===== INIT =====
-load();renderDash();
+(async () => {
+  await load();
+  renderDash();
+  startRealtimeSync();
+})();
 </script>
 <script>
 if('serviceWorker' in navigator){

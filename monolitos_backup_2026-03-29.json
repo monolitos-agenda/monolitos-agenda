@@ -1,0 +1,203 @@
+{
+  "orcamentos": [
+    {
+      "id": "1774789230654",
+      "num": "042-2026",
+      "data": "2026-03-29",
+      "cliente": "HENRIQUE JORGE DE OLIVEIRA CARNEIRO",
+      "matricula": "16039, da 2ª Zona de Fortaleza",
+      "servicos": [
+        {
+          "desc": "Levantamento planimétrico georreferenciado, com elaboração de planta, memorial descritivo e Termo de Responsabilidade Técnica para fins de Retificação Administrativa de registro do imóvel objeto da Matrícula n° 16.039 da 2ª Zona, a ser processada na 6ª Zona, a qual o imóvel é atualmente vinculado.",
+          "valor": 3500
+        }
+      ],
+      "parcelas": [
+        {
+          "label": "Sinal (entrada)",
+          "tipo": "%",
+          "val": 50
+        },
+        {
+          "label": "Valor restante (conclusão)",
+          "tipo": "%",
+          "val": 50
+        }
+      ],
+      "valor": 3500,
+      "obs": "",
+      "status": "Aberto",
+      "tipo": "orcamento"
+    },
+    {
+      "id": "1774563183903",
+      "num": "041-2026",
+      "data": "2026-03-26",
+      "cliente": "GRANJA AURORA LTDA",
+      "matricula": "0016, do C R I do 2º Ofício de Horizonte/CE",
+      "servicos": [
+        {
+          "desc": "Elaboração de planta, memorial descritivo e Termo de Responsabilidade Técnica, do imóvel objeto da Matrícula nº 0016, do C R I do 2º Ofício de Horizonte/CE.",
+          "valor": 2300
+        }
+      ],
+      "parcelas": [
+        {
+          "label": "Sinal (entrada)",
+          "tipo": "%",
+          "val": 50
+        },
+        {
+          "label": "Valor restante (conclusão)",
+          "tipo": "R$",
+          "val": ""
+        }
+      ],
+      "valor": 2300,
+      "obs": "",
+      "status": "Aberto"
+    },
+    {
+      "id": "1774534109131",
+      "num": "040-2026",
+      "data": "2026-03-26",
+      "cliente": "FRANCISCO ATUALPA SOARES",
+      "matricula": "114646, da 1ª Zona de Fortaleza",
+      "servicos": [
+        {
+          "desc": "1) - Serviço de medição do Terreno A. a ser desmembrado da Matrícula 114646 / 1ª Zona de Fortaleza. (R$ 600,00);\n\n2) - Elaboração de contratos de compra e venda dos Terrenos A e B. (500,00)",
+          "valor": 1100
+        }
+      ],
+      "parcelas": [
+        {
+          "label": "Sinal (entrada)",
+          "tipo": "%",
+          "val": 100
+        },
+        {
+          "label": "Valor restante (conclusão)",
+          "tipo": "R$",
+          "val": ""
+        }
+      ],
+      "valor": 1100,
+      "obs": "",
+      "status": "Concluído",
+      "tipo": "orcamento"
+    },
+    {
+      "id": "1774518181615",
+      "num": "039-2026",
+      "data": "2026-03-26",
+      "cliente": "ESPÓLIO DE PEDRO FERREIRA DA COSTA",
+      "matricula": "21.307 - 3º Ofício",
+      "servicos": [
+        {
+          "desc": "Prestação de serviços de Topografia e Geoprocessamento para elaboração de Laudo Técnico Pericial e emissão de Planta Georreferenciada, memorial descritivo e Termo de Responsabilidade Técnica do Terreno constituído pela Quadra nº 04 do Loteamento Parque São Luiz, objeto da Matrícula nº 21.307 do 3º Ofício de Fortaleza/CE). pertencente ao Espólio de Pedro Ferreira da Costa. ",
+          "valor": 2500
+        }
+      ],
+      "parcelas": [
+        {
+          "label": "Sinal (entrada)",
+          "tipo": "%",
+          "val": 100
+        },
+        {
+          "label": "Valor restante (conclusão)",
+          "tipo": "R$",
+          "val": ""
+        }
+      ],
+      "valor": 2500,
+      "obs": "",
+      "status": "Concluído",
+      "tipo": "orcamento"
+    }
+  ],
+  "clientes": [
+    {
+      "id": "1774518181615",
+      "nome": "ESPÓLIO DE PEDRO FERREIRA DA COSTA",
+      "cpf": "",
+      "tel": "",
+      "email": "",
+      "end": "",
+      "inter": "",
+      "interTel": "",
+      "obs": ""
+    },
+    {
+      "id": "1774534109131",
+      "nome": "FRANCISCO ATUALPA SOARES",
+      "cpf": "",
+      "tel": "",
+      "email": "",
+      "end": "",
+      "inter": "",
+      "interTel": "",
+      "obs": ""
+    },
+    {
+      "id": "1774563183904",
+      "nome": "GRANJA AURORA LTDA",
+      "cpf": "",
+      "tel": "",
+      "email": "",
+      "end": "",
+      "inter": "",
+      "interTel": "",
+      "obs": ""
+    },
+    {
+      "id": "1774789230654",
+      "nome": "HENRIQUE JORGE DE OLIVEIRA CARNEIRO",
+      "cpf": "",
+      "tel": "",
+      "email": "",
+      "end": "",
+      "inter": "",
+      "interTel": "",
+      "obs": ""
+    }
+  ],
+  "recebimentos": [
+    {
+      "id": "1774565015151",
+      "data": "2026-03-26",
+      "orcId": "1774518181615",
+      "orcNum": "039-2026",
+      "cliente": "ESPÓLIO DE PEDRO FERREIRA DA COSTA",
+      "parcela": "Pagamento integral",
+      "desc": "",
+      "valor": 2500,
+      "forma": "PIX",
+      "temRecibo": false
+    },
+    {
+      "id": "1774746995620",
+      "data": "2026-03-27",
+      "orcId": "1774534109131",
+      "orcNum": "040-2026",
+      "cliente": "FRANCISCO ATUALPA SOARES",
+      "parcela": "Sinal (1ª parcela)",
+      "desc": "como pagamento total ",
+      "valor": 1100,
+      "forma": "PIX",
+      "temRecibo": false
+    }
+  ],
+  "custos": [],
+  "nextNum": 42,
+  "banco": {
+    "razao": "F de Oliveira Topografia e Regularização de Imóveis Ltda",
+    "fantasia": "Monólitos Topografia",
+    "banco": "Banco do Brasil",
+    "agencia": "3472-0",
+    "conta": "322243-8",
+    "titular": "60.694.439/0001-93",
+    "pix": "60.694.439/0001-93",
+    "formas": "Transferência bancária, dinheiro, cartão de crédito ou PIX"
+  }
+}

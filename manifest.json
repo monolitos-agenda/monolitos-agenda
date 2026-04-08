@@ -1,13 +1,12 @@
 {
-  "name": "Monólitos Topografia — Agenda",
-  "short_name": "Monólitos",
-  "description": "Sistema de gestão de orçamentos e ordens de serviço",
-  "start_url": "./index.html",
+  "name": "Top-Agenda",
+  "short_name": "Top-Agenda",
+  "description": "Sistema de gestão — Monólitos Topografia",
+  "start_url": "./",
   "display": "standalone",
-  "background_color": "#0f2240",
-  "theme_color": "#0f2240",
-  "orientation": "any",
-  "lang": "pt-BR",
+  "background_color": "#111111",
+  "theme_color": "#111111",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "icon-192.png",
