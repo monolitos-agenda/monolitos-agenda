@@ -191,6 +191,7 @@ select.form-control{cursor:pointer}
     <button class="nav-item" onclick="nav('recebimentos')"><span class="nav-icon">◈</span>Recebimentos</button>
     <button class="nav-item" onclick="nav('financeiro')"><span class="nav-icon">◉</span>Por Orçamento</button>
     <button class="nav-item" onclick="nav('custos')"><span class="nav-icon">◷</span>Custos</button>
+    <button class="nav-item" onclick="openM('modal-recibo-avulso');initRav()"><span class="nav-icon">🧾</span>Recibo Avulso</button>
     <div class="nav-label">Agenda</div>
     <button class="nav-item" onclick="nav('agenda')"><span class="nav-icon">📅</span>Compromissos</button>
     <div class="nav-label">Configurações</div>
@@ -227,8 +228,14 @@ select.form-control{cursor:pointer}
 
     <!-- DASHBOARD -->
     <div class="view active" id="view-painel">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+        <button class="btn btn-outline btn-sm" onclick="toggleValores()" id="btn-olho" title="Ocultar/Exibir valores" style="display:flex;align-items:center;gap:6px">
+          <svg id="olho-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          <span id="olho-txt">Exibir valores</span>
+        </button>
+      </div>
       <div class="metrics-grid">
-        <div class="metric-card"><div class="metric-label">Faturamento do Mês</div><div class="metric-value" id="m-fat">R$ 0</div><span class="metric-badge badge-green">▲</span></div>
+        <div class="metric-card"><div class="metric-label">Faturamento do Mês</div><div class="metric-value" id="m-fat" style="letter-spacing:0">R$ 0</div><span class="metric-badge badge-green">▲</span></div>
         <div class="metric-card" onclick="nav('agenda')" style="cursor:pointer">
           <div class="metric-label">Compromissos Hoje</div>
           <div class="metric-value" id="m-agenda">0</div>
@@ -236,7 +243,7 @@ select.form-control{cursor:pointer}
         </div>
         <div class="metric-card"><div class="metric-label">Aguardando Aprovação</div><div class="metric-value" id="m-ab">0</div><span class="metric-badge badge-amber">Abertos</span></div>
         <div class="metric-card"><div class="metric-label">Em Andamento</div><div class="metric-value" id="m-emand">0</div><span class="metric-badge badge-navy">Ativos</span></div>
-        <div class="metric-card"><div class="metric-label">A Receber</div><div class="metric-value" id="m-ar">R$ 0</div><span class="metric-badge badge-blue">Pendente</span></div>
+        <div class="metric-card"><div class="metric-label">A Receber</div><div class="metric-value" id="m-ar" style="letter-spacing:0">R$ 0</div><span class="metric-badge badge-blue">Pendente</span></div>
         <div class="metric-card"><div class="metric-label">Concluídos</div><div class="metric-value" id="m-co">0</div><span class="metric-badge badge-navy">Este mês</span></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 320px;gap:16px">
@@ -696,6 +703,41 @@ select.form-control{cursor:pointer}
   </div>
 </div></div>
 
+<!-- MODAL RECIBO AVULSO -->
+<div class="modal-overlay" id="modal-recibo-avulso" style="display:none">
+<div class="modal" style="max-width:540px">
+  <div class="modal-header"><div class="modal-title">🧾 Emitir Recibo Avulso</div><button class="btn btn-ghost" onclick="closeM('modal-recibo-avulso')">✕</button></div>
+  <div class="modal-body">
+    <div class="form-grid form-grid-2" style="margin-bottom:13px">
+      <div class="form-group"><label>Data</label><input class="form-control" type="date" id="rav-data"></div>
+      <div class="form-group"><label>Valor (R$)</label><input class="form-control" type="number" id="rav-valor" placeholder="0.00" oninput="updRavPrev()"></div>
+      <div class="form-group" style="grid-column:1/-1"><label>Recebemos de (nome do cliente)</label><input class="form-control" id="rav-cliente" placeholder="Nome completo..." oninput="updRavPrev()"></div>
+      <div class="form-group" style="grid-column:1/-1"><label>Referente a</label><input class="form-control" id="rav-ref" placeholder="Descrição do serviço ou pagamento..." oninput="updRavPrev()"></div>
+      <div class="form-group"><label>Forma de Pagamento</label>
+        <select class="form-control" id="rav-forma" onchange="updRavPrev()">
+          <option>PIX</option><option>Transferência bancária</option><option>Dinheiro</option><option>Cartão de crédito</option><option>Cheque</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Orçamento nº (opcional)</label><input class="form-control" id="rav-orc" placeholder="ex: 050-2026"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:9px;margin-bottom:13px;padding:9px 12px;background:var(--amber-light);border:1px solid #e8d5a0;border-radius:var(--radius)">
+      <input type="checkbox" id="rav-faturamento" style="width:15px;height:15px;cursor:pointer">
+      <label for="rav-faturamento" style="font-size:12.5px;cursor:pointer;color:var(--amber)">Incluir valor no faturamento do mês</label>
+    </div>
+    <div class="recibo-preview"><h4>RECIBO DE PAGAMENTO</h4>
+      <div class="rec-line"><span style="color:var(--gray-500)">Recebemos de</span><span id="rav-prev-cli">—</span></div>
+      <div class="rec-line"><span style="color:var(--gray-500)">Referente a</span><span id="rav-prev-ref">—</span></div>
+      <div class="rec-line"><span style="color:var(--gray-500)">Orçamento nº</span><span id="rav-prev-orc">—</span></div>
+      <div class="rec-line"><span style="color:var(--gray-500)">Forma</span><span id="rav-prev-forma">PIX</span></div>
+      <div class="rec-line"><span>Valor</span><span id="rav-prev-val" style="color:var(--green);font-weight:700">R$ 0,00</span></div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-outline" onclick="closeM('modal-recibo-avulso')">Cancelar</button>
+    <button class="btn btn-gold" onclick="emitirReciboAvulso()">🖨 Emitir Recibo</button>
+  </div>
+</div></div>
+
 <!-- MODAL CUSTO -->
 <div class="modal-overlay" id="modal-cus" style="display:none">
 <div class="modal" style="max-width:470px">
@@ -719,7 +761,6 @@ select.form-control{cursor:pointer}
 
 <script>
 // ===== FIREBASE INIT =====
-
 const firebaseConfig = {
   apiKey: "AIzaSyCaJiO8XARNpC2mAaMTVWG7wFnKn2IR7TI",
   authDomain: "mt-agenda.firebaseapp.com",
@@ -728,9 +769,13 @@ const firebaseConfig = {
   messagingSenderId: "10217074325",
   appId: "1:10217074325:web:2c8d6d8beb0a4009ab759c"
 };
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+let db=null;
+try{
+  if(typeof firebase!=='undefined'){
+    firebase.initializeApp(firebaseConfig);
+    db=firebase.firestore();
+  }
+}catch(e){console.warn('Firebase indisponível (modo offline):',e.message);}
 
 // ===== LOADING OVERLAY =====
 function showLoading(msg){
@@ -771,30 +816,30 @@ const DOC_ID = 'dados-monolitos'; // single document stores all data
 async function load(){
   showLoading('Sincronizando dados...');
   try {
-    // Always fetch from Firestore first (authoritative source)
-    const snap = await db.collection('agenda').doc(DOC_ID).get();
-    if(snap.exists){
-      const remote = snap.data();
-      const local = localStorage.getItem('monolitos_v3');
-      const localData = local ? JSON.parse(local) : null;
-      // Use remote if it has more data or higher nextNum
-      if(!localData || remote.nextNum >= (localData.nextNum||0) ||
-         (remote.orcamentos||[]).length >= (localData.orcamentos||[]).length){
-        ST = remote;
+    if(db){
+      const snap = await db.collection('agenda').doc(DOC_ID).get();
+      if(snap.exists){
+        const remote = snap.data();
+        const local = localStorage.getItem('monolitos_v3');
+        const localData = local ? JSON.parse(local) : null;
+        if(!localData || remote.nextNum >= (localData.nextNum||0) ||
+           (remote.orcamentos||[]).length >= (localData.orcamentos||[]).length){
+          ST = remote;
+        } else {
+          ST = localData;
+          await db.collection('agenda').doc(DOC_ID).set(ST);
+        }
       } else {
-        // Local is newer - push it to Firebase
-        ST = localData;
-        await db.collection('agenda').doc(DOC_ID).set(ST);
+        const local = localStorage.getItem('monolitos_v3');
+        if(local){
+          ST = JSON.parse(local);
+          await db.collection('agenda').doc(DOC_ID).set(ST);
+        }
       }
     } else {
-      // First time - check localStorage and push to Firebase
       const local = localStorage.getItem('monolitos_v3');
-      if(local){
-        ST = JSON.parse(local);
-        await db.collection('agenda').doc(DOC_ID).set(ST);
-      }
+      if(local) ST = JSON.parse(local);
     }
-    // Always update localStorage with latest
     localStorage.setItem('monolitos_v3', JSON.stringify(ST));
   } catch(e){
     console.warn('Firebase load error, using local:', e);
@@ -805,9 +850,8 @@ async function load(){
 }
 
 async function save(){
-  // Save locally immediately
   try { localStorage.setItem('monolitos_v3', JSON.stringify(ST)); } catch(e){}
-  // Then sync to Firestore
+  if(!db){showSyncBadge(true);return;}
   try {
     await db.collection('agenda').doc(DOC_ID).set(ST);
     showSyncBadge();
@@ -838,6 +882,7 @@ function showSyncBadge(error){
 
 // Real-time listener: update UI when data changes on another device
 function startRealtimeSync(){
+  if(!db)return;
   db.collection('agenda').doc(DOC_ID).onSnapshot(snap => {
     if(snap.exists){
       const remote = snap.data();
@@ -1170,7 +1215,18 @@ function renderDash(){
       return a+saldo;
     },0);
   const co=ST.orcamentos.filter(o=>o.status==='Concluído'&&o.data&&new Date(o.data+'T12:00:00').getMonth()===mes&&new Date(o.data+'T12:00:00').getFullYear()===ano).length;
-  document.getElementById('m-fat').textContent=fmtM(tRec);
+  const elFat=document.getElementById('m-fat');
+  const elAr=document.getElementById('m-ar');
+  if(valoresOcultos){
+    _valFat=fmtM(tRec);_valAr=fmtM(aR);
+    elFat.textContent=OCULTO;elAr.textContent=OCULTO;
+    elFat.style.letterSpacing='4px';elAr.style.letterSpacing='4px';
+    elFat.style.color='var(--gray-300)';elAr.style.color='var(--gray-300)';
+  } else {
+    elFat.textContent=fmtM(tRec);elAr.textContent=fmtM(aR);
+    elFat.style.letterSpacing='0';elAr.style.letterSpacing='0';
+    elFat.style.color='';elAr.style.color='';
+  }
   document.getElementById('m-ab').textContent=ab;
   // Update Em andamento badge in metric if element exists
   const mEmAnd=document.getElementById('m-emand');
@@ -1182,7 +1238,6 @@ function renderDash(){
     mAgenda.textContent=hojeAgenda;
     mAgenda.style.color=hojeAgenda>0?'var(--blue)':'var(--navy)';
   }
-  document.getElementById('m-ar').textContent=fmtM(aR);
   document.getElementById('m-co').textContent=co;
   // Show only Em andamento in painel (already computed above)
   const tbody_dash = document.getElementById('tbody-dash');
@@ -1196,7 +1251,7 @@ function renderDash(){
           const rec=recPorOrc(o.id);
           const pct=o.valor>0?Math.min(Math.round((rec/o.valor)*100),100):0;
           const saldo=Math.max(0,parseFloat(o.valor||0)-rec);
-          return`<tr>
+          return`<tr style="cursor:pointer" onclick="abrirFinanceiro('${o.id}')">
           <td><strong style="color:var(--navy)">${o.num}</strong></td>
           <td>
             <div>${o.cliente}</div>
@@ -1208,7 +1263,10 @@ function renderDash(){
             <div style="font-size:10.5px;color:var(--gray-400)">${pct}% · falta ${fmtM(saldo)}</div>
           </td>
           <td>
-            <button class="btn btn-ghost btn-sm" onclick="abrirAndamento('${o.id}')" title="Anotações de andamento" style="font-size:16px;padding:4px 6px">📋</button>
+            <div style="display:flex;gap:3px">
+              <button class="btn btn-ghost btn-sm" onclick="abrirFinanceiro('${o.id}')" title="Ver financeiro" style="font-size:15px;padding:4px 6px">💰</button>
+              <button class="btn btn-ghost btn-sm" onclick="abrirAndamento('${o.id}')" title="Anotações de andamento" style="font-size:15px;padding:4px 6px">📋</button>
+            </div>
           </td>
         </tr>`;}).join('');
     }
@@ -1239,12 +1297,12 @@ function renderOrc(){
   if(!list.length){tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Nenhum orçamento</div></div></td></tr>';return}
   tbody.innerHTML=list.map(o=>{const r=recPorOrc(o.id);const p=o.valor>0?Math.round((r/o.valor)*100):0;
     const dispNum=o.num&&o.num.length<20?o.num:(o.num?o.num.slice(-8):'—');
-    return`<tr><td><strong style="color:var(--navy)">${dispNum}</strong>${o.tipo==='os'?'<br><span class="chip" style="background:#e6f0fb;color:#1a4a7a;font-size:9.5px;margin-top:2px">OS</span>':''}</td>
+    return`<tr style="cursor:pointer" onclick="abrirFinanceiro('${o.id}')"><td><strong style="color:var(--navy)">${dispNum}</strong>${o.tipo==='os'?'<br><span class="chip" style="background:#e6f0fb;color:#1a4a7a;font-size:9.5px;margin-top:2px">OS</span>':''}</td>
     <td style="font-size:11px;color:var(--gray-500)">${fmtD(o.data)}</td><td>${o.cliente}</td>
     <td><strong>${fmtM(o.valor)}</strong></td>
     <td><div style="min-width:78px"><div style="font-size:11px;color:var(--green);margin-bottom:3px">${fmtM(r)} (${p}%)</div><div class="progress-bar"><div class="progress-fill" style="width:${p}%"></div></div></div></td>
     <td>${stB(o.status)}</td>
-    <td><div style="display:flex;gap:2px"><button class="btn btn-ghost btn-sm" onclick="abrirFinanceiro('${o.id}')" title="Financeiro">💰</button><button class="btn btn-ghost btn-sm" onclick="abrirNovoCompromisso('${o.num}')" title="Agendar">📅</button><button class="btn btn-ghost btn-sm" onclick="editarOrc('${o.id}')">✏</button><button class="btn btn-ghost btn-sm" onclick="printById('${o.id}')">🖨</button><button class="btn btn-danger btn-sm" onclick="excluirOrc('${o.id}')">✕</button></div></td></tr>`;
+    <td onclick="event.stopPropagation()"><div style="display:flex;gap:2px"><button class="btn btn-ghost btn-sm" onclick="abrirFinanceiro('${o.id}')" title="Financeiro">💰</button><button class="btn btn-ghost btn-sm" onclick="abrirNovoCompromisso('${o.num}')" title="Agendar">📅</button><button class="btn btn-ghost btn-sm" onclick="editarOrc('${o.id}')">✏</button><button class="btn btn-ghost btn-sm" onclick="printById('${o.id}')">🖨</button><button class="btn btn-danger btn-sm" onclick="excluirOrc('${o.id}')">✕</button></div></td></tr>`;
   }).join('');
 }
 
@@ -1286,12 +1344,12 @@ function renderCli(){
   const tbody=document.getElementById('tbody-cli');
   if(!list.length){tbody.innerHTML='<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">👤</div><div class="empty-title">Nenhum cliente</div></div></td></tr>';return}
   tbody.innerHTML=list.map(c=>{const q=ST.orcamentos.filter(o=>o.cliente===c.nome).length;
-    return`<tr><td><strong>${c.nome}</strong>${c.cpf?`<br><span style="font-size:10.5px;color:var(--gray-400)">${c.cpf}</span>`:''}</td>
+    return`<tr style="cursor:pointer" onclick="editarCli('${c.id}')"><td><strong>${c.nome}</strong>${c.cpf?`<br><span style="font-size:10.5px;color:var(--gray-400)">${c.cpf}</span>`:''}</td>
     <td>${c.tel||'—'}</td>
     <td>${c.inter?`<strong style="font-size:12px">${c.inter}</strong>`:'<span style="color:var(--gray-300)">—</span>'}</td>
     <td style="font-size:11.5px;color:var(--blue)">${c.interTel||'—'}</td>
     <td><span class="chip badge-navy">${q}</span></td>
-    <td><div style="display:flex;gap:2px"><button class="btn btn-ghost btn-sm" onclick="editarCli('${c.id}')">✏</button><button class="btn btn-danger btn-sm" onclick="excluirCli('${c.id}')">✕</button></div></td></tr>`;
+    <td onclick="event.stopPropagation()"><div style="display:flex;gap:2px"><button class="btn btn-ghost btn-sm" onclick="editarCli('${c.id}')">✏</button><button class="btn btn-danger btn-sm" onclick="excluirCli('${c.id}')">✕</button></div></td></tr>`;
   }).join('');
 }
 
@@ -1389,10 +1447,7 @@ function renderRec(){
     <td>${fmtD(r.data)}</td><td><strong>${r.orcNum||'—'}</strong></td><td>${r.cliente||'—'}</td>
     <td><span class="chip badge-navy">${r.parcela||'—'}</span></td>
     <td><strong style="color:var(--green)">${fmtM(r.valor)}</strong></td><td>${r.forma}</td>
-    <td><div style="display:flex;gap:3px;align-items:center">
-      ${r.temRecibo?`<button class="btn btn-green btn-sm" onclick='printRecibo(${JSON.stringify(r).replace(/'/g,"\\'")})' title="Reimprimir recibo">🧾</button>`:`<button class="btn btn-outline btn-sm" onclick='gerarReciboRetro("${r.id}")' title="Gerar recibo">🧾</button>`}
-      <button class="btn btn-danger btn-sm" onclick='excluirRec("${r.id}")' title="Excluir">✕</button>
-    </div></td>
+    <td>${r.temRecibo?`<button class="btn btn-green btn-sm" onclick='printRecibo(${JSON.stringify(r).replace(/'/g,"\\'")})'>🧾</button>`:'<span style="color:var(--gray-300)">—</span>'}</td>
   </tr>`).join('');
 }
 
@@ -1408,6 +1463,101 @@ function gerarReciboRetro(id){
   save();renderRec();
   printRecibo(r);
 }
+
+// ===== OCULTAR VALORES =====
+let valoresOcultos=true;
+const OCULTO='••••••';
+let _valFat='',_valAr='';
+function toggleValores(){
+  valoresOcultos=!valoresOcultos;
+  const elFat=document.getElementById('m-fat');
+  const elAr=document.getElementById('m-ar');
+  if(valoresOcultos){
+    _valFat=elFat.textContent;_valAr=elAr.textContent;
+    elFat.textContent=OCULTO;elAr.textContent=OCULTO;
+    elFat.style.letterSpacing='4px';elAr.style.letterSpacing='4px';
+    elFat.style.color='var(--gray-300)';elAr.style.color='var(--gray-300)';
+  } else {
+    elFat.textContent=_valFat;elAr.textContent=_valAr;
+    elFat.style.letterSpacing='0';elAr.style.letterSpacing='0';
+    elFat.style.color='';elAr.style.color='';
+  }
+  document.getElementById('olho-icon').innerHTML=valoresOcultos
+    ?'<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
+    :'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  document.getElementById('olho-txt').textContent=valoresOcultos?'Exibir valores':'Ocultar valores';
+}
+
+// ===== RECIBO AVULSO =====
+function initRav(){
+  document.getElementById('rav-data').value=today();
+  document.getElementById('rav-valor').value='';
+  document.getElementById('rav-cliente').value='';
+  document.getElementById('rav-ref').value='';
+  document.getElementById('rav-orc').value='';
+  document.getElementById('rav-faturamento').checked=false;
+  document.getElementById('rav-forma').value='PIX';
+  updRavPrev();
+}
+function updRavPrev(){
+  document.getElementById('rav-prev-cli').textContent=document.getElementById('rav-cliente').value||'—';
+  document.getElementById('rav-prev-ref').textContent=document.getElementById('rav-ref').value||'—';
+  document.getElementById('rav-prev-orc').textContent=document.getElementById('rav-orc').value||'—';
+  document.getElementById('rav-prev-forma').textContent=document.getElementById('rav-forma').value||'PIX';
+  const v=parseFloat(document.getElementById('rav-valor').value)||0;
+  document.getElementById('rav-prev-val').textContent=fmtM(v);
+}
+function emitirReciboAvulso(){
+  const cliente=document.getElementById('rav-cliente').value.trim();
+  const ref=document.getElementById('rav-ref').value.trim();
+  const valor=parseFloat(document.getElementById('rav-valor').value)||0;
+  const forma=document.getElementById('rav-forma').value;
+  const orcNum=document.getElementById('rav-orc').value.trim();
+  const data=document.getElementById('rav-data').value;
+  const inclFat=document.getElementById('rav-faturamento').checked;
+  if(!cliente||!valor){alert('Informe o cliente e o valor.');return}
+  if(inclFat){
+    const r={id:Date.now().toString(),data,orcId:'',orcNum:orcNum||'Avulso',cliente,parcela:ref||'Recibo avulso',valor,forma,temRecibo:true,desc:ref};
+    ST.recebimentos.push(r);save();renderRec();renderDash();
+  }
+  const b=ST.banco;
+  const dataFmt=data?new Date(data+'T12:00:00').toLocaleDateString('pt-BR'):'—';
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Recibo</title>
+  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'DM Sans',Arial,sans-serif;background:#f8f7f5;display:flex;justify-content:center;padding:24px}
+  .recibo{background:white;border:2px solid #0f2240;border-radius:12px;max-width:520px;width:100%;padding:28px 32px}
+  .logo{font-family:Georgia,serif;font-size:17px;color:#0f2240;font-weight:700;text-align:center;margin-bottom:2px}
+  .sub{font-size:10px;color:#6b6560;text-align:center;margin-bottom:16px}
+  h2{text-align:center;font-size:15px;color:#0f2240;letter-spacing:.12em;border-top:2px solid #c8a84b;border-bottom:2px solid #c8a84b;padding:7px 0;margin-bottom:18px}
+  .linha{display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;border-bottom:1px solid #f0ede8}
+  .label{color:#6b6560}.val{color:#1c1a17;font-weight:500;text-align:right;max-width:60%}
+  .valor-destaque{font-size:20px;font-weight:700;color:#2d6a4f;text-align:center;margin:16px 0;padding:10px;background:#e8f4ee;border-radius:8px}
+  .assinatura{margin-top:28px;padding-top:12px;border-top:1px solid #e2ddd6;text-align:center;font-size:10.5px;color:#6b6560}
+  .no-print{margin-top:16px;background:#e6f0fb;border:1px solid #b5d4f4;border-radius:6px;padding:10px;font-size:11px;color:#1a4a7a;text-align:center}
+  @media print{.no-print{display:none}}</style></head><body>
+  <div class="recibo">
+    <div class="logo">${b.fantasia||'Monólitos Topografia'}</div>
+    <div class="sub">${b.razao||''} ${b.razao?'· CNPJ '+('04.252.192/0001-72'):''}</div>
+    <h2>RECIBO DE PAGAMENTO</h2>
+    <div class="linha"><span class="label">Recebemos de</span><span class="val">${cliente}</span></div>
+    ${orcNum?`<div class="linha"><span class="label">Orçamento nº</span><span class="val">${orcNum}</span></div>`:''}
+    <div class="linha"><span class="label">Referente a</span><span class="val">${ref||'Serviço de topografia'}</span></div>
+    <div class="linha"><span class="label">Forma de pagamento</span><span class="val">${forma}</span></div>
+    <div class="linha"><span class="label">Data</span><span class="val">${dataFmt}</span></div>
+    <div class="valor-destaque">R$ ${valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+    <div class="assinatura">
+      <div style="margin-bottom:32px">_______________________________________</div>
+      <div style="font-weight:600;color:#0f2240">${b.titular||b.fantasia||'Monólitos Topografia'}</div>
+      <div>PIX: ${b.pix||'—'}</div>
+    </div>
+    <div class="no-print">💡 Desmarque "Cabeçalhos e rodapés" nas configurações de impressão.</div>
+  </div>
+  <script>window.onload=()=>{setTimeout(()=>window.print(),300)};window.onafterprint=()=>window.close()<\/script>
+  </body></html>`);
+  w.document.close();
+  closeM('modal-recibo-avulso');
+}
+
 // ===== CUSTOS =====
 function abrirCusto(){
   document.getElementById('cus-data').value=today();
@@ -1464,7 +1614,7 @@ function renderBancoPrev(){
 // ===== SINCRONIZAÇÃO =====
 function exportar(){
   // Update Firebase before exporting
-  db.collection('agenda').doc(DOC_ID).set(ST).catch(e=>console.warn(e));
+  if(db) db.collection('agenda').doc(DOC_ID).set(ST).catch(e=>console.warn(e));
   const blob=new Blob([JSON.stringify(ST,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);const a=document.createElement('a');
   a.href=url;a.download='monolitos_backup_'+new Date().toISOString().slice(0,10)+'.json';
@@ -2072,7 +2222,7 @@ function abrirCliResult(id){
 })();
 </script>
 <script>
-if('serviceWorker' in navigator){
+if('serviceWorker' in navigator && location.protocol !== 'file:'){
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('sw.js')
       .then(r=>console.log('SW registered'))
