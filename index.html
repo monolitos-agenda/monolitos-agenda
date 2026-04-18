@@ -703,6 +703,22 @@ select.form-control{cursor:pointer}
   </div>
 </div></div>
 
+<!-- MODAL VISUALIZAR ORÇAMENTO -->
+<div class="modal-overlay" id="modal-ver-orc" style="display:none">
+<div class="modal" style="max-width:580px">
+  <div class="modal-header">
+    <div class="modal-title" id="ver-orc-title">Orçamento</div>
+    <button class="btn btn-ghost" onclick="closeM('modal-ver-orc')">✕</button>
+  </div>
+  <div class="modal-body" id="ver-orc-body"></div>
+  <div class="modal-footer">
+    <button class="btn btn-outline" onclick="closeM('modal-ver-orc')">Fechar</button>
+    <button class="btn btn-outline" id="ver-orc-fin" onclick="">💰 Financeiro</button>
+    <button class="btn btn-primary" id="ver-orc-imp" onclick="">🖨 Imprimir</button>
+    <button class="btn btn-gold" id="ver-orc-edit" onclick="">✏ Editar</button>
+  </div>
+</div></div>
+
 <!-- MODAL RECIBO AVULSO -->
 <div class="modal-overlay" id="modal-recibo-avulso" style="display:none">
 <div class="modal" style="max-width:540px">
@@ -1024,10 +1040,15 @@ function novoOrc(){
 function salvarOrc(){
   const id=document.getElementById('orc-id').value||Date.now().toString();
   const srvs=getSrvs();const parcs=getParcs();const total=srvs.reduce((a,s)=>a+s.valor,0);
+  const novoStatus=document.getElementById('orc-status').value;
+  const anterior=ST.orcamentos.find(x=>x.id===id);
+  const dataInicio=anterior?.dataInicio||document.getElementById('orc-data').value;
+  const dataConclusao=(novoStatus==='Concluído'&&anterior?.status!=='Concluído')?today():(anterior?.dataConclusao||'');
   const o={id,num:document.getElementById('orc-num').value,data:document.getElementById('orc-data').value,
+    dataInicio,dataConclusao,
     cliente:document.getElementById('orc-cli').value,matricula:document.getElementById('orc-mat').value,
     servicos:srvs,parcelas:parcs,valor:total,obs:document.getElementById('orc-obs').value,
-    status:document.getElementById('orc-status').value,
+    status:novoStatus,
     tipo:document.getElementById('orc-tipo').value||'orcamento'};
   if(!o.cliente||!o.valor){alert('Informe cliente e pelo menos um serviço com valor.');return}
   const idx=ST.orcamentos.findIndex(x=>x.id===id);
@@ -1051,6 +1072,62 @@ function editarOrc(id){
   initSrvs(o.servicos&&o.servicos.length?o.servicos:[{desc:o.descricao||'',valor:o.valor||0}]);
   initParcs(o.parcelas&&o.parcelas.length?o.parcelas:[]);
   openM('modal-orc');
+}
+function verOrc(id){
+  const o=ST.orcamentos.find(x=>x.id===id);if(!o)return;
+  const rec=recPorOrc(o.id);
+  const pct=o.valor>0?Math.min(Math.round((rec/o.valor)*100),100):0;
+  const saldo=Math.max(0,parseFloat(o.valor||0)-rec);
+  const srvs=o.servicos&&o.servicos.length?o.servicos:[{desc:o.descricao||'—',valor:o.valor||0}];
+  const parcs=o.parcelas&&o.parcelas.length?o.parcelas:[];
+  document.getElementById('ver-orc-title').textContent=(o.tipo==='os'?'Ordem de Serviço ':'Orçamento ')+o.num+' — '+o.cliente;
+  document.getElementById('ver-orc-body').innerHTML=`
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      ${stB(o.status)}
+      <span class="chip badge-navy">${fmtD(o.data)}</span>
+      ${o.matricula?`<span class="chip badge-blue" style="font-size:11px">📍 ${o.matricula}</span>`:''}
+    </div>
+    ${o.status==='Concluído'&&(o.dataInicio||o.dataConclusao)?`
+    <div style="display:flex;gap:8px;margin-bottom:14px;padding:10px 12px;background:var(--green-light);border-radius:var(--radius)">
+      <span style="font-size:12px;color:var(--green)">📅 <strong>Início:</strong> ${fmtD(o.dataInicio||o.data)} &nbsp;→&nbsp; <strong>Conclusão:</strong> ${o.dataConclusao?fmtD(o.dataConclusao):'—'}</span>
+    </div>`:''}
+    ${o.status!=='Concluído'&&o.dataInicio?`
+    <div style="display:flex;gap:8px;margin-bottom:14px;padding:10px 12px;background:var(--blue-light);border-radius:var(--radius)">
+      <span style="font-size:12px;color:var(--blue)">📅 <strong>Início:</strong> ${fmtD(o.dataInicio||o.data)}</span>
+    </div>`:''}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div style="background:var(--gray-50);border-radius:var(--radius);padding:12px">
+        <div style="font-size:10px;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Valor Total</div>
+        <div style="font-size:20px;font-weight:600;color:var(--navy)">${fmtM(o.valor)}</div>
+      </div>
+      <div style="background:var(--gray-50);border-radius:var(--radius);padding:12px">
+        <div style="font-size:10px;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Recebido</div>
+        <div style="font-size:20px;font-weight:600;color:var(--green)">${fmtM(rec)}</div>
+        <div class="progress-bar" style="margin-top:4px"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div style="font-size:10.5px;color:var(--gray-400);margin-top:3px">${pct}% · falta ${fmtM(saldo)}</div>
+      </div>
+    </div>
+    <div style="margin-bottom:13px">
+      <div style="font-size:10.5px;font-weight:500;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">Serviços</div>
+      ${srvs.map(s=>`<div style="display:flex;justify-content:space-between;padding:8px 10px;background:var(--gray-50);border-radius:var(--radius);margin-bottom:4px;font-size:12.5px">
+        <span>${s.desc||'—'}</span>
+        <strong style="color:var(--navy);white-space:nowrap;margin-left:10px">${fmtM(s.valor)}</strong>
+      </div>`).join('')}
+    </div>
+    ${parcs.length?`<div style="margin-bottom:13px">
+      <div style="font-size:10.5px;font-weight:500;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">Condições de Pagamento</div>
+      ${parcs.map(p=>`<div style="display:flex;justify-content:space-between;padding:7px 10px;border-bottom:1px solid var(--gray-100);font-size:12px">
+        <span>${p.desc||'Parcela'}</span>
+        <span style="color:var(--amber)">${p.pct?p.pct+'%':''} · <strong>${fmtM(p.valor)}</strong></span>
+      </div>`).join('')}
+    </div>`:''}
+    ${o.andamento?`<div style="background:var(--blue-light);border-radius:var(--radius);padding:10px 12px;font-size:12px;color:var(--blue);margin-bottom:10px">📌 <strong>Andamento:</strong> ${o.andamento}</div>`:''}
+    ${o.obs?`<div style="background:var(--amber-light);border-radius:var(--radius);padding:10px 12px;font-size:12px;color:var(--amber)">📝 ${o.obs}</div>`:''}
+  `;
+  document.getElementById('ver-orc-edit').onclick=()=>{closeM('modal-ver-orc');editarOrc(id)};
+  document.getElementById('ver-orc-fin').onclick=()=>{closeM('modal-ver-orc');abrirFinanceiro(id)};
+  document.getElementById('ver-orc-imp').onclick=()=>{closeM('modal-ver-orc');editarOrc(id);setTimeout(()=>imprimir(),300)};
+  openM('modal-ver-orc');
 }
 function excluirOrc(id){if(!confirm('Excluir orçamento?'))return;ST.orcamentos=ST.orcamentos.filter(x=>x.id!==id);save();renderOrc();renderDash()}
 
@@ -1251,7 +1328,7 @@ function renderDash(){
           const rec=recPorOrc(o.id);
           const pct=o.valor>0?Math.min(Math.round((rec/o.valor)*100),100):0;
           const saldo=Math.max(0,parseFloat(o.valor||0)-rec);
-          return`<tr style="cursor:pointer" onclick="abrirFinanceiro('${o.id}')">
+          return`<tr style="cursor:pointer" onclick="verOrc('${o.id}')">
           <td><strong style="color:var(--navy)">${o.num}</strong></td>
           <td>
             <div>${o.cliente}</div>
@@ -1262,7 +1339,7 @@ function renderDash(){
             <div class="progress-bar" style="margin-top:3px;width:80px"><div class="progress-fill" style="width:${pct}%"></div></div>
             <div style="font-size:10.5px;color:var(--gray-400)">${pct}% · falta ${fmtM(saldo)}</div>
           </td>
-          <td>
+          <td onclick="event.stopPropagation()">
             <div style="display:flex;gap:3px">
               <button class="btn btn-ghost btn-sm" onclick="abrirFinanceiro('${o.id}')" title="Ver financeiro" style="font-size:15px;padding:4px 6px">💰</button>
               <button class="btn btn-ghost btn-sm" onclick="abrirAndamento('${o.id}')" title="Anotações de andamento" style="font-size:15px;padding:4px 6px">📋</button>
@@ -1297,8 +1374,8 @@ function renderOrc(){
   if(!list.length){tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Nenhum orçamento</div></div></td></tr>';return}
   tbody.innerHTML=list.map(o=>{const r=recPorOrc(o.id);const p=o.valor>0?Math.round((r/o.valor)*100):0;
     const dispNum=o.num&&o.num.length<20?o.num:(o.num?o.num.slice(-8):'—');
-    return`<tr style="cursor:pointer" onclick="abrirFinanceiro('${o.id}')"><td><strong style="color:var(--navy)">${dispNum}</strong>${o.tipo==='os'?'<br><span class="chip" style="background:#e6f0fb;color:#1a4a7a;font-size:9.5px;margin-top:2px">OS</span>':''}</td>
-    <td style="font-size:11px;color:var(--gray-500)">${fmtD(o.data)}</td><td>${o.cliente}</td>
+    return`<tr style="cursor:pointer" onclick="verOrc('${o.id}')"><td><strong style="color:var(--navy)">${dispNum}</strong>${o.tipo==='os'?'<br><span class="chip" style="background:#e6f0fb;color:#1a4a7a;font-size:9.5px;margin-top:2px">OS</span>':''}</td>
+    <td style="font-size:11px;color:var(--gray-500)">${fmtD(o.data)}${o.status==='Concluído'&&o.dataConclusao?`<br><span style="color:var(--green)">✓ ${fmtD(o.dataConclusao)}</span>`:''}</td><td>${o.cliente}</td>
     <td><strong>${fmtM(o.valor)}</strong></td>
     <td><div style="min-width:78px"><div style="font-size:11px;color:var(--green);margin-bottom:3px">${fmtM(r)} (${p}%)</div><div class="progress-bar"><div class="progress-fill" style="width:${p}%"></div></div></div></td>
     <td>${stB(o.status)}</td>
