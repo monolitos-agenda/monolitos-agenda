@@ -1168,8 +1168,9 @@ function imprimir(){
   const b=ST.banco;
   const srvHTML=srvs.map(s=>`<tr><td style="padding:11px;border-bottom:1px solid #f0ede8;font-size:12.5px;vertical-align:top;text-align:justify;line-height:1.7">${s.desc}</td><td style="padding:11px;border-bottom:1px solid #f0ede8;font-size:12.5px;text-align:right;white-space:nowrap;vertical-align:top">${fmtM(s.valor)}</td></tr>`).join('');
   const parcHTML=parcs.map(p=>{const calc=p.tipo==='%'?(total*(parseFloat(p.val)||0)/100):(parseFloat(p.val)||0);return`<tr><td style="padding:7px 11px;border-bottom:1px solid #f0ede8;font-size:12px">${p.label}</td><td style="padding:7px 11px;border-bottom:1px solid #f0ede8;font-size:12px;text-align:right;color:#6b6560">${p.tipo==='%'?parseFloat(p.val||0)+'%':'—'}</td><td style="padding:7px 11px;border-bottom:1px solid #f0ede8;font-size:12px;text-align:right;font-weight:600">${fmtM(calc)}</td></tr>`}).join('');
+  const tipo=document.getElementById('orc-tipo').value==='os'?'OS':'ORC';
   const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${tipo}-${num} — ${cli}</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
   *{box-sizing:border-box;margin:0;padding:0}
@@ -1483,7 +1484,7 @@ function salvarRec(){
 }
 function printRecibo(r){
   const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Recibo — ${r.orcNum||'Avulso'} — ${r.cliente||''}</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'DM Sans',sans-serif;color:#1c1a17;font-size:13px}
   .rec{max-width:640px;margin:0 auto;padding:30px;border:1.5px solid #0f2240;border-radius:12px;margin-top:22px}
