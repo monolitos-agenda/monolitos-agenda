@@ -1166,7 +1166,7 @@ function imprimir(){
   const obs=document.getElementById('orc-obs').value;
   const srvs=getSrvs();const parcs=getParcs();const total=srvs.reduce((a,s)=>a+s.valor,0);
   const b=ST.banco;
-  const srvHTML=srvs.map(s=>`<tr><td style="padding:11px;border-bottom:1px solid #f0ede8;font-size:12.5px;vertical-align:top;text-align:justify;line-height:1.7">${s.desc}</td><td style="padding:11px;border-bottom:1px solid #f0ede8;font-size:12.5px;text-align:right;white-space:nowrap;vertical-align:top">${fmtM(s.valor)}</td></tr>`).join('');
+  const srvHTML=srvs.map(s=>`<tr><td style="padding:11px;border-bottom:1px solid #f0ede8;font-size:12.5px;vertical-align:top;text-align:justify;line-height:1.7;white-space:pre-wrap">${s.desc}</td><td style="padding:11px;border-bottom:1px solid #f0ede8;font-size:12.5px;text-align:right;white-space:nowrap;vertical-align:top">${fmtM(s.valor)}</td></tr>`).join('');
   const parcHTML=parcs.map(p=>{const calc=p.tipo==='%'?(total*(parseFloat(p.val)||0)/100):(parseFloat(p.val)||0);return`<tr><td style="padding:7px 11px;border-bottom:1px solid #f0ede8;font-size:12px">${p.label}</td><td style="padding:7px 11px;border-bottom:1px solid #f0ede8;font-size:12px;text-align:right;color:#6b6560">${p.tipo==='%'?parseFloat(p.val||0)+'%':'—'}</td><td style="padding:7px 11px;border-bottom:1px solid #f0ede8;font-size:12px;text-align:right;font-weight:600">${fmtM(calc)}</td></tr>`}).join('');
   const tipo=document.getElementById('orc-tipo').value==='os'?'OS':'ORC';
   const w=window.open('','_blank');
