@@ -198,6 +198,8 @@ select.form-control{cursor:pointer}
     <button class="nav-item" onclick="nav('configuracoes')"><span class="nav-icon">◉</span>Dados Bancários</button>
     <button class="nav-item" onclick="nav('sincronizar')"><span class="nav-icon">↕</span>Sincronizar</button>
     <button class="nav-item" onclick="nav('servicos')"><span class="nav-icon">◈</span>Serviços</button>
+    <div class="nav-label">Ferramentas</div>
+    <button class="nav-item" onclick="nav('vistoria')"><span class="nav-icon">🏠</span>Vistoria Cadastral</button>
     <div class="nav-label">Relatórios</div>
     <button class="nav-item" onclick="nav('relatorios')"><span class="nav-icon">◈</span>Faturamento</button>
   </nav>
@@ -434,6 +436,102 @@ select.form-control{cursor:pointer}
       </div>
     </div>
 
+    <!-- VISTORIA CADASTRAL -->
+    <div class="view" id="view-vistoria">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:9px">
+        <div style="font-size:13px;color:var(--gray-500)">Formulário de vistoria para geração automática do Memorial Descritivo (SEFIN/CECAD)</div>
+        <div style="display:flex;gap:7px">
+          <button class="btn btn-outline btn-sm" onclick="limparVistoria()">🗑 Limpar</button>
+          <button class="btn btn-gold" onclick="gerarMemorialWord()">📄 Gerar Memorial Word</button>
+        </div>
+      </div>
+
+      <!-- IDENTIFICAÇÃO -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-header"><span class="card-title">1. Identificação do Imóvel</span></div>
+        <div class="card-body">
+          <div class="form-grid form-grid-2" style="margin-bottom:10px">
+            <div class="form-group"><label>Proprietário / Responsável</label><input class="form-control" id="vis-prop" list="dl-cli2" placeholder="Nome completo"><datalist id="dl-cli2"></datalist></div>
+            <div class="form-group"><label>CPF</label><input class="form-control" id="vis-cpf" placeholder="000.000.000-00"></div>
+          </div>
+          <div class="form-grid form-grid-2" style="margin-bottom:10px">
+            <div class="form-group"><label>Endereço</label><input class="form-control" id="vis-end" placeholder="Rua, Av..."></div>
+            <div class="form-group"><label>Número</label><input class="form-control" id="vis-num" placeholder="Nº"></div>
+          </div>
+          <div class="form-grid form-grid-3" style="margin-bottom:10px">
+            <div class="form-group"><label>Bairro</label><input class="form-control" id="vis-bairro" placeholder="Bairro"></div>
+            <div class="form-group"><label>CEP</label><input class="form-control" id="vis-cep" placeholder="00000-000"></div>
+            <div class="form-group"><label>Inscrição Municipal (IPTU)</label><input class="form-control" id="vis-iptu" placeholder="Ex: 796567-2"></div>
+          </div>
+          <div class="form-grid form-grid-3">
+            <div class="form-group"><label>Uso da Edificação</label>
+              <select class="form-control" id="vis-uso">
+                <option>Residencial</option><option>Comercial</option><option>Misto</option><option>Institucional</option><option>Industrial</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Nº de Pavimentos</label>
+              <select class="form-control" id="vis-pav">
+                <option>1 (Térreo)</option><option>2 (Térreo + 1)</option><option>3 (Térreo + 2)</option><option>4 ou mais</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Intimação CECAD nº</label><input class="form-control" id="vis-intim" placeholder="Ex: 67/2026"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUADRO DE ÁREAS -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-header">
+          <span class="card-title">2. Quadro de Áreas</span>
+          <button class="btn btn-outline btn-sm" onclick="addAmbiente()">+ Ambiente</button>
+        </div>
+        <div class="card-body">
+          <div id="lista-ambientes"></div>
+          <div style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--gray-100)">
+            <span style="font-size:12px;color:var(--gray-500)">Área Total Construída:</span>
+            <strong id="vis-total-area" style="color:var(--navy);font-size:14px">0,00 m²</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- MATERIAIS -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-header"><span class="card-title">3. Materiais Empregados</span><span style="font-size:11px;color:var(--gray-400)">Marque a opção que melhor descreve o imóvel</span></div>
+        <div class="card-body">
+          <div id="vis-materiais-form"></div>
+        </div>
+      </div>
+
+      <!-- CONSERVAÇÃO -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-header"><span class="card-title">4. Conservação e Observações</span></div>
+        <div class="card-body">
+          <div class="form-grid form-grid-2" style="margin-bottom:10px">
+            <div class="form-group"><label>Estado de Conservação</label>
+              <select class="form-control" id="vis-conserv">
+                <option>Ótimo</option><option>Bom</option><option>Regular</option><option>Precário</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Ano de Construção (aprox.)</label><input class="form-control" id="vis-ano" placeholder="Ex: 2005" type="number" min="1900" max="2026"></div>
+          </div>
+          <div class="form-group"><label>Observações Gerais</label>
+            <textarea class="form-control" id="vis-obs" rows="3" placeholder="Patologias, reformas, características especiais..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOTOS (opcional) -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-header"><span class="card-title">5. Fotos (opcional)</span><span style="font-size:11px;color:var(--gray-400)">As fotos não entram no memorial Word, são para seu registro</span></div>
+        <div class="card-body">
+          <input type="file" id="vis-fotos-input" accept="image/*" multiple capture="environment" style="display:none" onchange="previewFotos(event)">
+          <button class="btn btn-outline" onclick="document.getElementById('vis-fotos-input').click()">📷 Adicionar Fotos</button>
+          <div id="vis-fotos-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px"></div>
+        </div>
+      </div>
+
+    </div>
+
   </div>
 </main>
 </div>
@@ -500,6 +598,7 @@ select.form-control{cursor:pointer}
   <div class="modal-footer">
     <button class="btn btn-outline" onclick="closeM('modal-orc')">Cancelar</button>
     <button class="btn btn-primary" onclick="imprimir()">🖨 Imprimir</button>
+    <button class="btn btn-green" onclick="enviarWhatsApp()" title="Enviar orçamento pelo WhatsApp">📲 WhatsApp</button>
     <button class="btn btn-gold" onclick="salvarOrc()">Salvar</button>
     <button class="btn btn-gold" style="background:var(--navy);color:white" onclick="salvarOrc(true)">Salvar e Fechar</button>
   </div>
@@ -936,10 +1035,10 @@ function nav(n){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-'+n).classList.add('active');
-  const T={painel:'Painel',orcamentos:'Orçamentos',clientes:'Clientes',recebimentos:'Recebimentos',custos:'Custos',configuracoes:'Dados Bancários',sincronizar:'Sincronizar',relatorios:'Faturamento'};
+  const T={painel:'Painel',orcamentos:'Orçamentos',clientes:'Clientes',recebimentos:'Recebimentos',custos:'Custos',configuracoes:'Dados Bancários',sincronizar:'Sincronizar',relatorios:'Faturamento',vistoria:'Vistoria Cadastral'};
   document.getElementById('page-title').textContent=T[n]||n;
   document.querySelectorAll('.nav-item').forEach(b=>{if(b.textContent.trim().startsWith((T[n]||'').slice(0,5)))b.classList.add('active')});
-  const R={painel:renderDash,agenda:renderAgenda,servicos:renderServicos,orcamentos:renderOrc,clientes:renderCli,recebimentos:renderRec,custos:renderCus,relatorios:renderRel,configuracoes:renderCfg,financeiro:()=>{}};
+  const R={painel:renderDash,agenda:renderAgenda,servicos:renderServicos,orcamentos:renderOrc,clientes:renderCli,recebimentos:renderRec,custos:renderCus,relatorios:renderRel,configuracoes:renderCfg,financeiro:()=>{},vistoria:initVistoria};
   if(R[n])R[n]();
 }
 function closeM(id){document.getElementById(id).style.display='none'}
@@ -2290,6 +2389,328 @@ function abrirCliResult(id){
     const cli=ST.clientes.find(c=>c.id===id);
     if(inp&&cli){inp.value=cli.nome;renderCli();}
   },200);
+}
+
+// ===== WHATSAPP ORÇAMENTO =====
+function enviarWhatsApp(){
+  const cli = document.getElementById('orc-cli').value.trim();
+  const num = document.getElementById('orc-num').value;
+  const total = document.getElementById('orc-total').textContent;
+  const obs = document.getElementById('orc-obs').value;
+
+  // Pegar serviços
+  const srvRows = document.querySelectorAll('#srvs .srv-row');
+  let srvTxt = '';
+  srvRows.forEach(r => {
+    const desc = r.querySelector('.srv-desc')?.value || '';
+    const val  = r.querySelector('.srv-val')?.value  || '';
+    if(desc) srvTxt += `• ${desc}${val ? ' — R$ '+parseFloat(val).toLocaleString('pt-BR',{minimumFractionDigits:2}) : ''}\n`;
+  });
+
+  // Pegar parcelas
+  const parcRows = document.querySelectorAll('#parcs .parc-row');
+  let parcTxt = '';
+  parcRows.forEach(r => {
+    const label = r.querySelector('.parc-label')?.value || '';
+    const val   = r.querySelector('.parc-val')?.value  || '';
+    if(label) parcTxt += `• ${label}: R$ ${parseFloat(val||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}\n`;
+  });
+
+  const b = ST.banco;
+  const pix = b.pix ? `\n💳 *PIX:* ${b.pix}` : '';
+
+  const msg =
+`Olá, *${cli}*! 👋
+
+Segue o orçamento *nº ${num}* da *Monólitos Topografia*:
+
+📋 *SERVIÇOS:*
+${srvTxt || '• Conforme combinado'}
+💰 *VALOR TOTAL: ${total}*
+
+📅 *CONDIÇÕES DE PAGAMENTO:*
+${parcTxt || '• A combinar'}${pix}
+
+${obs ? '📝 *Obs.:* ' + obs + '\n\n' : ''}⚠️ _O serviço inicia após confirmação do pagamento inicial._
+🔒 _Documentação disponível por 2 anos após entrega. Taxas cartoriais não inclusas._
+
+Qualquer dúvida, estamos à disposição! 😊
+*Monólitos Topografia — CFT/RNP nº 22020241315*`;
+
+  // Pegar telefone do cliente cadastrado
+  const cliObj = ST.clientes.find(c => c.nome === cli);
+  const tel = cliObj?.tel?.replace(/\D/g,'') || '';
+  const url = tel
+    ? `https://wa.me/55${tel}?text=${encodeURIComponent(msg)}`
+    : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+
+  window.open(url, '_blank');
+}
+
+// ===== VISTORIA CADASTRAL =====
+const VIS_MATERIAIS = [
+  { id:'estrutura', label:'Estrutura', opcoes:['Concreto armado','Alvenaria estrutural','Pré-moldado','Madeira','Misto'] },
+  { id:'paredes',   label:'Paredes',   opcoes:['Bloco cerâmico 9 furos','Bloco de concreto','Tijolo maciço','Placa cimentícia','Madeira'] },
+  { id:'cobertura', label:'Cobertura/Telhado', opcoes:['Telha cerâmica colonial','Telha fibrocimento','Telha metálica','Laje impermeabilizada','Laje + telha'] },
+  { id:'forro',     label:'Forro',     opcoes:['Sem forro','PVC','Gesso','Madeira','Laje aparente'] },
+  { id:'piso',      label:'Piso',      opcoes:['Cimento desempenado','Cerâmica','Porcelanato','Mármore/Granito','Vinílico/Laminado'] },
+  { id:'revestext', label:'Revestimento Externo', opcoes:['Reboco simples','Reboco + pintura','Textura','Cerâmica/Porcelanato','Sem revestimento'] },
+  { id:'revestint', label:'Revestimento Interno', opcoes:['Reboco + PVA','Reboco + gesso','Gesso liso','Azulejo (total)','Reboco simples'] },
+  { id:'esquadrias',label:'Esquadrias', opcoes:['Alumínio + vidro','Ferro','Madeira','PVC','Misto (alumínio + madeira)'] },
+  { id:'instalac',  label:'Instalações', opcoes:['Embutidas','Aparentes em eletroduto','Parcialmente embutidas','Aparentes sem proteção'] },
+];
+
+const VIS_AMBIENTES_PADRAO = [
+  {c:'Sala de Estar / Jantar', p:'Térreo'},
+  {c:'Cozinha',               p:'Térreo'},
+  {c:'Área de Serviço',       p:'Térreo'},
+  {c:'Dormitório 01',         p:'Térreo'},
+  {c:'Dormitório 02',         p:'Térreo'},
+  {c:'Banheiro Social',       p:'Térreo'},
+];
+
+function initVistoria(){
+  // Preencher datalist de clientes
+  const dl = document.getElementById('dl-cli2');
+  dl.innerHTML = ST.clientes.map(c=>`<option value="${c.nome}">`).join('');
+
+  // Renderizar ambientes padrão se vazio
+  const lista = document.getElementById('lista-ambientes');
+  if(!lista.children.length){
+    VIS_AMBIENTES_PADRAO.forEach(a => addAmbiente(a.c, a.p));
+  }
+
+  // Renderizar materiais
+  const mat = document.getElementById('vis-materiais-form');
+  if(!mat.innerHTML){
+    mat.innerHTML = VIS_MATERIAIS.map(m => `
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">${m.label}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          ${m.opcoes.map((op,i) => `
+            <label style="display:flex;align-items:center;gap:6px;padding:6px 12px;border:1.5px solid var(--gray-200);border-radius:20px;cursor:pointer;font-size:12.5px;transition:all .15s" id="lbl-${m.id}-${i}">
+              <input type="radio" name="mat-${m.id}" value="${op}" style="display:none" onchange="highlightMat('${m.id}',${i},${m.opcoes.length})">
+              ${op}
+            </label>`).join('')}
+          <label style="display:flex;align-items:center;gap:6px;padding:6px 12px;border:1.5px dashed var(--gray-200);border-radius:20px;cursor:pointer;font-size:12.5px" title="Outro">
+            <input type="radio" name="mat-${m.id}" value="__outro__" style="display:none" onchange="showOutro('${m.id}')">
+            ✏ Outro
+          </label>
+        </div>
+        <input class="form-control" id="outro-${m.id}" placeholder="Especificar..." style="display:none;margin-top:7px;max-width:340px">
+      </div>
+    `).join('<hr style="border:none;border-top:1px solid var(--gray-100);margin:4px 0">');
+  }
+}
+
+function highlightMat(id, selIdx, total){
+  for(let i=0;i<total;i++){
+    const lbl = document.getElementById(`lbl-${id}-${i}`);
+    if(lbl) lbl.style.cssText = i===selIdx
+      ? 'display:flex;align-items:center;gap:6px;padding:6px 12px;border:1.5px solid var(--navy);border-radius:20px;cursor:pointer;font-size:12.5px;background:var(--navy);color:white;transition:all .15s'
+      : 'display:flex;align-items:center;gap:6px;padding:6px 12px;border:1.5px solid var(--gray-200);border-radius:20px;cursor:pointer;font-size:12.5px;transition:all .15s;background:white;color:inherit';
+  }
+  const outro = document.getElementById(`outro-${id}`);
+  if(outro) outro.style.display='none';
+}
+
+function showOutro(id){
+  const outro = document.getElementById(`outro-${id}`);
+  if(outro) outro.style.display='block';
+  // Limpar highlights
+  VIS_MATERIAIS.find(m=>m.id===id)?.opcoes.forEach((_,i)=>{
+    const lbl=document.getElementById(`lbl-${id}-${i}`);
+    if(lbl) lbl.style.cssText='display:flex;align-items:center;gap:6px;padding:6px 12px;border:1.5px solid var(--gray-200);border-radius:20px;cursor:pointer;font-size:12.5px;transition:all .15s;background:white;color:inherit';
+  });
+}
+
+function getMat(id){
+  const sel = document.querySelector(`input[name="mat-${id}"]:checked`);
+  if(!sel) return '(não informado)';
+  if(sel.value==='__outro__') return document.getElementById(`outro-${id}`)?.value || 'Outro';
+  return sel.value;
+}
+
+function addAmbiente(comodo='', pav='Térreo'){
+  const lista = document.getElementById('lista-ambientes');
+  const id = Date.now()+Math.random();
+  const div = document.createElement('div');
+  div.className='form-grid form-grid-3';
+  div.style.cssText='margin-bottom:7px;align-items:center;gap:8px';
+  div.innerHTML=`
+    <div class="form-group" style="margin:0"><input class="form-control" placeholder="Nome do ambiente" value="${comodo}" oninput="calcTotalArea()"></div>
+    <div class="form-group" style="margin:0">
+      <select class="form-control">
+        <option ${pav==='Térreo'?'selected':''}>Térreo</option>
+        <option ${pav==='1º Pavimento'?'selected':''}>1º Pavimento</option>
+        <option ${pav==='2º Pavimento'?'selected':''}>2º Pavimento</option>
+        <option ${pav==='Subsolo'?'selected':''}>Subsolo</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <input class="form-control" type="number" placeholder="Área m²" min="0" step="0.01" style="flex:1" oninput="calcTotalArea()">
+      <button class="btn btn-ghost btn-sm" onclick="this.closest('.form-grid').remove();calcTotalArea()" title="Remover" style="color:var(--gray-400);padding:4px 8px">✕</button>
+    </div>`;
+  lista.appendChild(div);
+  calcTotalArea();
+}
+
+function calcTotalArea(){
+  const inputs = document.querySelectorAll('#lista-ambientes input[type="number"]');
+  let total = 0;
+  inputs.forEach(i=>{ total += parseFloat(i.value)||0; });
+  document.getElementById('vis-total-area').textContent = total.toLocaleString('pt-BR',{minimumFractionDigits:2}) + ' m²';
+}
+
+function limparVistoria(){
+  if(!confirm('Limpar todos os dados da vistoria?')) return;
+  ['vis-prop','vis-cpf','vis-end','vis-num','vis-bairro','vis-cep','vis-iptu','vis-intim','vis-ano','vis-obs'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('lista-ambientes').innerHTML='';
+  document.getElementById('vis-materiais-form').innerHTML='';
+  document.getElementById('vis-fotos-preview').innerHTML='';
+  document.getElementById('vis-total-area').textContent='0,00 m²';
+  initVistoria();
+}
+
+function previewFotos(e){
+  const prev = document.getElementById('vis-fotos-preview');
+  Array.from(e.target.files).forEach(f=>{
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const div = document.createElement('div');
+      div.style.cssText='position:relative;width:80px;height:80px';
+      div.innerHTML=`<img src="${ev.target.result}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--gray-200)">
+        <button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;border:none;background:var(--red);color:white;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0">✕</button>`;
+      prev.appendChild(div);
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
+// ===== GERAR MEMORIAL WORD =====
+function gerarMemorialWord(){
+  // Coletar dados
+  const D = {
+    prop:   document.getElementById('vis-prop').value   || '___________________',
+    cpf:    document.getElementById('vis-cpf').value    || '___________________',
+    end:    document.getElementById('vis-end').value    || '___________________',
+    num:    document.getElementById('vis-num').value    || '___',
+    bairro: document.getElementById('vis-bairro').value || '___________________',
+    cep:    document.getElementById('vis-cep').value    || '__________',
+    iptu:   document.getElementById('vis-iptu').value   || '___________________',
+    intim:  document.getElementById('vis-intim').value  || '______',
+    uso:    document.getElementById('vis-uso').value    || 'Residencial',
+    pav:    document.getElementById('vis-pav').value    || '1 (Térreo)',
+    conserv:document.getElementById('vis-conserv').value|| 'Bom',
+    ano:    document.getElementById('vis-ano').value    || '____',
+    obs:    document.getElementById('vis-obs').value    || '',
+  };
+
+  // Ambientes
+  const ambRows = document.querySelectorAll('#lista-ambientes .form-grid');
+  let ambientes = [];
+  let totalArea = 0;
+  ambRows.forEach(r => {
+    const inputs = r.querySelectorAll('input');
+    const sel    = r.querySelector('select');
+    const nome   = inputs[0]?.value || '';
+    const area   = parseFloat(inputs[1]?.value) || 0;
+    const pav    = sel?.value || 'Térreo';
+    if(nome){ ambientes.push({nome, pav, area}); totalArea += area; }
+  });
+
+  // Materiais
+  const mats = {};
+  VIS_MATERIAIS.forEach(m => { mats[m.label] = getMat(m.id); });
+
+  // Data
+  const hoje = new Date();
+  const dataFmt = hoje.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Montar HTML para conversão em blob Word-compatível
+  const html = `
+<html xmlns:o='urn:schemas-microsoft-com:office:office'
+      xmlns:w='urn:schemas-microsoft-com:office:word'
+      xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset='UTF-8'>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 11pt; margin: 2cm 1.5cm 1.5cm 2.5cm; color: #111; }
+  h1 { font-size: 13pt; font-weight: bold; text-align: center; color: #1F4E79; text-transform: uppercase; margin-bottom: 4pt; }
+  h2 { font-size: 11pt; font-weight: bold; color: #1F4E79; border-bottom: 1pt solid #1F4E79; margin: 14pt 0 6pt; padding-bottom: 2pt; text-transform: uppercase; }
+  .sub { font-size: 10pt; text-align: center; color: #555; margin-bottom: 14pt; font-style: italic; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 10pt; font-size: 10pt; }
+  th { background: #1F4E79; color: white; padding: 5pt 7pt; text-align: left; font-size: 10pt; }
+  td { padding: 4pt 7pt; border: 0.5pt solid #CCC; vertical-align: top; }
+  .label { background: #D6E4F0; font-weight: bold; width: 38%; }
+  .odd { background: #F5F5F5; }
+  p { text-align: justify; font-size: 11pt; margin: 6pt 0; line-height: 1.5; }
+  .assinatura { margin-top: 36pt; text-align: center; }
+  .linha-assin { border-top: 0.5pt solid #333; width: 280pt; margin: 0 auto 4pt; padding-top: 4pt; }
+  .rodape { font-size: 9pt; color: #555; margin-top: 24pt; border-top: 0.5pt solid #CCC; padding-top: 6pt; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>Memorial Descritivo de Edificação</h1>
+<div class="sub">Atualização Cadastral – SEFIN / CECAD – Prefeitura Municipal de Fortaleza<br>
+${D.intim !== '______' ? 'Ref. Intimação nº ' + D.intim + '/2026 – CECAD' : ''}</div>
+
+<h2>1. Identificação do Imóvel e do Responsável</h2>
+<table>
+  <tr><td class="label">Proprietário / Responsável</td><td>${D.prop}</td><td class="label">CPF</td><td>${D.cpf}</td></tr>
+  <tr><td class="label odd">Endereço</td><td class="odd">${D.end}, nº ${D.num}</td><td class="label odd">Bairro</td><td class="odd">${D.bairro}</td></tr>
+  <tr><td class="label">CEP</td><td>Fortaleza – CE, ${D.cep}</td><td class="label">Insc. Municipal (IPTU)</td><td>${D.iptu}</td></tr>
+  <tr><td class="label odd">Uso</td><td class="odd">${D.uso}</td><td class="label odd">Pavimentos</td><td class="odd">${D.pav}</td></tr>
+</table>
+
+<h2>2. Quadro de Áreas Edificadas</h2>
+<table>
+  <tr><th>Cômodo / Ambiente</th><th style="width:130pt">Pavimento</th><th style="width:90pt;text-align:right">Área (m²)</th></tr>
+  ${ambientes.map((a,i)=>`<tr ${i%2?'class="odd"':''}><td>${a.nome}</td><td>${a.pav}</td><td style="text-align:right">${a.area.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr>`).join('')}
+  <tr><td colspan="2" style="text-align:right;font-weight:bold;background:#D6E4F0;color:#1F4E79">Área Total Construída</td><td style="text-align:right;font-weight:bold;background:#D6E4F0;color:#1F4E79">${totalArea.toLocaleString('pt-BR',{minimumFractionDigits:2})} m²</td></tr>
+</table>
+<p style="font-size:9.5pt;font-style:italic;color:#555">* Áreas obtidas por levantamento métrico in loco. Conferir com a planta baixa anexa.</p>
+
+<h2>3. Características da Edificação e Materiais Empregados</h2>
+<table>
+  <tr><th style="width:32%">Elemento</th><th>Especificação / Material Empregado</th></tr>
+  ${Object.entries(mats).map(([k,v],i)=>`<tr ${i%2?'class="odd"':''}><td style="font-weight:bold">${k}</td><td>${v}</td></tr>`).join('')}
+</table>
+
+<h2>4. Considerações Finais</h2>
+<p>Em vistoria técnica realizada no imóvel acima identificado, constatou-se que a edificação encontra-se em <strong>${D.conserv.toLowerCase()}</strong> estado de conservação${D.ano && D.ano!=='____' ? ', construída aproximadamente no ano de ' + D.ano : ''}. As instalações hidrossanitárias e elétricas apresentam funcionamento adequado. As informações constantes neste memorial refletem fielmente as condições verificadas na data do levantamento, sendo elaborado para fins de atualização do Cadastro Imobiliário Municipal, em atendimento à Intimação nº ${D.intim}/2026 – CECAD / SEFIN.</p>
+${D.obs ? `<p><strong>Observações:</strong> ${D.obs}</p>` : ''}
+
+<div class="assinatura">
+  <p style="text-align:right">Fortaleza, ${dataFmt}.</p>
+  <br><br>
+  <div class="linha-assin">
+    <strong>José Airton Santiago Pereira</strong><br>
+    Gestor Ambiental e Técnico Agrimensor<br>
+    CFT/RNP nº 22020241315<br>
+    Monólitos Topografia e Regularização de Imóveis
+  </div>
+</div>
+
+<div class="rodape">
+  Monólitos Topografia e Regularização de Imóveis | CFT/RNP nº 22020241315 | Fortaleza – CE
+</div>
+
+</body></html>`;
+
+  // Download como .doc (Word abre perfeitamente)
+  const blob = new Blob(['\ufeff'+html], {type:'application/msword'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `Memorial_${D.prop.split(' ')[0]}_${new Date().toISOString().slice(0,10)}.doc`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // ===== INIT =====
