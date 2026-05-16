@@ -170,6 +170,9 @@ select.form-control{cursor:pointer}
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<!-- PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 <div class="app">
@@ -1840,79 +1843,15 @@ table.dados td.val{font-weight:500;color:#111}
 
 <div class="no-print" id="barra-acoes">
   <button class="btn-comp" style="background:#0f2240;color:white" onclick="window.print()">🖨 Imprimir</button>
-  <button class="btn-comp" style="background:#2d6a4f;color:white" onclick="gerarECompartilhar('download')">⬇ Salvar PDF</button>
-  <button class="btn-comp" style="background:#25d366;color:white" onclick="gerarECompartilhar('whatsapp')">📲 WhatsApp</button>
-  <button class="btn-comp" style="background:#1a73e8;color:white" onclick="gerarECompartilhar('email')">✉ E-mail</button>
-  <button class="btn-comp" style="background:#555;color:white" onclick="gerarECompartilhar('share')">↗ Compartilhar</button>
+  <button class="btn-comp" style="background:#2d6a4f;color:white" onclick="window.parent._gerarPdf&&window.parent._gerarPdf('download',_dados)">⬇ Salvar PDF</button>
+  <button class="btn-comp" style="background:#25d366;color:white" onclick="window.parent._gerarPdf&&window.parent._gerarPdf('whatsapp',_dados)">📲 WhatsApp</button>
+  <button class="btn-comp" style="background:#1a73e8;color:white" onclick="window.parent._gerarPdf&&window.parent._gerarPdf('email',_dados)">✉ E-mail</button>
+  <button class="btn-comp" style="background:#555;color:white" onclick="window.parent._gerarPdf&&window.parent._gerarPdf('share',_dados)">↗ Compartilhar</button>
 </div>
 <div id="status-pdf" style="display:none;text-align:center;padding:10pt;font-size:10pt;color:#1a4a7a">⏳ Gerando PDF...</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 const _dados = ${JSON.stringify({cliente:d.cliente,orcNum:d.orcNum,valor:d.valor,dataFmt:d.dataFmt,parcela:d.parcela,forma:d.forma})};
-
-async function gerarPdfBlob(){
-  document.getElementById('barra-acoes').style.display='none';
-  document.getElementById('status-pdf').style.display='block';
-  try {
-    const { jsPDF } = window.jspdf;
-    const el = document.querySelector('.page');
-    const canvas = await html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#ffffff'});
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
-    const pdf = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
-    const w = pdf.internal.pageSize.getWidth();
-    const h = (canvas.height * w) / canvas.width;
-    pdf.addImage(imgData, 'JPEG', 0, 0, w, h);
-    return pdf;
-  } finally {
-    document.getElementById('barra-acoes').style.display='flex';
-    document.getElementById('status-pdf').style.display='none';
-  }
-}
-
-async function gerarECompartilhar(acao){
-  try {
-    const pdf = await gerarPdfBlob();
-    const nomeArq = 'Recibo_' + (_dados.orcNum!=='Avulso'?_dados.orcNum:'Avulso') + '_' + (_dados.cliente||'').split(' ')[0] + '.pdf';
-
-    if(acao === 'download'){
-      pdf.save(nomeArq);
-
-    } else if(acao === 'whatsapp'){
-      // Salva o PDF e abre WhatsApp com mensagem — no celular o usuário anexa o arquivo salvo
-      pdf.save(nomeArq);
-      setTimeout(()=>{
-        const msg = \`🧾 *Recibo de Pagamento*\\n\\n*\${_dados.orcNum!=='Avulso'?'OS/Orçamento nº '+_dados.orcNum:'Recibo Avulso'}*\\nCliente: \${_dados.cliente}\\nData: \${_dados.dataFmt}\\n\${_dados.parcela?'Parcela: '+_dados.parcela+'\\n':''}Forma: \${_dados.forma}\\n💰 *Valor: R\$ \${_dados.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}*\\n\\n_Arquivo PDF salvo — anexe na conversa._\\n_Monólitos Topografia e Regularização de Imóveis_\`;
-        window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
-      }, 800);
-
-    } else if(acao === 'email'){
-      pdf.save(nomeArq);
-      setTimeout(()=>{
-        const assunto = encodeURIComponent('Recibo — '+(_dados.orcNum!=='Avulso'?'OS '+_dados.orcNum:'Avulso')+' — '+_dados.cliente);
-        const corpo   = encodeURIComponent('Prezado(a) '+_dados.cliente+',\\n\\nSegue em anexo o recibo de pagamento.\\n\\nValor: R\$ '+_dados.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})+'\\nData: '+_dados.dataFmt+'\\n\\nAtenciosamente,\\nMonólitos Topografia e Regularização de Imóveis');
-        window.location.href = 'mailto:?subject='+assunto+'&body='+corpo;
-      }, 800);
-
-    } else if(acao === 'share'){
-      // Web Share API — abre menu nativo do celular com o PDF
-      const pdfBlob = pdf.output('blob');
-      const file = new File([pdfBlob], nomeArq, {type:'application/pdf'});
-      if(navigator.canShare && navigator.canShare({files:[file]})){
-        await navigator.share({files:[file], title:'Recibo de Pagamento', text:'Recibo — '+_dados.cliente});
-      } else {
-        // Fallback: download direto
-        pdf.save(nomeArq);
-        alert('Compartilhamento nativo não disponível. PDF salvo!');
-      }
-    }
-  } catch(e){
-    console.error(e);
-    alert('Erro ao gerar PDF: '+e.message);
-  }
-}
-
 window.onload = () => { setTimeout(()=>window.print(), 400); }
 window.onafterprint = () => {}
 <\/script>
@@ -1944,9 +1883,54 @@ function numPorExtenso(valor){
 
 function abrirJanelaRecibo(html, r){
   const w = window.open('','_blank');
+  window._reciboWin = w;
   w.document.write(html);
   w.document.close();
 }
+
+// Função global acessível da janela do recibo via window.parent
+window._gerarPdf = async function(acao, dados){
+  const nomeArq = 'Recibo_'+(dados.orcNum!=='Avulso'?dados.orcNum:'Avulso')+'_'+(dados.cliente||'').split(' ')[0]+'.pdf';
+  try {
+    const { jsPDF } = window.jspdf;
+    // Capturar o conteúdo da janela do recibo
+    const wins = window._reciboWin;
+    if(!wins||wins.closed){ alert('Janela do recibo foi fechada.'); return; }
+    const el = wins.document.querySelector('.page');
+    if(!el){ alert('Elemento não encontrado.'); return; }
+    const canvas = await html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#ffffff', windowWidth: wins.document.body.scrollWidth});
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const pdf = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+    const w2 = pdf.internal.pageSize.getWidth();
+    const h2 = (canvas.height * w2) / canvas.width;
+    pdf.addImage(imgData, 'JPEG', 0, 0, w2, h2);
+
+    if(acao==='download'){
+      pdf.save(nomeArq);
+    } else if(acao==='whatsapp'){
+      pdf.save(nomeArq);
+      setTimeout(()=>{
+        const msg = `🧾 *Recibo de Pagamento*\n\n*${dados.orcNum!=='Avulso'?'OS/Orçamento nº '+dados.orcNum:'Recibo Avulso'}*\nCliente: ${dados.cliente}\nData: ${dados.dataFmt}\n${dados.parcela?'Parcela: '+dados.parcela+'\n':''}Forma: ${dados.forma}\n💰 *Valor: R$ ${dados.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}*\n\n_PDF salvo — anexe na conversa._\n_Monólitos Topografia_`;
+        window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+      }, 600);
+    } else if(acao==='email'){
+      pdf.save(nomeArq);
+      setTimeout(()=>{
+        const assunto = encodeURIComponent('Recibo — '+(dados.orcNum!=='Avulso'?'OS '+dados.orcNum:'Avulso')+' — '+dados.cliente);
+        const corpo   = encodeURIComponent('Prezado(a) '+dados.cliente+',\n\nSegue em anexo o recibo.\n\nValor: R$ '+dados.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})+'\nData: '+dados.dataFmt+'\n\nAtenciosamente,\nMonólitos Topografia');
+        window.location.href = 'mailto:?subject='+assunto+'&body='+corpo;
+      }, 600);
+    } else if(acao==='share'){
+      const blob = pdf.output('blob');
+      const file = new File([blob], nomeArq, {type:'application/pdf'});
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({files:[file], title:'Recibo', text:'Recibo — '+dados.cliente});
+      } else {
+        pdf.save(nomeArq);
+      }
+    }
+  } catch(e){ console.error(e); alert('Erro ao gerar PDF: '+e.message); }
+};
 
 // ===== RECIBO AVULSO =====
 let ravModo = 'avulso';
