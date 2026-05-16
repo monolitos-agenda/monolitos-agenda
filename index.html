@@ -955,7 +955,14 @@ select.form-control{cursor:pointer}
     <!-- BLOCO VINCULADO -->
     <div id="rav-bloco-vinc" style="display:none">
       <div class="form-group" style="margin-bottom:10px"><label>Selecionar Orçamento / OS</label>
-        <select class="form-control" id="rav-vinc-orc" onchange="preencherRavVinc()"><option value="">— Selecione —</option></select>
+        <div style="position:relative">
+          <input class="form-control" id="rav-vinc-busca" placeholder="🔍 Buscar por nº ou cliente..." oninput="filtrarRavOrc()" autocomplete="off"
+            style="margin-bottom:6px">
+          <select class="form-control" id="rav-vinc-orc" size="5" onchange="preencherRavVinc()"
+            style="height:auto;min-height:110px;font-size:12px">
+            <option value="">— Selecione —</option>
+          </select>
+        </div>
       </div>
       <div id="rav-vinc-dados" style="display:none">
         <div class="form-grid form-grid-2" style="margin-bottom:10px">
@@ -1882,7 +1889,16 @@ function setRavModo(modo){
   document.getElementById('rav-bloco-avulso').style.display=modo==='avulso'?'':'none';
   document.getElementById('rav-bloco-vinc').style.display=modo==='vinculado'?'':'none';
 }
-function preencherRavVinc(){
+function filtrarRavOrc(){
+  const q = document.getElementById('rav-vinc-busca').value.toLowerCase().trim();
+  const sel = document.getElementById('rav-vinc-orc');
+  const opts = ST.orcamentos
+    .filter(o => !q || o.num.toLowerCase().includes(q) || (o.cliente||'').toLowerCase().includes(q))
+    .sort((a,b) => b.num.localeCompare(a.num));
+  sel.innerHTML = '<option value="">— Selecione —</option>' +
+    opts.map(o => `<option value="${o.id}">${o.num} — ${o.cliente}</option>`).join('');
+  document.getElementById('rav-vinc-dados').style.display='none';
+}
   const id=document.getElementById('rav-vinc-orc').value;
   const orc=ST.orcamentos.find(o=>o.id===id);
   const bloco=document.getElementById('rav-vinc-dados');
@@ -1910,8 +1926,9 @@ function initRav(){
   document.getElementById('rav-forma').value='PIX';
   const dl=document.getElementById('dl-rav-cli');
   if(dl)dl.innerHTML=ST.clientes.map(c=>`<option value="${c.nome}">`).join('');
-  const sel=document.getElementById('rav-vinc-orc');
-  if(sel)sel.innerHTML='<option value="">— Selecione —</option>'+ST.orcamentos.map(o=>`<option value="${o.id}">${o.num} — ${o.cliente}</option>`).join('');
+  const buscaEl=document.getElementById('rav-vinc-busca');
+  if(buscaEl) buscaEl.value='';
+  filtrarRavOrc();
   document.getElementById('rav-vinc-dados').style.display='none';
   setRavModo('avulso');
   updRavPrev();
