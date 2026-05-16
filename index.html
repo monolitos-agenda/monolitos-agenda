@@ -3044,11 +3044,19 @@ function gerarMemorialWord(){
 })();
 </script>
 <script>
+// Desregistrar todos os Service Workers antigos e registrar o novo
 if('serviceWorker' in navigator && location.protocol !== 'file:'){
+  // Primeiro desregistra tudo que estiver rodando
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => r.unregister());
+  });
+  // Depois registra o novo
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('sw.js')
-      .then(r=>console.log('SW registered'))
-      .catch(e=>console.log('SW error',e));
+    setTimeout(()=>{
+      navigator.serviceWorker.register('sw.js')
+        .then(r=>console.log('SW v15 registered'))
+        .catch(e=>console.log('SW error',e));
+    }, 1000);
   });
 }
 </script>
