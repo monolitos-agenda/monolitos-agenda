@@ -1547,16 +1547,9 @@ function renderDash(){
   const co=ST.orcamentos.filter(o=>o.status==='Concluído'&&o.data&&new Date(o.data+'T12:00:00').getMonth()===mes&&new Date(o.data+'T12:00:00').getFullYear()===ano).length;
   const elFat=document.getElementById('m-fat');
   const elAr=document.getElementById('m-ar');
-  if(valoresOcultos){
-    _valFat=fmtM(tRec);_valAr=fmtM(aR);
-    elFat.textContent=OCULTO;elAr.textContent=OCULTO;
-    elFat.style.letterSpacing='4px';elAr.style.letterSpacing='4px';
-    elFat.style.color='var(--gray-300)';elAr.style.color='var(--gray-300)';
-  } else {
-    elFat.textContent=fmtM(tRec);elAr.textContent=fmtM(aR);
-    elFat.style.letterSpacing='0';elAr.style.letterSpacing='0';
-    elFat.style.color='';elAr.style.color='';
-  }
+  _valFat=fmtM(tRec);
+  _valAr=fmtM(aR);
+  _aplicarVisibilidade();
   document.getElementById('m-ab').textContent=ab;
   // Update Em andamento badge in metric if element exists
   const mEmAnd=document.getElementById('m-emand');
@@ -2120,13 +2113,20 @@ function gerarReciboRetro(id){
 // ===== OCULTAR VALORES =====
 let valoresOcultos=true;
 const OCULTO='••••••';
-let _valFat='',_valAr='';
+let _valFat='R$ 0',_valAr='R$ 0';
 function toggleValores(){
   valoresOcultos=!valoresOcultos;
+  _aplicarVisibilidade();
+  document.getElementById('olho-icon').innerHTML=valoresOcultos
+    ?'<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
+    :'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  document.getElementById('olho-txt').textContent=valoresOcultos?'Exibir valores':'Ocultar valores';
+}
+function _aplicarVisibilidade(){
   const elFat=document.getElementById('m-fat');
   const elAr=document.getElementById('m-ar');
+  if(!elFat||!elAr)return;
   if(valoresOcultos){
-    _valFat=elFat.textContent;_valAr=elAr.textContent;
     elFat.textContent=OCULTO;elAr.textContent=OCULTO;
     elFat.style.letterSpacing='4px';elAr.style.letterSpacing='4px';
     elFat.style.color='var(--gray-300)';elAr.style.color='var(--gray-300)';
@@ -2135,10 +2135,6 @@ function toggleValores(){
     elFat.style.letterSpacing='0';elAr.style.letterSpacing='0';
     elFat.style.color='';elAr.style.color='';
   }
-  document.getElementById('olho-icon').innerHTML=valoresOcultos
-    ?'<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
-    :'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
-  document.getElementById('olho-txt').textContent=valoresOcultos?'Exibir valores':'Ocultar valores';
 }
 
 // ===== RECIBO AVULSO =====
