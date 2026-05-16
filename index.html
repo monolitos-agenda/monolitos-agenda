@@ -1489,14 +1489,12 @@ function imprimir(){
     </div>
   </div>
   <style>.no-print{display:block}@media print{.no-print{display:none!important}}</style>
-  <script>
+  <scr\`+\`ipt>
   window.onload=function(){
-    // Remove browser header/footer via CSS trick (zero margins handled by @page)
-    // Then print
     setTimeout(()=>window.print(), 300);
   };
   window.onafterprint=()=>window.close();
-  <\/script></body></html>`);
+  <\/scr\`+\`ipt></body></html>\`);
   w.document.close();
 }
 function printById(id){editarOrc(id);setTimeout(()=>imprimir(),250)}
