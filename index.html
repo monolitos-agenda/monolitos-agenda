@@ -1489,12 +1489,7 @@ function imprimir(){
     </div>
   </div>
   <style>.no-print{display:block}@media print{.no-print{display:none!important}}</style>
-  <scr\`+\`ipt>
-  window.onload=function(){
-    setTimeout(()=>window.print(), 300);
-  };
-  window.onafterprint=()=>window.close();
-  <\/scr\`+\`ipt></body></html>\`);
+  ${'<'+'script>'}window.onload=function(){setTimeout(()=>window.print(),300)};window.onafterprint=()=>window.close();${'</'+'script>'}</body></html>`);
   w.document.close();
 }
 function printById(id){editarOrc(id);setTimeout(()=>imprimir(),250)}
@@ -1822,7 +1817,7 @@ td.vl{font-weight:500}
   <a class="btn-a" style="background:#25d366;color:white" href="https://wa.me/?text=${waMsg}" target="_blank">📲 WhatsApp</a>
   <a class="btn-a" style="background:#1a73e8;color:white" href="mailto:?subject=${emailAssunto}&body=${emailCorpo}">✉ E-mail</a>
 </div>
-<scr`+`ipt>window.onload=()=>{setTimeout(()=>window.print(),400)};window.onafterprint=()=>window.close();<\/scr`+`ipt>
+<script>window.onload=()=>{setTimeout(()=>window.print(),400)};window.onafterprint=()=>{}<\/script>
 </body></html>`);
   w.document.close();
 }
@@ -1897,6 +1892,7 @@ function filtrarRavOrc(){
     opts.map(o => `<option value="${o.id}">${o.num} — ${o.cliente}</option>`).join('');
   document.getElementById('rav-vinc-dados').style.display='none';
 }
+function preencherRavVinc(){
   const id=document.getElementById('rav-vinc-orc').value;
   const orc=ST.orcamentos.find(o=>o.id===id);
   const bloco=document.getElementById('rav-vinc-dados');
