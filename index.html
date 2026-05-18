@@ -440,7 +440,9 @@ select.form-control{cursor:pointer}
         <div style="font-size:13px;color:var(--gray-500)">Formulário de vistoria para geração automática do Memorial Descritivo</div>
         <div style="display:flex;gap:7px">
           <button class="btn btn-outline btn-sm" onclick="limparVistoria()">🗑 Limpar</button>
-          <button class="btn btn-gold" onclick="gerarMemorialWord()">📄 Gerar Memorial Word</button>
+          <button class="btn btn-gold" onclick="gerarMemorialWord()">📄 Gerar Memorial</button>
+          <button class="btn btn-outline btn-sm" onclick="gerarECompartilharWA()" style="background:#25d366;color:white;border-color:#25d366;display:flex;align-items:center;gap:5px">📲 WhatsApp</button>
+          <button class="btn btn-outline btn-sm" onclick="gerarEAbrirDrive()" style="background:#1a73e8;color:white;border-color:#1a73e8;display:flex;align-items:center;gap:5px">☁️ Drive</button>
         </div>
       </div>
 
@@ -2914,69 +2916,43 @@ function gerarMemorialWord(){
   const dataFmt = hoje.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
 
   const ESTILO = `
-    body { font-family: Arial, sans-serif; font-size: 11pt; margin: 2cm 2cm 1.5cm 2.5cm; color: #111; }
-    .timbre { background: #0f2240; padding: 10pt 14pt 10pt 14pt; margin-bottom: 16pt; border-radius: 4pt; }
-    .timbre-nome { font-size: 15pt; font-weight: bold; color: #e8c96a; letter-spacing: 0.04em; text-transform: uppercase; }
-    .timbre-sub  { font-size: 9pt; color: #c8d8f0; margin-top: 2pt; }
-    .timbre-rt   { font-size: 9pt; color: #e8c96a; margin-top: 4pt; font-weight: bold; border-top: 0.5pt solid #2a4a7a; padding-top: 4pt; }
-    h1   { font-size: 13pt; font-weight: bold; text-align: center; color: #0f2240; text-transform: uppercase; margin-bottom: 4pt; }
-    h2   { font-size: 11pt; font-weight: bold; color: #0f2240; border-bottom: 1.5pt solid #e8c96a; margin: 14pt 0 6pt; padding-bottom: 2pt; text-transform: uppercase; }
+    body { font-family: Arial, sans-serif; font-size: 11pt; margin: 2cm 1.5cm 1.5cm 2.5cm; color: #111; }
+    h1   { font-size: 13pt; font-weight: bold; text-align: center; color: #1F4E79; text-transform: uppercase; margin-bottom: 4pt; }
+    h2   { font-size: 11pt; font-weight: bold; color: #1F4E79; border-bottom: 1pt solid #1F4E79; margin: 14pt 0 6pt; padding-bottom: 2pt; text-transform: uppercase; }
     .sub { font-size: 10pt; text-align: center; color: #555; margin-bottom: 14pt; font-style: italic; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 10pt; font-size: 10pt; }
-    th   { background: #0f2240; color: #e8c96a; padding: 5pt 7pt; text-align: left; font-size: 9.5pt; letter-spacing: 0.03em; }
+    th   { background: #1F4E79; color: white; padding: 5pt 7pt; text-align: left; }
     td   { padding: 4pt 7pt; border: 0.5pt solid #CCC; vertical-align: top; }
-    .label { background: #e8f0f8; font-weight: bold; width: 32%; color: #0f2240; }
-    .odd { background: #f8f8f8; }
+    .label { background: #D6E4F0; font-weight: bold; width: 38%; }
+    .odd { background: #F5F5F5; }
     p    { text-align: justify; font-size: 11pt; margin: 6pt 0; line-height: 1.6; }
-    .assinatura { margin-top: 36pt; }
-    .linha-assin { border-top: 1pt solid #0f2240; width: 220pt; margin: 0 0 4pt; padding-top: 5pt; font-size: 10pt; }
-    .rodape { font-size: 8.5pt; color: #666; margin-top: 20pt; border-top: 0.5pt solid #CCC; padding-top: 5pt; text-align: center; font-style: italic; }`;
+    .assinatura { margin-top: 36pt; text-align: center; }
+    .linha-assin { border-top: 0.5pt solid #333; width: 280pt; margin: 0 auto 4pt; padding-top: 4pt; font-size: 10pt; }
+    .rodape { font-size: 9pt; color: #555; margin-top: 24pt; border-top: 0.5pt solid #CCC; padding-top: 6pt; text-align: center; }`;
 
   const CABECALHO = `
-    <div class="timbre">
-      <div class="timbre-nome">Mon&oacute;litos Topografia</div>
-      <div class="timbre-sub">Topografia, Georreferenciamento e Regulariza&ccedil;&atilde;o de Im&oacute;veis</div>
-      <div class="timbre-rt">Resp. T&eacute;cnico: Jos&eacute; Airton Santiago Pereira &nbsp;|&nbsp; CFT/RNP n&ordm; 22020241315</div>
-    </div>
-    <h1>Memorial Descritivo de Edifica&ccedil;&atilde;o</h1>
+    <h1>Memorial Descritivo de Edificação</h1>
     <div class="sub">${modoVistoria==='simples' ? 'Atualização Cadastral – SEFIN / CECAD – Prefeitura Municipal de Fortaleza' : 'Laudo de Avaliação de Imóvel'}
     ${D.intim !== '______' ? '<br>Ref. Intimação nº ' + D.intim + '/2026 – CECAD' : ''}</div>
-    <h2>1. Identifica&ccedil;&atilde;o do Im&oacute;vel e do Propriet&aacute;rio</h2>
+    <h2>1. Identificação do Imóvel e do Responsável</h2>
     <table>
-      <tr><th colspan="4" style="text-align:left">Dados do Propriet&aacute;rio / Respons&aacute;vel</th></tr>
-      <tr><td class="label">Nome</td><td colspan="3">${D.prop}</td></tr>
-      <tr><td class="label odd">CPF</td><td class="odd" colspan="3">${D.cpf}</td></tr>
-      <tr><th colspan="4" style="text-align:left">Localiza&ccedil;&atilde;o do Im&oacute;vel</th></tr>
-      <tr><td class="label">Endere&ccedil;o</td><td>${D.end}, n&ordm; ${D.num}</td><td class="label">Bairro</td><td>${D.bairro}</td></tr>
-      <tr><td class="label odd">CEP</td><td class="odd">Fortaleza &ndash; CE, ${D.cep}</td><td class="label odd">Insc. Municipal (IPTU)</td><td class="odd">${D.iptu}</td></tr>
-      <tr><td class="label">Uso da Edifica&ccedil;&atilde;o</td><td>${D.uso}</td><td class="label">Pavimentos</td><td>${D.pav}</td></tr>
+      <tr><td class="label">Proprietário / Responsável</td><td>${D.prop}</td><td class="label">CPF</td><td>${D.cpf}</td></tr>
+      <tr><td class="label odd">Endereço</td><td class="odd">${D.end}, nº ${D.num}</td><td class="label odd">Bairro</td><td class="odd">${D.bairro}</td></tr>
+      <tr><td class="label">CEP</td><td>Fortaleza – CE, ${D.cep}</td><td class="label">Insc. Municipal (IPTU)</td><td>${D.iptu}</td></tr>
+      <tr><td class="label odd">Uso</td><td class="odd">${D.uso}</td><td class="label odd">Pavimentos</td><td class="odd">${D.pav}</td></tr>
     </table>`;
 
   const ASSINATURA = `
     <div class="assinatura">
-      <p style="text-align:right">Fortaleza, ${dataFmt}.</p>
-      <br><br>
+      <p style="text-align:right">Fortaleza, ${dataFmt}.</p><br><br>
       <div class="linha-assin">
-        <strong>Jos&eacute; Airton Santiago Pereira</strong><br>
-        Gestor Ambiental e T&eacute;cnico Agrimensor<br>
-        CFT/RNP n&ordm; 22020241315
+        <strong>José Airton Santiago Pereira</strong><br>
+        Gestor Ambiental e Técnico Agrimensor<br>
+        CFT/RNP nº 22020241315<br>
+        Monólitos Topografia e Regularização de Imóveis
       </div>
     </div>
-    <div class="rodape">F de Oliveira Topografia e Regulariza&ccedil;&atilde;o de Im&oacute;veis Ltda &nbsp;&ndash;&nbsp; CNPJ 60.694.439/0001-93 &nbsp;|&nbsp; Email: monolitostopografia@gmail.com &nbsp;|&nbsp; Telezap: (85) 99976.5111</div>`;
-
-  // Coletar fotos com carimbo e descrição IA
-  const fotosDivs = document.querySelectorAll('#vis-fotos-preview > div');
-  const fotosHTML = Array.from(fotosDivs).map(div => {
-    const img  = div.querySelector('img');
-    const desc = div.querySelector('[id$="-desc"]');
-    const src  = img ? img.src : '';
-    const txt  = desc ? desc.innerText.trim() : '';
-    if (!src) return '';
-    return '<div style="display:inline-block;margin:4pt 6pt 8pt 0;vertical-align:top;text-align:left">'
-      + '<img src="' + src + '" style="width:220pt;height:165pt;object-fit:cover;border:0.5pt solid #CCC;border-radius:3pt;display:block">'
-      + (txt ? '<div style="font-size:8.5pt;color:#444;font-style:italic;margin-top:3pt;max-width:220pt">' + txt + '</div>' : '')
-      + '</div>';
-  }).filter(Boolean).join('');
+    <div class="rodape">Monólitos Topografia e Regularização de Imóveis | CFT/RNP nº 22020241315 | Fortaleza – CE</div>`;
 
   let corpo = '';
 
@@ -3043,10 +3019,9 @@ function gerarMemorialWord(){
       ${obs?`<p><strong>Observações:</strong> ${obs}</p>`:''}`;
   }
 
-  const secFotos = fotosHTML ? '<h2>5. Registro Fotográfico</h2><div style="margin:6pt 0">' + fotosHTML + '</div>' : '';
   const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
 <head><meta charset='UTF-8'><style>${ESTILO}</style></head>
-<body>${CABECALHO}${corpo}${secFotos}${ASSINATURA}</body></html>`;
+<body>${CABECALHO}${corpo}${ASSINATURA}</body></html>`;
 
   const blob = new Blob(['\ufeff'+html], {type:'application/msword'});
   const url  = URL.createObjectURL(blob);
@@ -3055,6 +3030,33 @@ function gerarMemorialWord(){
   a.download = `Memorial_${D.prop.split(' ')[0]}_${new Date().toISOString().slice(0,10)}.doc`;
   document.body.appendChild(a); a.click();
   document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+function _nomeMemorial(){
+  const prop = document.getElementById('vis-prop')?.value || 'Memorial';
+  return 'Memorial_' + prop.split(' ')[0] + '_' + new Date().toISOString().slice(0,10) + '.doc';
+}
+
+function gerarECompartilharWA(){
+  gerarMemorialWord();
+  const prop   = document.getElementById('vis-prop')?.value   || '(proprietário)';
+  const end    = document.getElementById('vis-end')?.value    || '';
+  const num    = document.getElementById('vis-num')?.value    || '';
+  const bairro = document.getElementById('vis-bairro')?.value || '';
+  const data   = new Date().toLocaleDateString('pt-BR');
+  const nome   = _nomeMemorial();
+  const msg = '📋 *Memorial Descritivo gerado*\n'
+    + '👤 Proprietário: ' + prop + '\n'
+    + '📍 Endereço: ' + end + (num ? ', nº ' + num : '') + (bairro ? ' — ' + bairro : '') + '\n'
+    + '📅 Data: ' + data + '\n\n'
+    + '📎 O arquivo *' + nome + '* foi salvo no seu dispositivo.\n'
+    + 'Abra o WhatsApp no PC, acesse esta conversa e envie o arquivo para imprimir.';
+  setTimeout(() => window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank'), 800);
+}
+
+function gerarEAbrirDrive(){
+  gerarMemorialWord();
+  setTimeout(() => window.open('https://drive.google.com/drive/my-drive', '_blank'), 800);
 }
 
 // ===== INIT =====
