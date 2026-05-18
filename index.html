@@ -630,11 +630,16 @@ select.form-control{cursor:pointer}
 
       <!-- FOTOS (comum) -->
       <div class="card" style="margin-bottom:14px">
-        <div class="card-header"><span class="card-title">📷 Fotos (opcional)</span><span style="font-size:11px;color:var(--gray-400)">Para seu registro — não entram no memorial</span></div>
+        <div class="card-header"><span class="card-title">📷 Fotos do Imóvel</span><span style="font-size:11px;color:var(--gray-400)">Carimbo automático · Análise por IA</span></div>
         <div class="card-body">
-          <input type="file" id="vis-fotos-input" accept="image/*" multiple capture="environment" style="display:none" onchange="previewFotos(event)">
-          <button class="btn btn-outline" onclick="document.getElementById('vis-fotos-input').click()">📷 Adicionar Fotos</button>
-          <div id="vis-fotos-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px"></div>
+          <input type="file" id="vis-fotos-input" accept="image/*" capture="environment" style="display:none" onchange="capturarFotoVistoria(event)">
+          <input type="file" id="vis-galeria-input" accept="image/*" multiple style="display:none" onchange="capturarFotoVistoria(event)">
+          <canvas id="vis-canvas" style="display:none"></canvas>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+            <button class="btn btn-outline" onclick="document.getElementById('vis-fotos-input').click()" style="display:flex;align-items:center;gap:6px">📷 Fotografar</button>
+            <button class="btn btn-outline" onclick="document.getElementById('vis-galeria-input').click()" style="display:flex;align-items:center;gap:6px">🖼 Da Galeria</button>
+          </div>
+          <div id="vis-fotos-preview" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:4px"></div>
         </div>
       </div>
 
@@ -2882,19 +2887,130 @@ function limparVistoria(){
   initVistoria();
 }
 
-function previewFotos(e){
-  const prev = document.getElementById('vis-fotos-preview');
-  Array.from(e.target.files).forEach(f=>{
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const div = document.createElement('div');
-      div.style.cssText='position:relative;width:80px;height:80px';
-      div.innerHTML=`<img src="${ev.target.result}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--gray-200)">
-        <button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;border:none;background:var(--red);color:white;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0">✕</button>`;
-      prev.appendChild(div);
+function capturarFotoVistoria(e){
+  Array.from(e.target.files).forEach(f => processarFotoVistoria(f));
+  e.target.value = '';
+}
+
+function processarFotoVistoria(file){
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.getElementById('vis-canvas');
+      const W = img.naturalWidth, H = img.naturalHeight;
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, W, H);
+
+      const now    = new Date();
+      const data   = now.toLocaleDateString('pt-BR');
+      const hora   = now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      const endVal = (document.getElementById('vis-end')?.value    || '').trim();
+      const numVal = (document.getElementById('vis-num')?.value    || '').trim();
+      const baiVal = (document.getElementById('vis-bairro')?.value || '').trim();
+      const endTxt = endVal ? endVal + (numVal ? ', n\u00ba '+numVal : '') + (baiVal ? ' \u2014 '+baiVal : '') : '';
+
+      const escala = W / 1000;
+      const margem = Math.round(14 * escala);
+      const fBase  = Math.round(22 * escala);
+      const pad    = Math.round(10 * escala);
+      const raio   = Math.round(6  * escala);
+      const lhExtra= Math.round(6  * escala);
+      const linhas = [];
+      if (endTxt) linhas.push(endTxt);
+      linhas.push('Data: ' + data + '   Hora: ' + hora);
+
+      ctx.font = 'bold ' + fBase + 'px monospace';
+      let maxW = 0;
+      linhas.forEach(l => { const m = ctx.measureText(l).width; if(m > maxW) maxW = m; });
+
+      const boxW = maxW + pad * 2;
+      const boxH = fBase * linhas.length + pad * 2 + (linhas.length - 1) * lhExtra;
+      const boxX = margem;
+      const boxY = H - margem - boxH;
+
+      ctx.save();
+      ctx.globalAlpha = 0.72;
+      ctx.fillStyle = '#0f2240';
+      ctx.beginPath();
+      ctx.moveTo(boxX + raio, boxY);
+      ctx.lineTo(boxX + boxW - raio, boxY);
+      ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + raio);
+      ctx.lineTo(boxX + boxW, boxY + boxH - raio);
+      ctx.quadraticCurveTo(boxX + boxW, boxY + boxH, boxX + boxW - raio, boxY + boxH);
+      ctx.lineTo(boxX + raio, boxY + boxH);
+      ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - raio);
+      ctx.lineTo(boxX, boxY + raio);
+      ctx.quadraticCurveTo(boxX, boxY, boxX + raio, boxY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = '#e8c96a';
+      ctx.font = 'bold ' + fBase + 'px monospace';
+      ctx.textBaseline = 'top';
+      linhas.forEach((l, i) => {
+        ctx.fillText(l, boxX + pad, boxY + pad + i * (fBase + lhExtra));
+      });
+
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+      adicionarFotoComAnalise(dataUrl);
     };
-    reader.readAsDataURL(f);
-  });
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function adicionarFotoComAnalise(dataUrl){
+  const prev  = document.getElementById('vis-fotos-preview');
+  const divId = 'foto-' + Date.now() + '-' + Math.random().toString(36).slice(2,6);
+  const div   = document.createElement('div');
+  div.id = divId;
+  div.style.cssText = 'position:relative;border-radius:10px;border:1px solid var(--gray-200);overflow:hidden;background:var(--gray-50);width:160px;flex-shrink:0';
+  div.innerHTML = '<img src="' + dataUrl + '" style="width:160px;height:110px;object-fit:cover;display:block">'
+    + '<div style="padding:6px 8px;font-size:11px;color:var(--gray-600);line-height:1.4;min-height:32px" id="' + divId + '-desc">'
+    + '<span style="color:var(--gray-400);font-style:italic">🔍 Analisando...</span></div>'
+    + '<button onclick="document.getElementById(\'' + divId + '\').remove()" '
+    + 'style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;border:none;'
+    + 'background:rgba(15,34,64,.75);color:white;cursor:pointer;font-size:12px;display:flex;'
+    + 'align-items:center;justify-content:center;padding:0">✕</button>';
+  prev.appendChild(div);
+  analisarFotoIA(dataUrl, divId + '-desc');
+}
+
+async function analisarFotoIA(dataUrl, descId){
+  const descEl = document.getElementById(descId);
+  if(!descEl) return;
+  try {
+    const base64    = dataUrl.split(',')[1];
+    const mediaType = dataUrl.split(';')[0].split(':')[1] || 'image/jpeg';
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 200,
+        messages: [{
+          role: 'user',
+          content: [
+            {type:'image', source:{type:'base64', media_type:mediaType, data:base64}},
+            {type:'text',  text:'Analise esta foto de imóvel para laudo de vistoria cadastral. Identifique em no máximo 2 linhas curtas: tipo de elemento fotografado (fachada, cobertura, piso, parede, esquadria, etc.), material predominante e estado de conservação (bom, regular, ruim). Seja objetivo e técnico. Responda apenas a descrição, sem prefixos.'}
+          ]
+        }]
+      })
+    });
+    if(resp.ok){
+      const data  = await resp.json();
+      const texto = (data.content||[]).find(b=>b.type==='text')?.text || '';
+      if(descEl) descEl.innerHTML = '<span style="color:var(--navy)">' + texto.trim() + '</span>';
+    } else {
+      if(descEl) descEl.innerHTML = '<span style="color:var(--gray-400);font-style:italic">Foto registrada</span>';
+    }
+  } catch(err){
+    if(descEl) descEl.innerHTML = '<span style="color:var(--gray-400);font-style:italic">Foto registrada</span>';
+  }
 }
 
 // ===== GERAR MEMORIAL WORD =====
@@ -2916,43 +3032,69 @@ function gerarMemorialWord(){
   const dataFmt = hoje.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
 
   const ESTILO = `
-    body { font-family: Arial, sans-serif; font-size: 11pt; margin: 2cm 1.5cm 1.5cm 2.5cm; color: #111; }
-    h1   { font-size: 13pt; font-weight: bold; text-align: center; color: #1F4E79; text-transform: uppercase; margin-bottom: 4pt; }
-    h2   { font-size: 11pt; font-weight: bold; color: #1F4E79; border-bottom: 1pt solid #1F4E79; margin: 14pt 0 6pt; padding-bottom: 2pt; text-transform: uppercase; }
+    body { font-family: Arial, sans-serif; font-size: 11pt; margin: 2cm 2cm 1.5cm 2.5cm; color: #111; }
+    .timbre { background: #0f2240; padding: 10pt 14pt; margin-bottom: 16pt; border-radius: 4pt; }
+    .timbre-nome { font-size: 15pt; font-weight: bold; color: #e8c96a; letter-spacing: 0.04em; text-transform: uppercase; }
+    .timbre-sub  { font-size: 9pt; color: #c8d8f0; margin-top: 2pt; }
+    .timbre-rt   { font-size: 9pt; color: #e8c96a; margin-top: 4pt; font-weight: bold; border-top: 0.5pt solid #2a4a7a; padding-top: 4pt; }
+    h1   { font-size: 13pt; font-weight: bold; text-align: center; color: #0f2240; text-transform: uppercase; margin-bottom: 4pt; }
+    h2   { font-size: 11pt; font-weight: bold; color: #0f2240; border-bottom: 1.5pt solid #e8c96a; margin: 14pt 0 6pt; padding-bottom: 2pt; text-transform: uppercase; }
     .sub { font-size: 10pt; text-align: center; color: #555; margin-bottom: 14pt; font-style: italic; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 10pt; font-size: 10pt; }
-    th   { background: #1F4E79; color: white; padding: 5pt 7pt; text-align: left; }
+    th   { background: #0f2240; color: #e8c96a; padding: 5pt 7pt; text-align: left; font-size: 9.5pt; letter-spacing: 0.03em; }
     td   { padding: 4pt 7pt; border: 0.5pt solid #CCC; vertical-align: top; }
-    .label { background: #D6E4F0; font-weight: bold; width: 38%; }
-    .odd { background: #F5F5F5; }
+    .label { background: #e8f0f8; font-weight: bold; width: 32%; color: #0f2240; }
+    .odd { background: #f8f8f8; }
     p    { text-align: justify; font-size: 11pt; margin: 6pt 0; line-height: 1.6; }
-    .assinatura { margin-top: 36pt; text-align: center; }
-    .linha-assin { border-top: 0.5pt solid #333; width: 280pt; margin: 0 auto 4pt; padding-top: 4pt; font-size: 10pt; }
-    .rodape { font-size: 9pt; color: #555; margin-top: 24pt; border-top: 0.5pt solid #CCC; padding-top: 6pt; text-align: center; }`;
+    .assinatura { margin-top: 36pt; }
+    .linha-assin { border-top: 1pt solid #0f2240; width: 220pt; margin: 0 0 4pt; padding-top: 5pt; font-size: 10pt; }
+    .rodape { font-size: 8.5pt; color: #666; margin-top: 20pt; border-top: 0.5pt solid #CCC; padding-top: 5pt; text-align: center; font-style: italic; }`;
 
   const CABECALHO = `
-    <h1>Memorial Descritivo de Edificação</h1>
+    <div class="timbre">
+      <div class="timbre-nome">Mon&oacute;litos Topografia</div>
+      <div class="timbre-sub">Topografia, Georreferenciamento e Regulariza&ccedil;&atilde;o de Im&oacute;veis</div>
+      <div class="timbre-rt">Resp. T&eacute;cnico: Jos&eacute; Airton Santiago Pereira &nbsp;|&nbsp; CFT/RNP n&ordm; 22020241315</div>
+    </div>
+    <h1>Memorial Descritivo de Edifica&ccedil;&atilde;o</h1>
     <div class="sub">${modoVistoria==='simples' ? 'Atualização Cadastral – SEFIN / CECAD – Prefeitura Municipal de Fortaleza' : 'Laudo de Avaliação de Imóvel'}
     ${D.intim !== '______' ? '<br>Ref. Intimação nº ' + D.intim + '/2026 – CECAD' : ''}</div>
-    <h2>1. Identificação do Imóvel e do Responsável</h2>
+    <h2>1. Identifica&ccedil;&atilde;o do Im&oacute;vel e do Propriet&aacute;rio</h2>
     <table>
-      <tr><td class="label">Proprietário / Responsável</td><td>${D.prop}</td><td class="label">CPF</td><td>${D.cpf}</td></tr>
-      <tr><td class="label odd">Endereço</td><td class="odd">${D.end}, nº ${D.num}</td><td class="label odd">Bairro</td><td class="odd">${D.bairro}</td></tr>
-      <tr><td class="label">CEP</td><td>Fortaleza – CE, ${D.cep}</td><td class="label">Insc. Municipal (IPTU)</td><td>${D.iptu}</td></tr>
-      <tr><td class="label odd">Uso</td><td class="odd">${D.uso}</td><td class="label odd">Pavimentos</td><td class="odd">${D.pav}</td></tr>
+      <tr><th colspan="4" style="text-align:left">Dados do Propriet&aacute;rio / Respons&aacute;vel</th></tr>
+      <tr><td class="label">Nome</td><td colspan="3">${D.prop}</td></tr>
+      <tr><td class="label odd">CPF</td><td class="odd" colspan="3">${D.cpf}</td></tr>
+      <tr><th colspan="4" style="text-align:left">Localiza&ccedil;&atilde;o do Im&oacute;vel</th></tr>
+      <tr><td class="label">Endere&ccedil;o</td><td>${D.end}, n&ordm; ${D.num}</td><td class="label">Bairro</td><td>${D.bairro}</td></tr>
+      <tr><td class="label odd">CEP</td><td class="odd">Fortaleza – CE, ${D.cep}</td><td class="label odd">Insc. Municipal (IPTU)</td><td class="odd">${D.iptu}</td></tr>
+      <tr><td class="label">Uso da Edifica&ccedil;&atilde;o</td><td>${D.uso}</td><td class="label">Pavimentos</td><td>${D.pav}</td></tr>
     </table>`;
 
   const ASSINATURA = `
     <div class="assinatura">
-      <p style="text-align:right">Fortaleza, ${dataFmt}.</p><br><br>
+      <p style="text-align:right">Fortaleza, ${dataFmt}.</p>
+      <br><br>
       <div class="linha-assin">
-        <strong>José Airton Santiago Pereira</strong><br>
-        Gestor Ambiental e Técnico Agrimensor<br>
-        CFT/RNP nº 22020241315<br>
-        Monólitos Topografia e Regularização de Imóveis
+        <strong>Jos&eacute; Airton Santiago Pereira</strong><br>
+        Gestor Ambiental e T&eacute;cnico Agrimensor<br>
+        CFT/RNP n&ordm; 22020241315
       </div>
     </div>
-    <div class="rodape">Monólitos Topografia e Regularização de Imóveis | CFT/RNP nº 22020241315 | Fortaleza – CE</div>`;
+    <div class="rodape">F de Oliveira Topografia e Regulariza&ccedil;&atilde;o de Im&oacute;veis Ltda &nbsp;&ndash;&nbsp; CNPJ 60.694.439/0001-93 &nbsp;|&nbsp; Email: monolitostopografia@gmail.com &nbsp;|&nbsp; Telezap: (85) 99976.5111</div>`;
+
+  // Coletar fotos com carimbo
+  const fotosDivs = document.querySelectorAll('#vis-fotos-preview > div');
+  const fotosHTML = Array.from(fotosDivs).map(div => {
+    const img  = div.querySelector('img');
+    const desc = div.querySelector('[id$="-desc"]');
+    const src  = img ? img.src : '';
+    const txt  = desc ? desc.innerText.trim() : '';
+    if (!src) return '';
+    return '<div style="display:inline-block;margin:4pt 6pt 8pt 0;vertical-align:top">'
+      + '<img src="' + src + '" style="width:220pt;height:165pt;object-fit:cover;border:0.5pt solid #CCC;border-radius:3pt;display:block">'
+      + (txt ? '<div style="font-size:8.5pt;color:#444;font-style:italic;margin-top:3pt;max-width:220pt">' + txt + '</div>' : '')
+      + '</div>';
+  }).filter(Boolean).join('');
 
   let corpo = '';
 
@@ -3019,9 +3161,10 @@ function gerarMemorialWord(){
       ${obs?`<p><strong>Observações:</strong> ${obs}</p>`:''}`;
   }
 
+  const secFotos = fotosHTML ? '<h2>5. Registro Fotográfico</h2><div style="margin:6pt 0">' + fotosHTML + '</div>' : '';
   const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
 <head><meta charset='UTF-8'><style>${ESTILO}</style></head>
-<body>${CABECALHO}${corpo}${ASSINATURA}</body></html>`;
+<body>${CABECALHO}${corpo}${secFotos}${ASSINATURA}</body></html>`;
 
   const blob = new Blob(['\ufeff'+html], {type:'application/msword'});
   const url  = URL.createObjectURL(blob);
