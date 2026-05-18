@@ -638,11 +638,14 @@ select.form-control{cursor:pointer}
       <div class="card" style="margin-bottom:14px">
         <div class="card-header"><span class="card-title">📷 Fotos do Imóvel</span><span style="font-size:11px;color:var(--gray-400)">Carimbo com data, hora e endereço</span></div>
         <div class="card-body">
+          <input type="file" id="vis-fotos-input" accept="image/*" capture="environment" style="display:none" onchange="capturarFotoVistoria(event)">
+          <input type="file" id="vis-galeria-input" accept="image/*" multiple style="display:none" onchange="capturarFotoVistoria(event)">
           <canvas id="vis-canvas" style="display:none"></canvas>
-          <input type="file" id="vis-fotos-input" accept="image/*" capture="environment" style="display:none" onchange="capturarFotoVistoria(event,window._setorAtivo||'geral')">
-          <input type="file" id="vis-galeria-input" accept="image/*" multiple style="display:none" onchange="capturarFotoVistoria(event,window._setorAtivo||'geral')">
-          <!-- SETORES -->
-          <div id="vis-setores-container"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+            <button class="btn btn-outline" onclick="document.getElementById('vis-fotos-input').click()" style="display:flex;align-items:center;gap:6px">📷 Fotografar</button>
+            <button class="btn btn-outline" onclick="document.getElementById('vis-galeria-input').click()" style="display:flex;align-items:center;gap:6px">🖼 Da Galeria</button>
+          </div>
+          <div id="vis-fotos-preview" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:4px"></div>
         </div>
       </div>
 
@@ -673,6 +676,14 @@ select.form-control{cursor:pointer}
     <div class="form-grid form-grid-2" style="margin-bottom:11px">
       <div class="form-group"><label>Cliente</label><input class="form-control" id="orc-cli" placeholder="Nome completo" list="dl-cli"><datalist id="dl-cli"></datalist></div>
       <div class="form-group"><label>Matrícula do Imóvel</label><input class="form-control" id="orc-mat" placeholder="Ex: nº 38319 — 1ª Zona de Fortaleza/CE"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:11px;position:relative">
+      <label style="display:flex;align-items:center;gap:6px">
+        🤝 Intermediário
+        <span style="font-size:10px;font-weight:400;color:var(--gray-400);text-transform:none;letter-spacing:0">Advogado, despachante ou indicador</span>
+      </label>
+      <input class="form-control" id="orc-inter" placeholder="Nome do intermediário (opcional)" list="dl-inter" autocomplete="off">
+      <datalist id="dl-inter"></datalist>
     </div>
 
     <!-- SERVIÇOS MÚLTIPLOS -->
@@ -1287,10 +1298,14 @@ function novoOrc(){
   document.getElementById('orc-num').value=String(ST.nextNum).padStart(3,'0')+'-'+anoCorrente;
   document.getElementById('orc-cli').value='';
   document.getElementById('orc-mat').value='';
+  document.getElementById('orc-inter').value='';
   document.getElementById('orc-obs').value='';
   document.getElementById('orc-status').value='Aberto';
   setTipo('orcamento');
   document.getElementById('dl-cli').innerHTML=ST.clientes.map(c=>`<option value="${c.nome}">`).join('');
+  // Datalist de intermediários — lista única dos já usados
+  const inters=[...new Set(ST.orcamentos.map(o=>o.inter||'').filter(Boolean))];
+  document.getElementById('dl-inter').innerHTML=inters.map(i=>`<option value="${i}">`).join('');
   initSrvs([]);initParcs([]);openM('modal-orc');
 }
 function salvarOrc(){
@@ -1303,6 +1318,7 @@ function salvarOrc(){
   const o={id,num:document.getElementById('orc-num').value,data:document.getElementById('orc-data').value,
     dataInicio,dataConclusao,
     cliente:document.getElementById('orc-cli').value,matricula:document.getElementById('orc-mat').value,
+    inter:document.getElementById('orc-inter').value.trim(),
     servicos:srvs,parcelas:parcs,valor:total,obs:document.getElementById('orc-obs').value,
     status:novoStatus,
     tipo:document.getElementById('orc-tipo').value||'orcamento'};
@@ -1316,12 +1332,16 @@ function salvarOrc(){
 function editarOrc(id){
   const o=ST.orcamentos.find(x=>x.id===id);if(!o)return;
   document.getElementById('dl-cli').innerHTML=ST.clientes.map(c=>`<option value="${c.nome}">`).join('');
+  // Datalist de intermediários — lista única dos já usados
+  const inters=[...new Set(ST.orcamentos.map(o=>o.inter||'').filter(Boolean))];
+  document.getElementById('dl-inter').innerHTML=inters.map(i=>`<option value="${i}">`).join('');
   document.getElementById('orc-id').value=o.id;
   document.getElementById('morc-title').textContent='Editar Orçamento '+o.num;
   document.getElementById('orc-num').value=o.num;
   document.getElementById('orc-data').value=o.data;
   document.getElementById('orc-cli').value=o.cliente;
   document.getElementById('orc-mat').value=o.matricula||'';
+  document.getElementById('orc-inter').value=o.inter||'';
   document.getElementById('orc-obs').value=o.obs||'';
   document.getElementById('orc-status').value=o.status;
   setTipo(o.tipo||'orcamento');
@@ -1343,6 +1363,7 @@ function verOrc(id){
       <span class="chip badge-navy">${fmtD(o.data)}</span>
       ${o.matricula?`<span class="chip badge-blue" style="font-size:11px">📍 ${o.matricula}</span>`:''}
     </div>
+    ${o.inter?`<div style="font-size:11.5px;color:var(--gray-500);margin-bottom:10px;display:flex;align-items:center;gap:5px"><span style="font-size:13px">🤝</span> <span>via <strong style="color:var(--navy)">${o.inter}</strong></span></div>`:''}
     ${o.status==='Concluído'&&(o.dataInicio||o.dataConclusao)?`
     <div style="display:flex;gap:8px;margin-bottom:14px;padding:10px 12px;background:var(--green-light);border-radius:var(--radius)">
       <span style="font-size:12px;color:var(--green)">📅 <strong>Início:</strong> ${fmtD(o.dataInicio||o.data)} &nbsp;→&nbsp; <strong>Conclusão:</strong> ${o.dataConclusao?fmtD(o.dataConclusao):'—'}</span>
@@ -1419,6 +1440,7 @@ function imprimir(){
   const data=fmtD(document.getElementById('orc-data').value);
   const cli=document.getElementById('orc-cli').value;
   const mat=document.getElementById('orc-mat').value;
+  const inter=document.getElementById('orc-inter').value.trim();
   const obs=document.getElementById('orc-obs').value;
   const srvs=getSrvs();const parcs=getParcs();const total=srvs.reduce((a,s)=>a+s.valor,0);
   const b=ST.banco;
@@ -1473,7 +1495,7 @@ function imprimir(){
         </div>
       </div>
     </div>
-    <div class="sec"><h3>Cliente</h3><div class="clnm">${cli}</div>${mat?`<p style="font-size:11px;color:#6b6560;margin-top:3px">Imóvel: Matrícula ${mat}</p>`:''}</div>
+    <div class="sec"><h3>Cliente</h3><div class="clnm">${cli}</div>${inter?`<div style="font-size:10.5pt;color:#666;margin-top:3pt;display:flex;align-items:center;gap:4pt"><span>🤝</span><span>via <em>${inter}</em></span></div>`:''}${mat?`<p style="font-size:11px;color:#6b6560;margin-top:3px">Imóvel: Matrícula ${mat}</p>`:''}</div>
     <div class="sec"><h3>Serviços</h3>
       <table><thead><tr><th>Descrição</th><th style="text-align:right;width:125px">Preço</th></tr></thead>
       <tbody>${srvHTML}</tbody><tfoot><tr><td class="tft"><strong>Total Geral</strong></td><td class="tft" style="text-align:right"><strong>${fmtM(total)}</strong></td></tr></tfoot></table>
@@ -1572,6 +1594,7 @@ function renderDash(){
           <td><strong style="color:var(--navy)">${o.num}</strong></td>
           <td>
             <div>${o.cliente}</div>
+            ${o.inter?`<div style="font-size:10.5px;color:var(--gray-400);margin-top:1px;display:flex;align-items:center;gap:3px"><span>🤝</span><span>${o.inter}</span></div>`:''}
             ${o.andamento?`<div style="font-size:11px;color:var(--blue);margin-top:2px">📌 ${o.andamento.slice(0,60)}${o.andamento.length>60?'...':''}</div>`:''}
           </td>
           <td>
@@ -2812,7 +2835,6 @@ function initVistoria(){
       </div>
     `).join('<hr style="border:none;border-top:1px solid var(--gray-100);margin:4px 0">');
   }
-  initSetoresFotos();
 }
 
 function highlightMat(id, selIdx, total){
@@ -2891,53 +2913,12 @@ function limparVistoria(){
   initVistoria();
 }
 
-// Setores de foto
-const VIS_SETORES = [
-  {id:'fachada',   label:'🏠 Fachada'},
-  {id:'paredes',   label:'🧱 Paredes'},
-  {id:'piso',      label:'🪟 Piso'},
-  {id:'cobertura', label:'🏚 Cobertura/Teto'},
-  {id:'esquadrias',label:'🚪 Esquadrias'},
-  {id:'outras',    label:'📸 Outras'}
-];
-
-function initSetoresFotos(){
-  const container = document.getElementById('vis-setores-container');
-  if(!container) return;
-  container.innerHTML = VIS_SETORES.map(s =>
-    '<div style="margin-bottom:14px">'
-    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
-    + '<span style="font-size:12px;font-weight:600;color:var(--navy)">' + s.label + '</span>'
-    + '<div style="display:flex;gap:6px">'
-    + '<button class="btn btn-outline btn-sm" onclick="abrirCameraSetor(\'' + s.id + '\')" style="font-size:11px;padding:3px 8px">📷 Foto</button>'
-    + '<button class="btn btn-outline btn-sm" onclick="abrirGaleriaSetor(\'' + s.id + '\')" style="font-size:11px;padding:3px 8px">🖼 Galeria</button>'
-    + '</div></div>'
-    + '<div id="setor-' + s.id + '" style="display:flex;flex-wrap:wrap;gap:8px;min-height:10px"></div>'
-    + '</div>'
-  ).join('<hr style="border:none;border-top:1px solid var(--gray-100);margin:4px 0 14px">');
-}
-
-function abrirCameraSetor(setor){
-  window._setorAtivo = setor;
-  const inp = document.getElementById('vis-fotos-input');
-  inp.onchange = e => capturarFotoVistoria(e, setor);
-  inp.click();
-}
-
-function abrirGaleriaSetor(setor){
-  window._setorAtivo = setor;
-  const inp = document.getElementById('vis-galeria-input');
-  inp.onchange = e => capturarFotoVistoria(e, setor);
-  inp.click();
-}
-
-function capturarFotoVistoria(e, setor){
-  const s = setor || 'outras';
-  Array.from(e.target.files).forEach(f => processarFotoVistoria(f, s));
+function capturarFotoVistoria(e){
+  Array.from(e.target.files).forEach(f => processarFotoVistoria(f));
   e.target.value = '';
 }
 
-function processarFotoVistoria(file, setor){
+function processarFotoVistoria(file){
   const reader = new FileReader();
   reader.onload = ev => {
     const img = new Image();
@@ -2947,126 +2928,137 @@ function processarFotoVistoria(file, setor){
       canvas.width = W; canvas.height = H;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, W, H);
+
       const now    = new Date();
       const data   = now.toLocaleDateString('pt-BR');
       const hora   = now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
       const endVal = (document.getElementById('vis-end')?.value    || '').trim();
       const numVal = (document.getElementById('vis-num')?.value    || '').trim();
       const baiVal = (document.getElementById('vis-bairro')?.value || '').trim();
-      const endTxt = endVal ? endVal + (numVal ? ', nº '+numVal : '') + (baiVal ? ' — '+baiVal : '') : '';
+      const endTxt = endVal ? endVal + (numVal ? ', n\u00ba '+numVal : '') + (baiVal ? ' \u2014 '+baiVal : '') : '';
+
       const escala = W / 1000;
       const margem = Math.round(14 * escala);
       const fBase  = Math.round(22 * escala);
       const pad    = Math.round(10 * escala);
       const raio   = Math.round(6  * escala);
-      const lhEx   = Math.round(6  * escala);
+      const lhExtra= Math.round(6  * escala);
       const linhas = [];
-      if(endTxt) linhas.push(endTxt);
+      if (endTxt) linhas.push(endTxt);
       linhas.push('Data: ' + data + '   Hora: ' + hora);
+
       ctx.font = 'bold ' + fBase + 'px monospace';
       let maxW = 0;
-      linhas.forEach(l => { const m = ctx.measureText(l).width; if(m>maxW) maxW=m; });
-      const boxW = maxW + pad*2, boxH = fBase*linhas.length + pad*2 + (linhas.length-1)*lhEx;
-      const boxX = margem, boxY = H - margem - boxH;
-      ctx.save(); ctx.globalAlpha = 0.72; ctx.fillStyle = '#0f2240';
+      linhas.forEach(l => { const m = ctx.measureText(l).width; if(m > maxW) maxW = m; });
+
+      const boxW = maxW + pad * 2;
+      const boxH = fBase * linhas.length + pad * 2 + (linhas.length - 1) * lhExtra;
+      const boxX = margem;
+      const boxY = H - margem - boxH;
+
+      ctx.save();
+      ctx.globalAlpha = 0.72;
+      ctx.fillStyle = '#0f2240';
       ctx.beginPath();
-      ctx.moveTo(boxX+raio,boxY); ctx.lineTo(boxX+boxW-raio,boxY);
-      ctx.quadraticCurveTo(boxX+boxW,boxY,boxX+boxW,boxY+raio);
-      ctx.lineTo(boxX+boxW,boxY+boxH-raio);
-      ctx.quadraticCurveTo(boxX+boxW,boxY+boxH,boxX+boxW-raio,boxY+boxH);
-      ctx.lineTo(boxX+raio,boxY+boxH);
-      ctx.quadraticCurveTo(boxX,boxY+boxH,boxX,boxY+boxH-raio);
-      ctx.lineTo(boxX,boxY+raio);
-      ctx.quadraticCurveTo(boxX,boxY,boxX+raio,boxY); ctx.closePath(); ctx.fill(); ctx.restore();
-      ctx.globalAlpha = 1; ctx.fillStyle = '#e8c96a';
-      ctx.font = 'bold ' + fBase + 'px monospace'; ctx.textBaseline = 'top';
-      linhas.forEach((l,i) => ctx.fillText(l, boxX+pad, boxY+pad+i*(fBase+lhEx)));
+      ctx.moveTo(boxX + raio, boxY);
+      ctx.lineTo(boxX + boxW - raio, boxY);
+      ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + raio);
+      ctx.lineTo(boxX + boxW, boxY + boxH - raio);
+      ctx.quadraticCurveTo(boxX + boxW, boxY + boxH, boxX + boxW - raio, boxY + boxH);
+      ctx.lineTo(boxX + raio, boxY + boxH);
+      ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - raio);
+      ctx.lineTo(boxX, boxY + raio);
+      ctx.quadraticCurveTo(boxX, boxY, boxX + raio, boxY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = '#e8c96a';
+      ctx.font = 'bold ' + fBase + 'px monospace';
+      ctx.textBaseline = 'top';
+      linhas.forEach((l, i) => {
+        ctx.fillText(l, boxX + pad, boxY + pad + i * (fBase + lhExtra));
+      });
+
       const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-      adicionarFotoSetor(dataUrl, setor);
+      adicionarFotoComAnalise(dataUrl);
     };
     img.src = ev.target.result;
   };
   reader.readAsDataURL(file);
 }
 
-function adicionarFotoSetor(dataUrl, setor){
-  const container = document.getElementById('setor-' + (setor||'outras'));
-  if(!container) return;
+function adicionarFotoComAnalise(dataUrl){
+  const prev  = document.getElementById('vis-fotos-preview');
   const divId = 'foto-' + Date.now() + '-' + Math.random().toString(36).slice(2,6);
   const div   = document.createElement('div');
   div.id = divId;
-  div.style.cssText = 'position:relative;border-radius:8px;overflow:hidden;width:90px;height:90px;flex-shrink:0';
-  div.innerHTML = '<img src="' + dataUrl + '" style="width:90px;height:90px;object-fit:cover;display:block">'
+  div.style.cssText = 'position:relative;border-radius:10px;border:1px solid var(--gray-200);overflow:hidden;background:var(--gray-50);width:160px;flex-shrink:0';
+  div.innerHTML = '<img src="' + dataUrl + '" style="width:160px;height:110px;object-fit:cover;display:block">'
     + '<button onclick="document.getElementById(\'' + divId + '\').remove()" '
-    + 'style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;border:none;'
-    + 'background:rgba(15,34,64,.8);color:white;cursor:pointer;font-size:11px;display:flex;'
+    + 'style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;border:none;'
+    + 'background:rgba(15,34,64,.75);color:white;cursor:pointer;font-size:12px;display:flex;'
     + 'align-items:center;justify-content:center;padding:0">✕</button>';
-  container.appendChild(div);
+  prev.appendChild(div);
 }
 
 async function gerarDescricaoIA(){
-  // Coletar fotos de todos os setores com label
-  const setoresDados = [];
-  VIS_SETORES.forEach(s => {
-    const imgs = Array.from(document.querySelectorAll('#setor-' + s.id + ' img'));
-    if(imgs.length) setoresDados.push({label: s.label, imgs});
-  });
-  if(!setoresDados.length){
+  const imgs = Array.from(document.querySelectorAll('#vis-fotos-preview img'));
+  if(!imgs.length){
     alert('Tire pelo menos uma foto do imóvel antes de gerar a descrição.');
     return;
   }
   const btn  = document.getElementById('btn-ia-desc');
   const prev = document.getElementById('vis-s-preview');
   if(btn){ btn.disabled = true; btn.textContent = '🤖 Analisando...'; }
-  prev.innerHTML = '<span style="color:var(--gray-400);font-style:italic">🤖 Analisando as fotos...</span>';
+  prev.innerHTML = '<span style="color:var(--gray-400);font-style:italic">🤖 Analisando as fotos do imóvel...</span>';
   try {
     const msgContent = [];
-    let descSetores = '';
-    setoresDados.forEach(sd => {
-      sd.imgs.slice(0,2).forEach(img => {
-        const base64    = img.src.split(',')[1];
-        const mediaType = img.src.split(';')[0].split(':')[1] || 'image/jpeg';
-        msgContent.push({type:'image', source:{type:'base64', media_type:mediaType, data:base64}});
-      });
-      descSetores += sd.label + ': ' + sd.imgs.length + ' foto(s). ';
+    imgs.slice(0,6).forEach(img => {
+      const base64    = img.src.split(',')[1];
+      const mediaType = img.src.split(';')[0].split(':')[1] || 'image/jpeg';
+      msgContent.push({type:'image', source:{type:'base64', media_type:mediaType, data:base64}});
     });
     const tipo = document.getElementById('vis-s-tipo')?.value || 'imóvel';
     const pav  = document.getElementById('vis-pav')?.value    || '1';
     const uso  = document.getElementById('vis-uso')?.value    || 'Residencial';
     const cond = document.getElementById('vis-s-cond')?.value || '';
     msgContent.push({type:'text', text:
-      'As imagens acima são de vistoria cadastral organizadas por setor: ' + descSetores + ' '
-      + 'Tipo de edificação: ' + tipo + '. Uso: ' + uso + '. Pavimentos: ' + pav + '. '
-      + (cond ? 'Condomínio: ' + cond + '. ' : '')
-      + 'Com base nessas fotos, redija um parágrafo técnico descritivo para memorial descritivo '
-      + 'de edificação brasileira. Descreva materiais predominantes de cada elemento '
-      + '(piso, paredes, cobertura/forro, esquadrias) e estado geral de conservação. '
-      + 'Máximo 4 linhas. Seja objetivo e técnico. Sem mencionar data, endereço ou que viu fotos. '
-      + 'Responda apenas o parágrafo, sem título.'
+      'Com base nestas fotos de vistoria cadastral, redija um parágrafo técnico descritivo '
+      + 'para um memorial descritivo de edificação brasileira. '
+      + 'Tipo: ' + tipo + '. Uso: ' + uso + '. Pavimentos: ' + pav + '. '
+      + (cond ? 'Condomínio/residencial: ' + cond + '. ' : '')
+      + 'Descreva: materiais predominantes (piso, parede, cobertura/forro), estado geral de conservação. '
+      + 'Seja objetivo e técnico, máximo 3 linhas, sem mencionar data nem endereço. '
+      + 'Responda apenas o parágrafo, sem título nem prefixo.'
     });
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({model:'claude-sonnet-4-20250514', max_tokens:350,
-        messages:[{role:'user', content:msgContent}]})
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 300,
+        messages: [{role:'user', content:msgContent}]
+      })
     });
     if(resp.ok){
       const data  = await resp.json();
       const texto = (data.content||[]).find(b=>b.type==='text')?.text || '';
       if(texto.trim()){
-        prev.style.fontStyle='normal'; prev.style.color='var(--navy)';
-        prev.textContent = texto.trim();
+        prev.style.fontStyle = 'normal';
+        prev.style.color     = 'var(--navy)';
+        prev.textContent     = texto.trim();
       } else {
-        prev.innerHTML='<span style="color:var(--red)">Não foi possível gerar. Tente novamente.</span>';
+        prev.innerHTML = '<span style="color:var(--red)">Não foi possível gerar. Tente novamente.</span>';
       }
     } else {
-      const errData = await resp.json().catch(()=>({}));
-      prev.innerHTML='<span style="color:var(--red)">Erro API: ' + (errData.error?.message||resp.status) + '</span>';
+      prev.innerHTML = '<span style="color:var(--red)">Erro na API. Verifique sua conexão.</span>';
     }
   } catch(err){
-    prev.innerHTML='<span style="color:var(--red)">Erro de conexão. Verifique sua internet.</span>';
+    prev.innerHTML = '<span style="color:var(--red)">Erro: ' + err.message + '</span>';
   } finally {
-    if(btn){ btn.disabled=false; btn.innerHTML='🤖 Gerar Descrição com IA'; }
+    if(btn){ btn.disabled = false; btn.innerHTML = '🤖 Gerar Descrição com IA'; }
   }
 }
 
@@ -3091,9 +3083,9 @@ function gerarMemorialWord(){
   const ESTILO = `
     body { font-family: Arial, sans-serif; font-size: 11pt; margin: 2cm 2cm 1.5cm 2.5cm; color: #111; }
     .timbre { border-bottom: 1.5pt solid #0f2240; padding-bottom: 8pt; margin-bottom: 14pt; }
-    .timbre-nome { font-size: 15pt; font-weight: bold; color: #0f2240; letter-spacing: 0.04em; text-transform: uppercase; }
-    .timbre-sub  { font-size: 9pt; color: #555; margin-top: 2pt; }
-    .timbre-rt   { font-size: 9pt; color: #0f2240; margin-top: 3pt; font-weight: bold; }
+    .timbre-nome { font-size: 15pt; font-weight: bold; color: #c8a227; letter-spacing: 0.04em; text-transform: uppercase; }
+    .timbre-sub  { font-size: 9pt; color: #444; margin-top: 2pt; }
+    .timbre-rt   { font-size: 9pt; color: #444; margin-top: 3pt; font-weight: bold; }
     h1   { font-size: 13pt; font-weight: bold; text-align: center; color: #0f2240; text-transform: uppercase; margin-bottom: 4pt; }
     h2   { font-size: 11pt; font-weight: bold; color: #0f2240; border-bottom: 1.5pt solid #e8c96a; margin: 14pt 0 6pt; padding-bottom: 2pt; text-transform: uppercase; }
     .sub { font-size: 10pt; text-align: center; color: #555; margin-bottom: 14pt; font-style: italic; }
@@ -3139,20 +3131,42 @@ function gerarMemorialWord(){
     </div>
     <div class="rodape">F de Oliveira Topografia e Regulariza&ccedil;&atilde;o de Im&oacute;veis Ltda &nbsp;&ndash;&nbsp; CNPJ 60.694.439/0001-93 &nbsp;|&nbsp; Email: monolitostopografia@gmail.com &nbsp;|&nbsp; Telezap: (85) 99976.5111</div>`;
 
-  // Coletar fotos com carimbo
-  // Coletar fotos por setor
+  // Coletar fotos por setor — layout em tabela (Word-compatible)
   let fotosHTML = '';
+  const COLS = 2; // fotos por linha
   if(typeof VIS_SETORES !== 'undefined'){
     VIS_SETORES.forEach(s => {
       const imgs = Array.from(document.querySelectorAll('#setor-' + s.id + ' img'));
       if(!imgs.length) return;
-      fotosHTML += '<h3 style="font-size:10pt;color:#0f2240;margin:10pt 0 5pt;text-transform:uppercase;letter-spacing:.04em">' + s.label + '</h3>';
-      fotosHTML += imgs.map(img =>
-        '<div style="display:inline-block;margin:4pt 6pt 8pt 0;vertical-align:top">'
-        + '<img src="' + img.src + '" style="width:200pt;height:150pt;object-fit:cover;border:0.5pt solid #CCC;border-radius:3pt;display:block">'
-        + '</div>'
-      ).join('');
+      // Título do setor
+      fotosHTML += '<p style="font-size:10pt;font-weight:bold;color:#0f2240;margin:10pt 0 4pt;'                 + 'text-transform:uppercase;letter-spacing:.04em;border-bottom:0.5pt solid #e8c96a;padding-bottom:2pt">' + s.label + '</p>';
+      // Fotos em tabela de 2 colunas
+      fotosHTML += '<table style="border-collapse:collapse;margin-bottom:8pt;width:100%"><tr>';
+      imgs.forEach((img, idx) => {
+        if(idx > 0 && idx % COLS === 0) fotosHTML += '</tr><tr>';
+        fotosHTML += '<td style="border:none;padding:3pt 6pt 3pt 0;vertical-align:top;width:50%">'
+          + '<img src="' + img.src + '" style="width:220pt;height:160pt;object-fit:cover;'
+          + 'border:0.5pt solid #CCC;display:block">'
+          + '</td>';
+      });
+      // Completar linha com célula vazia se ímpar
+      if(imgs.length % COLS !== 0) fotosHTML += '<td style="border:none"></td>';
+      fotosHTML += '</tr></table>';
     });
+  } else {
+    // Fallback: fotos genéricas sem setor
+    const imgs = Array.from(document.querySelectorAll('#vis-fotos-preview img'));
+    if(imgs.length){
+      fotosHTML += '<table style="border-collapse:collapse;margin-bottom:8pt;width:100%"><tr>';
+      imgs.forEach((img, idx) => {
+        if(idx > 0 && idx % 2 === 0) fotosHTML += '</tr><tr>';
+        fotosHTML += '<td style="border:none;padding:3pt 6pt 3pt 0;vertical-align:top;width:50%">'
+          + '<img src="' + img.src + '" style="width:220pt;height:160pt;object-fit:cover;border:0.5pt solid #CCC;display:block">'
+          + '</td>';
+      });
+      if(imgs.length % 2 !== 0) fotosHTML += '<td style="border:none"></td>';
+      fotosHTML += '</tr></table>';
+    }
   }
 
   let corpo = '';
@@ -3251,10 +3265,9 @@ function gerarECompartilharWA(){
     + '👤 Proprietário: ' + prop + '\n'
     + '📍 Endereço: ' + end + (num ? ', nº ' + num : '') + (bairro ? ' — ' + bairro : '') + '\n'
     + '📅 Data: ' + data + '\n\n'
-    + '📎 Arquivo: *' + nome + '*\n'
-    + 'Salvo no dispositivo. Anexe manualmente nesta conversa para enviar ao PC.';
-  // Abre direto no WhatsApp Business (número da Monolitos)
-  setTimeout(() => window.open('https://wa.me/5585999765111?text=' + encodeURIComponent(msg), '_blank'), 800);
+    + '📎 O arquivo *' + nome + '* foi salvo no seu dispositivo.\n'
+    + 'Abra o WhatsApp no PC, acesse esta conversa e envie o arquivo para imprimir.';
+  setTimeout(() => window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank'), 800);
 }
 
 function gerarEAbrirDrive(){
