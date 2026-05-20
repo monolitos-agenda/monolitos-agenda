@@ -176,7 +176,7 @@ select.form-control{cursor:pointer}
 .tipo-btn.active{background:white;color:var(--navy);box-shadow:0 1px 4px rgba(15,34,64,.12);font-weight:600}
 </style>
 <!-- docx.js para geração de Word nativo -->
-<script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js"></script>
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -578,6 +578,9 @@ select.form-control{cursor:pointer}
                 <div class="vis-counter"><span>🛏 Quartos</span><div class="vis-cnt-ctrl"><button onclick="adjCnt('cnt-quartos',-1)">−</button><span id="cnt-quartos">2</span><button onclick="adjCnt('cnt-quartos',1)">+</button></div></div>
                 <div class="vis-counter"><span>🚿 Banheiros</span><div class="vis-cnt-ctrl"><button onclick="adjCnt('cnt-banheiros',-1)">−</button><span id="cnt-banheiros">1</span><button onclick="adjCnt('cnt-banheiros',1)">+</button></div></div>
                 <div class="vis-counter"><span>🍳 Cozinha</span><div class="vis-cnt-ctrl"><button onclick="adjCnt('cnt-cozinha',-1)">−</button><span id="cnt-cozinha">1</span><button onclick="adjCnt('cnt-cozinha',1)">+</button></div></div>
+                <div class="vis-counter"><span>🏖 Varanda</span><div class="vis-cnt-ctrl"><button onclick="adjCnt('cnt-varanda',-1)">−</button><span id="cnt-varanda">0</span><button onclick="adjCnt('cnt-varanda',1)">+</button></div></div>
+                <div class="vis-counter"><span>💼 Escritório</span><div class="vis-cnt-ctrl"><button onclick="adjCnt('cnt-escritorio',-1)">−</button><span id="cnt-escritorio">0</span><button onclick="adjCnt('cnt-escritorio',1)">+</button></div></div>
+                <div class="vis-counter"><span>🧺 Área de Serviço</span><div class="vis-cnt-ctrl"><button onclick="adjCnt('cnt-areaserv',-1)">−</button><span id="cnt-areaserv">0</span><button onclick="adjCnt('cnt-areaserv',1)">+</button></div></div>
                 <div class="vis-counter"><span>🚗 Vagas</span><div class="vis-cnt-ctrl"><button onclick="adjCnt('cnt-vagas',-1)">−</button><span id="cnt-vagas">0</span><button onclick="adjCnt('cnt-vagas',1)">+</button></div></div>
                 <div class="vis-counter"><span>🏠 Outros</span><div class="vis-cnt-ctrl"><button onclick="adjCnt('cnt-outros',-1)">−</button><span id="cnt-outros">0</span><button onclick="adjCnt('cnt-outros',1)">+</button></div></div>
               </div>
@@ -2856,9 +2859,11 @@ function previewSimples(){
   const unid   = document.getElementById('vis-s-unidades')?.value  || '';
   const compl  = document.getElementById('vis-s-compl')?.value     || '';
   const pav    = document.getElementById('vis-pav')?.value         || '1 (Térreo)';
-  const salas  = getCnt('cnt-salas'),  quartos = getCnt('cnt-quartos');
-  const banh   = getCnt('cnt-banheiros'), coz  = getCnt('cnt-cozinha');
-  const vagas  = getCnt('cnt-vagas'),  outros  = getCnt('cnt-outros');
+  const salas    = getCnt('cnt-salas'),    quartos  = getCnt('cnt-quartos');
+  const banh     = getCnt('cnt-banheiros'), coz     = getCnt('cnt-cozinha');
+  const varanda  = getCnt('cnt-varanda'),  escrit   = getCnt('cnt-escritorio');
+  const areaserv = getCnt('cnt-areaserv'), vagas    = getCnt('cnt-vagas');
+  const outros   = getCnt('cnt-outros');
 
   const pavNum = pav.split(' ')[0];
   const pavTxt = pavNum === '1' ? 'com 1 pavimento' : 'com ' + pavNum + ' pavimentos';
@@ -2867,12 +2872,15 @@ function previewSimples(){
   const complTxt  = compl ? ', ' + compl : '';
 
   const comodos = [];
-  if(salas)   comodos.push(salas   + (salas===1   ? ' sala'      : ' salas'));
-  if(quartos) comodos.push(quartos + (quartos===1 ? ' quarto'    : ' quartos'));
-  if(banh)    comodos.push(banh    + (banh===1    ? ' banheiro'  : ' banheiros'));
-  if(coz)     comodos.push(coz     + (coz===1     ? ' cozinha'   : ' cozinhas'));
-  if(vagas)   comodos.push(vagas   + (vagas===1   ? ' vaga de garagem' : ' vagas de garagem'));
-  if(outros)  comodos.push(outros  + ' ambiente' + (outros===1 ? '' : 's') + ' auxiliar' + (outros===1 ? '' : 'es'));
+  if(salas)    comodos.push(salas    + (salas===1    ? ' sala'           : ' salas'));
+  if(quartos)  comodos.push(quartos  + (quartos===1  ? ' quarto'         : ' quartos'));
+  if(banh)     comodos.push(banh     + (banh===1     ? ' banheiro'       : ' banheiros'));
+  if(coz)      comodos.push(coz      + (coz===1      ? ' cozinha'        : ' cozinhas'));
+  if(varanda)  comodos.push(varanda  + (varanda===1  ? ' varanda'        : ' varandas'));
+  if(escrit)   comodos.push(escrit   + (escrit===1   ? ' escritório' : ' escritórios'));
+  if(areaserv) comodos.push(areaserv + (areaserv===1 ? ' área de serviço' : ' áreas de serviço'));
+  if(vagas)    comodos.push(vagas    + (vagas===1    ? ' vaga de garagem' : ' vagas de garagem'));
+  if(outros)   comodos.push(outros   + ' ambiente'  + (outros===1 ? '' : 's') + ' auxiliar' + (outros===1 ? '' : 'es'));
   const comodTxt = comodos.length ? ', com ' + comodos.join(', ') : '';
 
   const texto = tipo.charAt(0).toUpperCase() + tipo.slice(1) + ' ' + pavTxt
@@ -3177,9 +3185,24 @@ async function gerarDescricaoIA(){
 
 // ===== GERAR MEMORIAL WORD (docx.js nativo) =====
 async function gerarMemorialWord(){
+  // Aguardar docx carregar (até 8 segundos)
   if(typeof docx === 'undefined'){
-    alert('Biblioteca docx ainda carregando. Aguarde alguns segundos e tente novamente.');
-    return;
+    const btnGerar = document.querySelector('[onclick="gerarMemorialWord()"]');
+    if(btnGerar){ btnGerar.textContent = '⏳ Carregando...'; btnGerar.disabled = true; }
+    let tentativas = 0;
+    await new Promise((resolve, reject) => {
+      const check = setInterval(() => {
+        tentativas++;
+        if(typeof docx !== 'undefined'){ clearInterval(check); resolve(); }
+        else if(tentativas > 16){ clearInterval(check); reject(new Error('timeout')); }
+      }, 500);
+    }).catch(() => {
+      if(btnGerar){ btnGerar.textContent = '📄 Gerar Memorial'; btnGerar.disabled = false; }
+      alert('Não foi possível carregar a biblioteca. Verifique sua conexão e recarregue a página.');
+      return;
+    });
+    if(typeof docx === 'undefined') return;
+    if(btnGerar){ btnGerar.textContent = '📄 Gerar Memorial'; btnGerar.disabled = false; }
   }
 
   const {
