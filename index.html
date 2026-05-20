@@ -120,7 +120,7 @@ select.form-control{cursor:pointer}
 /* ── Vistoria botões seletores ── */
   .vis-label{font-size:10.5px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
   .vis-btn-group{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:2px}
-  .vis-btn{padding:8px 14px;border-radius:20px;border:1.5px solid var(--gray-200);background:white;font-size:13px;color:var(--gray-600);cursor:pointer;transition:all .15s;font-weight:500;line-height:1}
+  .vis-btn{padding:9px 16px;border-radius:20px;border:1.5px solid var(--gray-200);background:white;font-size:13px;color:var(--gray-600);cursor:pointer;transition:all .15s;font-weight:500;line-height:1}
   .vis-btn.active{background:var(--navy);color:white;border-color:var(--navy)}
   .vis-btn:active{transform:scale(.96)}
   .vis-counter{display:flex;justify-content:space-between;align-items:center;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--gray-700)}
@@ -509,7 +509,6 @@ select.form-control{cursor:pointer}
           <div class="card-header"><span class="card-title">2. Descrição da Edificação</span></div>
           <div class="card-body">
 
-            <!-- TIPO -->
             <div style="margin-bottom:14px">
               <div class="vis-label">Tipo de Edificação</div>
               <div class="vis-btn-group" id="grp-tipo">
@@ -523,7 +522,6 @@ select.form-control{cursor:pointer}
               <input type="hidden" id="vis-s-tipo" value="casa">
             </div>
 
-            <!-- PISO -->
             <div style="margin-bottom:14px">
               <div class="vis-label">Piso</div>
               <div class="vis-btn-group" id="grp-piso">
@@ -537,7 +535,6 @@ select.form-control{cursor:pointer}
               <input type="hidden" id="vis-s-piso" value="cerâmica">
             </div>
 
-            <!-- FORRO -->
             <div style="margin-bottom:14px">
               <div class="vis-label">Forro</div>
               <div class="vis-btn-group" id="grp-forro">
@@ -548,7 +545,6 @@ select.form-control{cursor:pointer}
               <input type="hidden" id="vis-s-forro" value="toda forrada">
             </div>
 
-            <!-- TIPO DE FORRO -->
             <div style="margin-bottom:14px">
               <div class="vis-label">Material do Forro</div>
               <div class="vis-btn-group" id="grp-tipoforro">
@@ -561,7 +557,6 @@ select.form-control{cursor:pointer}
               <input type="hidden" id="vis-s-tipoforro" value="PVC">
             </div>
 
-            <!-- COBERTURA -->
             <div style="margin-bottom:14px">
               <div class="vis-label">Cobertura</div>
               <div class="vis-btn-group" id="grp-cobertura">
@@ -574,7 +569,6 @@ select.form-control{cursor:pointer}
               <input type="hidden" id="vis-s-cobertura" value="telha cerâmica">
             </div>
 
-            <!-- CÔMODOS -->
             <div style="margin-bottom:14px">
               <div class="vis-label">Cômodos</div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -587,19 +581,20 @@ select.form-control{cursor:pointer}
               </div>
             </div>
 
-            <!-- CONDOMÍNIO E COMPLEMENTO -->
-            <div class="form-grid form-grid-2" style="margin-bottom:6px">
-              <div class="form-group"><label>Condomínio / Residencial</label>
-                <input class="form-control" id="vis-s-cond" placeholder="Ex: Res. Legado 2000 (opcional)">
+            <div class="form-grid form-grid-2" style="margin-bottom:10px">
+              <div class="form-group"><label>Condomínio / Residencial (se houver)</label>
+                <input class="form-control" id="vis-s-cond" placeholder="Ex: Res. Legado 2000 (opcional)" oninput="previewSimples()">
               </div>
-              <div class="form-group"><label>Complemento (opcional)</label>
-                <input class="form-control" id="vis-s-compl" placeholder="Ex: com área de lazer, piscina...">
+              <div class="form-group"><label>Nº de Unidades <span style="font-weight:400;color:var(--gray-400)">(se condomínio)</span></label>
+                <input class="form-control" id="vis-s-unidades" placeholder="Ex: 24" oninput="previewSimples()" type="number" min="2">
               </div>
             </div>
-            <input type="hidden" id="vis-s-unidades" value="">
+            <div class="form-group" style="margin-bottom:10px">
+              <label>Complemento <span style="font-weight:400;color:var(--gray-400)">(opcional)</span></label>
+              <input class="form-control" id="vis-s-compl" placeholder="Ex: com área de lazer, piscina..." oninput="previewSimples()">
+            </div>
 
-            <!-- PRÉVIA -->
-            <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px 16px;margin-top:8px">
+            <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px 16px;margin-top:4px">
               <div style="font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Prévia do texto gerado:</div>
               <div id="vis-s-preview" style="font-size:13px;color:var(--gray-700);line-height:1.6;font-style:italic">Selecione as opções acima...</div>
             </div>
@@ -629,7 +624,6 @@ select.form-control{cursor:pointer}
         <div class="card" style="margin-bottom:14px">
           <div class="card-header"><span class="card-title">4. Conservação</span></div>
           <div class="card-body">
-            <!-- ESTADO -->
             <div style="margin-bottom:14px">
               <div class="vis-label">Estado de Conservação</div>
               <div class="vis-btn-group" id="grp-conserv">
@@ -697,7 +691,20 @@ select.form-control{cursor:pointer}
 
       </div><!-- fim bloco-completo -->
 
-
+      <!-- FOTOS (comum) -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-header"><span class="card-title">📷 Fotos do Imóvel</span><span style="font-size:11px;color:var(--gray-400)">Carimbo com data, hora e endereço</span></div>
+        <div class="card-body">
+          <input type="file" id="vis-fotos-input" accept="image/*" capture="environment" style="display:none" onchange="capturarFotoVistoria(event)">
+          <input type="file" id="vis-galeria-input" accept="image/*" multiple style="display:none" onchange="capturarFotoVistoria(event)">
+          <canvas id="vis-canvas" style="display:none"></canvas>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+            <button class="btn btn-outline" onclick="document.getElementById('vis-fotos-input').click()" style="display:flex;align-items:center;gap:6px">📷 Fotografar</button>
+            <button class="btn btn-outline" onclick="document.getElementById('vis-galeria-input').click()" style="display:flex;align-items:center;gap:6px">🖼 Da Galeria</button>
+          </div>
+          <div id="vis-fotos-preview" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:4px"></div>
+        </div>
+      </div>
 
     </div>
 
@@ -2802,7 +2809,7 @@ function setModoVistoria(modo){
   document.getElementById('bloco-completo').style.display = modo==='completo' ? '' : 'none';
 }
 
-// ── Vistoria: selecionar botão ──
+// Vistoria: selecionar botão
 function selVis(grpId, btn, hiddenId){
   document.querySelectorAll('#'+grpId+' .vis-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
@@ -2811,7 +2818,7 @@ function selVis(grpId, btn, hiddenId){
   previewSimples();
 }
 
-// ── Vistoria: contador de cômodos ──
+// Vistoria: contador de cômodos
 function adjCnt(id, delta){
   const el = document.getElementById(id);
   if(!el) return;
@@ -2819,43 +2826,42 @@ function adjCnt(id, delta){
   el.textContent = v;
   previewSimples();
 }
-
 function getCnt(id){ const el=document.getElementById(id); return el?parseInt(el.textContent||'0'):0; }
 
 function previewSimples(){
-  const tipo   = document.getElementById('vis-s-tipo')?.value     || 'casa';
-  const forro  = document.getElementById('vis-s-forro')?.value    || 'toda forrada';
+  const tipo   = document.getElementById('vis-s-tipo')?.value      || 'casa';
+  const forro  = document.getElementById('vis-s-forro')?.value     || 'toda forrada';
   const tforro = document.getElementById('vis-s-tipoforro')?.value || 'PVC';
-  const piso   = document.getElementById('vis-s-piso')?.value     || 'cerâmica';
+  const piso   = document.getElementById('vis-s-piso')?.value      || 'cerâmica';
   const cobVal = document.getElementById('vis-s-cobertura')?.value || 'telha cerâmica';
-  const cond   = document.getElementById('vis-s-cond')?.value     || '';
-  const compl  = document.getElementById('vis-s-compl')?.value    || '';
-  const pav    = document.getElementById('vis-pav')?.value        || '1 (Térreo)';
-  const salas  = getCnt('cnt-salas'), quartos = getCnt('cnt-quartos');
-  const banh   = getCnt('cnt-banheiros'), coz = getCnt('cnt-cozinha');
-  const vagas  = getCnt('cnt-vagas'), outros = getCnt('cnt-outros');
+  const cond   = document.getElementById('vis-s-cond')?.value      || '';
+  const unid   = document.getElementById('vis-s-unidades')?.value  || '';
+  const compl  = document.getElementById('vis-s-compl')?.value     || '';
+  const pav    = document.getElementById('vis-pav')?.value         || '1 (Térreo)';
+  const salas  = getCnt('cnt-salas'),  quartos = getCnt('cnt-quartos');
+  const banh   = getCnt('cnt-banheiros'), coz  = getCnt('cnt-cozinha');
+  const vagas  = getCnt('cnt-vagas'),  outros  = getCnt('cnt-outros');
 
-  const forroTxt = forro === 'sem forro' ? 'sem forro' : forro + ' em ' + tforro;
-  const condTxt  = cond ? ', integrante do ' + cond : '';
-  const complTxt = compl ? ', ' + compl : '';
-  const pavNum   = pav.split(' ')[0];
-  const pavTxt   = pavNum === '1' ? 'com 1 pavimento' : 'com ' + pavNum + ' pavimentos';
+  const pavNum = pav.split(' ')[0];
+  const pavTxt = pavNum === '1' ? 'com 1 pavimento' : 'com ' + pavNum + ' pavimentos';
+  const forroDesc = forro === 'sem forro' ? 'sem forro' : 'forro ' + forro + ' em ' + tforro;
+  const condTxt   = cond ? ', integrante do ' + cond + (unid ? ', com ' + unid + ' unidades' : '') : '';
+  const complTxt  = compl ? ', ' + compl : '';
 
-  // Montar lista de cômodos
   const comodos = [];
-  if(salas)   comodos.push(salas   + (salas===1   ? ' sala'     : ' salas'));
-  if(quartos) comodos.push(quartos + (quartos===1 ? ' quarto'   : ' quartos'));
-  if(banh)    comodos.push(banh    + (banh===1    ? ' banheiro' : ' banheiros'));
-  if(coz)     comodos.push(coz     + (coz===1     ? ' cozinha'  : ' cozinhas'));
+  if(salas)   comodos.push(salas   + (salas===1   ? ' sala'      : ' salas'));
+  if(quartos) comodos.push(quartos + (quartos===1 ? ' quarto'    : ' quartos'));
+  if(banh)    comodos.push(banh    + (banh===1    ? ' banheiro'  : ' banheiros'));
+  if(coz)     comodos.push(coz     + (coz===1     ? ' cozinha'   : ' cozinhas'));
   if(vagas)   comodos.push(vagas   + (vagas===1   ? ' vaga de garagem' : ' vagas de garagem'));
   if(outros)  comodos.push(outros  + ' ambiente' + (outros===1 ? '' : 's') + ' auxiliar' + (outros===1 ? '' : 'es'));
   const comodTxt = comodos.length ? ', com ' + comodos.join(', ') : '';
 
-  const texto = tipo.charAt(0).toUpperCase()+tipo.slice(1) + ' ' + pavTxt
+  const texto = tipo.charAt(0).toUpperCase() + tipo.slice(1) + ' ' + pavTxt
     + comodTxt
     + ', cobertura em ' + cobVal
-    + ', ' + forroTxt
-    + ', com piso em ' + piso
+    + ', ' + forroDesc
+    + ', piso em ' + piso
     + condTxt + complTxt + '.';
 
   const el = document.getElementById('vis-s-preview');
@@ -2988,28 +2994,17 @@ function calcTotalArea(){
 function limparVistoria(){
   if(!confirm('Limpar todos os dados da vistoria?')) return;
   ['vis-prop','vis-cpf','vis-end','vis-num','vis-bairro','vis-cep','vis-iptu','vis-intim',
-   'vis-obs','vis-s-cond','vis-s-compl','vis-s-area-cob','vis-s-area-desc','vis-s-ano']
+   'vis-ano','vis-obs','vis-s-cond','vis-s-unidades','vis-s-compl','vis-s-area-cob','vis-s-area-desc','vis-s-ano']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   const pa = document.getElementById('vis-s-preview');
-  if(pa){ pa.textContent='Selecione as opções acima...'; pa.style.fontStyle='italic'; pa.style.color='var(--gray-700)'; }
+  if(pa) pa.textContent='Preencha os campos acima...';
   const st = document.getElementById('vis-s-total');
   if(st) st.textContent='0,00 m²';
+  document.getElementById('lista-ambientes').innerHTML='';
+  document.getElementById('vis-materiais-form').innerHTML='';
+  document.getElementById('vis-fotos-preview').innerHTML='';
   const vta = document.getElementById('vis-total-area');
   if(vta) vta.textContent='0,00 m²';
-  // Resetar botões seletores — primeiro ativo de cada grupo
-  ['grp-tipo','grp-piso','grp-forro','grp-tipoforro','grp-cobertura','grp-conserv'].forEach(g=>{
-    const btns=document.querySelectorAll('#'+g+' .vis-btn');
-    if(btns.length){ btns.forEach(b=>b.classList.remove('active')); btns[0].classList.add('active'); }
-  });
-  // Resetar contadores de cômodos
-  const defs={salas:1,quartos:2,banheiros:1,cozinha:1,vagas:0,outros:0};
-  Object.entries(defs).forEach(([k,v])=>{ const el=document.getElementById('cnt-'+k); if(el)el.textContent=v; });
-  // Resetar hidden inputs
-  [['vis-s-tipo','casa'],['vis-s-piso','cerâmica'],['vis-s-forro','toda forrada'],
-   ['vis-s-tipoforro','pvc'],['vis-s-cobertura','telha cerâmica'],['vis-s-conserv','bom']]
-   .forEach(([id,v])=>{ const el=document.getElementById(id); if(el)el.value=v; });
-  document.getElementById('lista-ambientes')?.remove();
-  document.getElementById('vis-materiais-form')?.remove();
   initVistoria();
 }
 
@@ -3177,9 +3172,6 @@ function gerarMemorialWord(){
     pav:    document.getElementById('vis-pav')?.value    || '1 (Térreo)',
   };
 
-  // Pegar texto da prévia como descrição da edificação
-  const descEdif = document.getElementById('vis-s-preview')?.textContent?.trim() || '';
-
   const hoje    = new Date();
   const dataFmt = hoje.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
 
@@ -3218,8 +3210,9 @@ function gerarMemorialWord(){
       <tr><td class="label odd">CPF</td><td class="odd" colspan="3">${D.cpf}</td></tr>
       <tr><th colspan="4" style="text-align:left">Localiza&ccedil;&atilde;o do Im&oacute;vel</th></tr>
       <tr><td class="label">Endere&ccedil;o</td><td>${D.end}, n&ordm; ${D.num}</td><td class="label">Bairro</td><td>${D.bairro}</td></tr>
-      <tr><td class="label odd">CEP</td><td class="odd">Fortaleza – CE, ${D.cep}</td><td class="label odd">Insc. Municipal (IPTU)</td><td class="odd">${D.iptu}</td></tr>
-      <tr><td class="label">Uso da Edifica&ccedil;&atilde;o</td><td>${D.uso}</td><td class="label">Pavimentos</td><td>${D.pav}</td></tr>
+      <tr><td class="label odd">Munic&iacute;pio / UF</td><td class="odd">Fortaleza &ndash; CE</td><td class="label odd">CEP</td><td class="odd">${D.cep}</td></tr>
+      <tr><td class="label">Insc. Municipal (IPTU)</td><td>${D.iptu}</td><td class="label">Uso da Edifica&ccedil;&atilde;o</td><td>${D.uso}</td></tr>
+      <tr><td class="label odd">Pavimentos</td><td class="odd">${D.pav}</td><td class="label odd">Intima&ccedil;&atilde;o CECAD</td><td class="odd">${D.intim !== '______' ? D.intim : '&mdash;'}</td></tr>
     </table>`;
 
   const ASSINATURA = `
