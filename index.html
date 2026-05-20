@@ -3459,41 +3459,44 @@ async function gerarMemorialWord(){
     { size: 22 }
   )], { align: AlignmentType.JUSTIFIED, after: 120 });
 
-  // ── ASSINATURA ───────────────────────────────────────────────────────────
+  // ── CARIMBO DIGITAL + DATA ──────────────────────────────────────────
   const dataLinha = para(
     [txtRun('Fortaleza, ' + dataFmt + '.', { size: 22 })],
-    { align: AlignmentType.RIGHT, before: 360, after: 720 }
+    { align: AlignmentType.RIGHT, before: 360, after: 360 }
   );
 
-  // Assinatura: linha curta centralizada (~4cm), colada ao nome
-  const ASSIN_W = 2268;
-  const SIDE_W  = Math.floor((W - ASSIN_W) / 2);
+  // Largura do carimbo: ~9cm centralizado
+  const STAMP_W = 5103; // ~9cm em DXA
+  const STAMP_SIDE = Math.floor((W - STAMP_W) / 2);
   const tblAssin = new Table({
     width: { size: W, type: WidthType.DXA },
-    columnWidths: [SIDE_W, ASSIN_W, SIDE_W],
-    rows: [
-      // Linha de assinatura curta
-      new TableRow({ children: [
-        new TableCell({ width: { size: SIDE_W, type: WidthType.DXA }, borders: noBorders, children: [para([txtRun('',{size:4})],{after:0})] }),
-        new TableCell({ width: { size: ASSIN_W, type: WidthType.DXA },
-          borders: { top: { style: BorderStyle.SINGLE, size: 8, color: NAVY }, bottom: noBorder, left: noBorder, right: noBorder },
-          margins: { top: 0, bottom: 0, left: 0, right: 0 },
-          children: [para([txtRun('',{size:4})],{after:0})]
-        }),
-        new TableCell({ width: { size: SIDE_W, type: WidthType.DXA }, borders: noBorders, children: [para([txtRun('',{size:4})],{after:0})] }),
-      ]}),
-      // Nome e dados — centralizados
-      new TableRow({ children: [
-        new TableCell({ columnSpan: 3, width: { size: W, type: WidthType.DXA }, borders: noBorders,
-          children: [
-            para([txtRun('José Airton Santiago Pereira', { bold: true, size: 22, color: NAVY })], { align: AlignmentType.CENTER, after: 40, before: 40 }),
-            para([txtRun('Gestor Ambiental e Técnico Agrimensor', { size: 20 })], { align: AlignmentType.CENTER, after: 40 }),
-            para([txtRun('CFT/RNP nº 22020241315', { size: 20 })], { align: AlignmentType.CENTER, after: 0 }),
-          ],
-        }),
-      ]}),
-    ],
-  });
+    columnWidths: [STAMP_SIDE, STAMP_W, STAMP_SIDE],
+    rows: [new TableRow({ children: [
+      new TableCell({ width: { size: STAMP_SIDE, type: WidthType.DXA }, borders: noBorders,
+        children: [para([txtRun('',{size:4})],{after:0})] }),
+      new TableCell({ width: { size: STAMP_W, type: WidthType.DXA },
+        shading: { fill: NAVY, type: ShadingType.CLEAR },
+        borders: noBorders,
+        margins: { top: 160, bottom: 160, left: 280, right: 280 },
+        children: [
+          para([
+            txtRun('🔐 Assinado digitalmente por', { size: 17, italic: true, color: 'c8d8f0' }),
+          ], { after: 60 }),
+          para([
+            txtRun('José Airton Santiago Pereira', { size: 21, bold: true, color: GOLD }),
+          ], { after: 60 }),
+          para([
+            txtRun('Gestor Ambiental e Técnico Agrimensor', { size: 18, italic: true, color: WHITE }),
+          ], { after: 60 }),
+          para([
+            txtRun('CFT/RNP nº 22020241315', { size: 18, bold: true, color: GOLD }),
+          ], { after: 0 }),
+        ],
+      }),
+      new TableCell({ width: { size: STAMP_SIDE, type: WidthType.DXA }, borders: noBorders,
+        children: [para([txtRun('',{size:4})],{after:0})] }),
+    ]})]},
+  );
 
   // ── RODAPÉ ───────────────────────────────────────────────────────────────
   const rodape = new Paragraph({
