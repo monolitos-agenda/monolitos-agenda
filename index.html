@@ -117,7 +117,18 @@ select.form-control{cursor:pointer}
 .custo-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-100)}
 .custo-item:last-child{border-bottom:none}
 .garantia-banner{background:var(--navy);border-radius:var(--radius);padding:11px 14px;display:flex;align-items:flex-start;gap:9px;margin-top:10px}
-.garantia-text{color:rgba(255,255,255,.88);font-size:11px;line-height:1.55}
+/* ── Vistoria botões seletores ── */
+  .vis-label{font-size:10.5px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+  .vis-btn-group{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:2px}
+  .vis-btn{padding:8px 14px;border-radius:20px;border:1.5px solid var(--gray-200);background:white;font-size:13px;color:var(--gray-600);cursor:pointer;transition:all .15s;font-weight:500;line-height:1}
+  .vis-btn.active{background:var(--navy);color:white;border-color:var(--navy)}
+  .vis-btn:active{transform:scale(.96)}
+  .vis-counter{display:flex;justify-content:space-between;align-items:center;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--gray-700)}
+  .vis-cnt-ctrl{display:flex;align-items:center;gap:0}
+  .vis-cnt-ctrl button{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--gray-200);background:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--navy);font-weight:600;line-height:1;padding:0}
+  .vis-cnt-ctrl span{min-width:32px;text-align:center;font-size:16px;font-weight:600;color:var(--navy)}
+  .vis-cnt-ctrl button:active{transform:scale(.9)}
+  .garantia-text{color:rgba(255,255,255,.88);font-size:11px;line-height:1.55}
 .garantia-text strong{color:var(--gold-light)}
 .obs-fixa{background:var(--amber-light);border:1px solid #dbb96644;border-radius:var(--radius);padding:9px 13px;margin-top:8px;font-size:11px;color:var(--amber);line-height:1.6;display:flex;gap:7px;align-items:flex-start}
 .banco-display{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px 14px}
@@ -493,62 +504,109 @@ select.form-control{cursor:pointer}
       <!-- MODO SIMPLES -->
       <div id="bloco-simples">
 
-        <!-- DESCRIÇÃO TEXTUAL -->
+        <!-- DESCRIÇÃO COM BOTÕES SELETORES -->
         <div class="card" style="margin-bottom:14px">
-          <div class="card-header"><span class="card-title">2. Descrição da Edificação</span><span style="font-size:11px;color:var(--gray-400)">Preencha os campos — o texto é gerado automaticamente</span></div>
+          <div class="card-header"><span class="card-title">2. Descrição da Edificação</span></div>
           <div class="card-body">
-            <div class="form-grid form-grid-2" style="margin-bottom:10px">
-              <div class="form-group"><label>Tipo da Edificação</label>
-                <select class="form-control" id="vis-s-tipo" onchange="previewSimples()">
-                  <option>casa</option><option>apartamento</option><option>prédio residencial</option><option>prédio comercial</option><option>sala comercial</option><option>galpão</option><option>barracão</option>
-                </select>
+
+            <!-- TIPO -->
+            <div style="margin-bottom:14px">
+              <div class="vis-label">Tipo de Edificação</div>
+              <div class="vis-btn-group" id="grp-tipo">
+                <button class="vis-btn active" onclick="selVis('grp-tipo',this,'vis-s-tipo')">Casa</button>
+                <button class="vis-btn" onclick="selVis('grp-tipo',this,'vis-s-tipo')">Apartamento</button>
+                <button class="vis-btn" onclick="selVis('grp-tipo',this,'vis-s-tipo')">Prédio Res.</button>
+                <button class="vis-btn" onclick="selVis('grp-tipo',this,'vis-s-tipo')">Prédio Com.</button>
+                <button class="vis-btn" onclick="selVis('grp-tipo',this,'vis-s-tipo')">Sala Comercial</button>
+                <button class="vis-btn" onclick="selVis('grp-tipo',this,'vis-s-tipo')">Galpão</button>
               </div>
-              <div class="form-group"><label>Condomínio / Residencial (se houver)</label>
-                <input class="form-control" id="vis-s-cond" placeholder="Ex: Residencial Legado 2000" oninput="previewSimples()">
+              <input type="hidden" id="vis-s-tipo" value="casa">
+            </div>
+
+            <!-- PISO -->
+            <div style="margin-bottom:14px">
+              <div class="vis-label">Piso</div>
+              <div class="vis-btn-group" id="grp-piso">
+                <button class="vis-btn active" onclick="selVis('grp-piso',this,'vis-s-piso')">Cerâmica</button>
+                <button class="vis-btn" onclick="selVis('grp-piso',this,'vis-s-piso')">Porcelanato</button>
+                <button class="vis-btn" onclick="selVis('grp-piso',this,'vis-s-piso')">Cimento</button>
+                <button class="vis-btn" onclick="selVis('grp-piso',this,'vis-s-piso')">Mármore/Granito</button>
+                <button class="vis-btn" onclick="selVis('grp-piso',this,'vis-s-piso')">Vinílico</button>
+                <button class="vis-btn" onclick="selVis('grp-piso',this,'vis-s-piso')">Misto</button>
+              </div>
+              <input type="hidden" id="vis-s-piso" value="cerâmica">
+            </div>
+
+            <!-- FORRO -->
+            <div style="margin-bottom:14px">
+              <div class="vis-label">Forro</div>
+              <div class="vis-btn-group" id="grp-forro">
+                <button class="vis-btn active" onclick="selVis('grp-forro',this,'vis-s-forro')">Toda forrada</button>
+                <button class="vis-btn" onclick="selVis('grp-forro',this,'vis-s-forro')">Parcialmente</button>
+                <button class="vis-btn" onclick="selVis('grp-forro',this,'vis-s-forro')">Sem forro</button>
+              </div>
+              <input type="hidden" id="vis-s-forro" value="toda forrada">
+            </div>
+
+            <!-- TIPO DE FORRO -->
+            <div style="margin-bottom:14px">
+              <div class="vis-label">Material do Forro</div>
+              <div class="vis-btn-group" id="grp-tipoforro">
+                <button class="vis-btn active" onclick="selVis('grp-tipoforro',this,'vis-s-tipoforro')">PVC</button>
+                <button class="vis-btn" onclick="selVis('grp-tipoforro',this,'vis-s-tipoforro')">Gesso</button>
+                <button class="vis-btn" onclick="selVis('grp-tipoforro',this,'vis-s-tipoforro')">Madeira</button>
+                <button class="vis-btn" onclick="selVis('grp-tipoforro',this,'vis-s-tipoforro')">Laje aparente</button>
+                <button class="vis-btn" onclick="selVis('grp-tipoforro',this,'vis-s-tipoforro')">Fibra mineral</button>
+              </div>
+              <input type="hidden" id="vis-s-tipoforro" value="PVC">
+            </div>
+
+            <!-- COBERTURA -->
+            <div style="margin-bottom:14px">
+              <div class="vis-label">Cobertura</div>
+              <div class="vis-btn-group" id="grp-cobertura">
+                <button class="vis-btn active" onclick="selVis('grp-cobertura',this,'vis-s-cobertura')">Telha cerâmica</button>
+                <button class="vis-btn" onclick="selVis('grp-cobertura',this,'vis-s-cobertura')">Fibrocimento</button>
+                <button class="vis-btn" onclick="selVis('grp-cobertura',this,'vis-s-cobertura')">Laje</button>
+                <button class="vis-btn" onclick="selVis('grp-cobertura',this,'vis-s-cobertura')">Metálica</button>
+                <button class="vis-btn" onclick="selVis('grp-cobertura',this,'vis-s-cobertura')">Mista</button>
+              </div>
+              <input type="hidden" id="vis-s-cobertura" value="telha cerâmica">
+            </div>
+
+            <!-- CÔMODOS -->
+            <div style="margin-bottom:14px">
+              <div class="vis-label">Cômodos</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div class="vis-counter"><span>🛋 Salas</span><div class="vis-cnt-ctrl"><button onclick="adjCnt('cnt-salas',-1)">−</button><span id="cnt-salas">1</span><button onclick="adjCnt('cnt-salas',1)">+</button></div></div>
+                <div class="vis-counter"><span>🛏 Quartos</span><div class="vis-cnt-ctrl"><button onclick="adjCnt('cnt-quartos',-1)">−</button><span id="cnt-quartos">2</span><button onclick="adjCnt('cnt-quartos',1)">+</button></div></div>
+                <div class="vis-counter"><span>🚿 Banheiros</span><div class="vis-cnt-ctrl"><button onclick="adjCnt('cnt-banheiros',-1)">−</button><span id="cnt-banheiros">1</span><button onclick="adjCnt('cnt-banheiros',1)">+</button></div></div>
+                <div class="vis-counter"><span>🍳 Cozinha</span><div class="vis-cnt-ctrl"><button onclick="adjCnt('cnt-cozinha',-1)">−</button><span id="cnt-cozinha">1</span><button onclick="adjCnt('cnt-cozinha',1)">+</button></div></div>
+                <div class="vis-counter"><span>🚗 Vagas</span><div class="vis-cnt-ctrl"><button onclick="adjCnt('cnt-vagas',-1)">−</button><span id="cnt-vagas">0</span><button onclick="adjCnt('cnt-vagas',1)">+</button></div></div>
+                <div class="vis-counter"><span>🏠 Outros</span><div class="vis-cnt-ctrl"><button onclick="adjCnt('cnt-outros',-1)">−</button><span id="cnt-outros">0</span><button onclick="adjCnt('cnt-outros',1)">+</button></div></div>
               </div>
             </div>
-            <div class="form-grid form-grid-3" style="margin-bottom:10px">
-              <div class="form-group"><label>Forro</label>
-                <select class="form-control" id="vis-s-forro" onchange="previewSimples()">
-                  <option value="toda forrada">toda forrada</option>
-                  <option value="parcialmente forrada">parcialmente forrada</option>
-                  <option value="sem forro">sem forro</option>
-                </select>
+
+            <!-- CONDOMÍNIO E COMPLEMENTO -->
+            <div class="form-grid form-grid-2" style="margin-bottom:6px">
+              <div class="form-group"><label>Condomínio / Residencial</label>
+                <input class="form-control" id="vis-s-cond" placeholder="Ex: Res. Legado 2000 (opcional)">
               </div>
-              <div class="form-group"><label>Tipo de Forro</label>
-                <select class="form-control" id="vis-s-tipoforro" onchange="previewSimples()">
-                  <option>PVC</option><option>gesso</option><option>madeira</option><option>laje aparente</option><option>fibra mineral</option>
-                </select>
-              </div>
-              <div class="form-group"><label>Piso</label>
-                <select class="form-control" id="vis-s-piso" onchange="previewSimples()">
-                  <option>cerâmica</option><option>porcelanato</option><option>cimento desempenado</option><option>mármore/granito</option><option>vinílico/laminado</option><option>misto</option>
-                </select>
+              <div class="form-group"><label>Complemento (opcional)</label>
+                <input class="form-control" id="vis-s-compl" placeholder="Ex: com área de lazer, piscina...">
               </div>
             </div>
-            <div class="form-grid form-grid-2" style="margin-bottom:10px">
-              <div class="form-group"><label>Nº de Unidades no Condomínio</label>
-                <input class="form-control" id="vis-s-unidades" placeholder="Ex: 24 (deixe em branco se não se aplica)" oninput="previewSimples()">
-              </div>
-              <div class="form-group"><label>Complemento livre (opcional)</label>
-                <input class="form-control" id="vis-s-compl" placeholder="Ex: com área de lazer, piscina..." oninput="previewSimples()">
-              </div>
-            </div>
-            <!-- PREVIEW DO TEXTO -->
-            <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px 16px;margin-top:4px">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                <div style="font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em">Prévia do texto gerado:</div>
-                <button class="btn btn-outline btn-sm" id="btn-ia-desc" onclick="gerarDescricaoIA()"
-                  style="font-size:11px;display:flex;align-items:center;gap:4px;padding:4px 10px;background:var(--navy);color:white;border-color:var(--navy)">
-                  🤖 Gerar Descrição com IA
-                </button>
-              </div>
-              <div id="vis-s-preview" style="font-size:13px;color:var(--gray-700);line-height:1.6;font-style:italic">Preencha os campos acima...</div>
+            <input type="hidden" id="vis-s-unidades" value="">
+
+            <!-- PRÉVIA -->
+            <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px 16px;margin-top:8px">
+              <div style="font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Prévia do texto gerado:</div>
+              <div id="vis-s-preview" style="font-size:13px;color:var(--gray-700);line-height:1.6;font-style:italic">Selecione as opções acima...</div>
             </div>
           </div>
         </div>
 
-        <!-- QUADRO DE ÁREAS SIMPLES -->
+        <!-- QUADRO DE ÁREAS -->
         <div class="card" style="margin-bottom:14px">
           <div class="card-header"><span class="card-title">3. Quadro de Áreas</span></div>
           <div class="card-body">
@@ -567,19 +625,24 @@ select.form-control{cursor:pointer}
           </div>
         </div>
 
-        <!-- CONSERVAÇÃO SIMPLES -->
+        <!-- CONSERVAÇÃO -->
         <div class="card" style="margin-bottom:14px">
           <div class="card-header"><span class="card-title">4. Conservação</span></div>
           <div class="card-body">
-            <div class="form-grid form-grid-2">
-              <div class="form-group"><label>Estado de Conservação</label>
-                <select class="form-control" id="vis-s-conserv">
-                  <option>ótimo</option><option>bom</option><option>regular</option><option>precário</option>
-                </select>
+            <!-- ESTADO -->
+            <div style="margin-bottom:14px">
+              <div class="vis-label">Estado de Conservação</div>
+              <div class="vis-btn-group" id="grp-conserv">
+                <button class="vis-btn" onclick="selVis('grp-conserv',this,'vis-s-conserv')">Ótimo</button>
+                <button class="vis-btn active" onclick="selVis('grp-conserv',this,'vis-s-conserv')">Bom</button>
+                <button class="vis-btn" onclick="selVis('grp-conserv',this,'vis-s-conserv')">Regular</button>
+                <button class="vis-btn" onclick="selVis('grp-conserv',this,'vis-s-conserv')">Precário</button>
               </div>
-              <div class="form-group"><label>Ano de Construção (aprox.)</label>
-                <input class="form-control" id="vis-s-ano" placeholder="Ex: 2005" type="number" min="1900" max="2026">
-              </div>
+              <input type="hidden" id="vis-s-conserv" value="bom">
+            </div>
+            <div class="form-group">
+              <label>Ano de Construção (aprox.)</label>
+              <input class="form-control" id="vis-s-ano" placeholder="Ex: 2005" type="number" min="1900" max="2030">
             </div>
           </div>
         </div>
@@ -634,20 +697,7 @@ select.form-control{cursor:pointer}
 
       </div><!-- fim bloco-completo -->
 
-      <!-- FOTOS (comum) -->
-      <div class="card" style="margin-bottom:14px">
-        <div class="card-header"><span class="card-title">📷 Fotos do Imóvel</span><span style="font-size:11px;color:var(--gray-400)">Carimbo com data, hora e endereço</span></div>
-        <div class="card-body">
-          <input type="file" id="vis-fotos-input" accept="image/*" capture="environment" style="display:none" onchange="capturarFotoVistoria(event)">
-          <input type="file" id="vis-galeria-input" accept="image/*" multiple style="display:none" onchange="capturarFotoVistoria(event)">
-          <canvas id="vis-canvas" style="display:none"></canvas>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-            <button class="btn btn-outline" onclick="document.getElementById('vis-fotos-input').click()" style="display:flex;align-items:center;gap:6px">📷 Fotografar</button>
-            <button class="btn btn-outline" onclick="document.getElementById('vis-galeria-input').click()" style="display:flex;align-items:center;gap:6px">🖼 Da Galeria</button>
-          </div>
-          <div id="vis-fotos-preview" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:4px"></div>
-        </div>
-      </div>
+
 
     </div>
 
@@ -2752,25 +2802,64 @@ function setModoVistoria(modo){
   document.getElementById('bloco-completo').style.display = modo==='completo' ? '' : 'none';
 }
 
+// ── Vistoria: selecionar botão ──
+function selVis(grpId, btn, hiddenId){
+  document.querySelectorAll('#'+grpId+' .vis-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const hid = document.getElementById(hiddenId);
+  if(hid) hid.value = btn.textContent.trim().toLowerCase();
+  previewSimples();
+}
+
+// ── Vistoria: contador de cômodos ──
+function adjCnt(id, delta){
+  const el = document.getElementById(id);
+  if(!el) return;
+  const v = Math.max(0, parseInt(el.textContent||'0') + delta);
+  el.textContent = v;
+  previewSimples();
+}
+
+function getCnt(id){ const el=document.getElementById(id); return el?parseInt(el.textContent||'0'):0; }
+
 function previewSimples(){
-  const tipo    = document.getElementById('vis-s-tipo')?.value     || 'casa';
-  const forro   = document.getElementById('vis-s-forro')?.value    || 'toda forrada';
-  const tforro  = document.getElementById('vis-s-tipoforro')?.value|| 'PVC';
-  const piso    = document.getElementById('vis-s-piso')?.value     || 'cerâmica';
-  const cond    = document.getElementById('vis-s-cond')?.value     || '';
-  const unid    = document.getElementById('vis-s-unidades')?.value || '';
-  const compl   = document.getElementById('vis-s-compl')?.value    || '';
-  const pav     = document.getElementById('vis-pav')?.value        || '1 (Térreo)';
+  const tipo   = document.getElementById('vis-s-tipo')?.value     || 'casa';
+  const forro  = document.getElementById('vis-s-forro')?.value    || 'toda forrada';
+  const tforro = document.getElementById('vis-s-tipoforro')?.value || 'PVC';
+  const piso   = document.getElementById('vis-s-piso')?.value     || 'cerâmica';
+  const cobVal = document.getElementById('vis-s-cobertura')?.value || 'telha cerâmica';
+  const cond   = document.getElementById('vis-s-cond')?.value     || '';
+  const compl  = document.getElementById('vis-s-compl')?.value    || '';
+  const pav    = document.getElementById('vis-pav')?.value        || '1 (Térreo)';
+  const salas  = getCnt('cnt-salas'), quartos = getCnt('cnt-quartos');
+  const banh   = getCnt('cnt-banheiros'), coz = getCnt('cnt-cozinha');
+  const vagas  = getCnt('cnt-vagas'), outros = getCnt('cnt-outros');
 
-  const forroTxt = forro === 'sem forro' ? 'sem forro' : `${forro} em ${tforro}`;
-  const condTxt  = cond  ? `, integrante do ${cond}${unid ? ', composto de ' + unid + ' unidades' : ''}` : '';
-  const complTxt = compl ? `, ${compl}` : '';
+  const forroTxt = forro === 'sem forro' ? 'sem forro' : forro + ' em ' + tforro;
+  const condTxt  = cond ? ', integrante do ' + cond : '';
+  const complTxt = compl ? ', ' + compl : '';
   const pavNum   = pav.split(' ')[0];
-  const pavTxt   = pavNum === '1' ? 'com 1 pavimento' : `com ${pavNum} pavimentos`;
+  const pavTxt   = pavNum === '1' ? 'com 1 pavimento' : 'com ' + pavNum + ' pavimentos';
 
-  const texto = `${tipo.charAt(0).toUpperCase()+tipo.slice(1)} ${pavTxt}, ${forroTxt}, com piso em ${piso}${condTxt}${complTxt}.`;
+  // Montar lista de cômodos
+  const comodos = [];
+  if(salas)   comodos.push(salas   + (salas===1   ? ' sala'     : ' salas'));
+  if(quartos) comodos.push(quartos + (quartos===1 ? ' quarto'   : ' quartos'));
+  if(banh)    comodos.push(banh    + (banh===1    ? ' banheiro' : ' banheiros'));
+  if(coz)     comodos.push(coz     + (coz===1     ? ' cozinha'  : ' cozinhas'));
+  if(vagas)   comodos.push(vagas   + (vagas===1   ? ' vaga de garagem' : ' vagas de garagem'));
+  if(outros)  comodos.push(outros  + ' ambiente' + (outros===1 ? '' : 's') + ' auxiliar' + (outros===1 ? '' : 'es'));
+  const comodTxt = comodos.length ? ', com ' + comodos.join(', ') : '';
+
+  const texto = tipo.charAt(0).toUpperCase()+tipo.slice(1) + ' ' + pavTxt
+    + comodTxt
+    + ', cobertura em ' + cobVal
+    + ', ' + forroTxt
+    + ', com piso em ' + piso
+    + condTxt + complTxt + '.';
+
   const el = document.getElementById('vis-s-preview');
-  if(el) el.textContent = texto;
+  if(el){ el.textContent = texto; el.style.fontStyle='normal'; el.style.color='var(--navy)'; }
 }
 
 function calcAreaSimples(){
@@ -2899,17 +2988,28 @@ function calcTotalArea(){
 function limparVistoria(){
   if(!confirm('Limpar todos os dados da vistoria?')) return;
   ['vis-prop','vis-cpf','vis-end','vis-num','vis-bairro','vis-cep','vis-iptu','vis-intim',
-   'vis-ano','vis-obs','vis-s-cond','vis-s-unidades','vis-s-compl','vis-s-area-cob','vis-s-area-desc','vis-s-ano']
+   'vis-obs','vis-s-cond','vis-s-compl','vis-s-area-cob','vis-s-area-desc','vis-s-ano']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   const pa = document.getElementById('vis-s-preview');
-  if(pa) pa.textContent='Preencha os campos acima...';
+  if(pa){ pa.textContent='Selecione as opções acima...'; pa.style.fontStyle='italic'; pa.style.color='var(--gray-700)'; }
   const st = document.getElementById('vis-s-total');
   if(st) st.textContent='0,00 m²';
-  document.getElementById('lista-ambientes').innerHTML='';
-  document.getElementById('vis-materiais-form').innerHTML='';
-  document.getElementById('vis-fotos-preview').innerHTML='';
   const vta = document.getElementById('vis-total-area');
   if(vta) vta.textContent='0,00 m²';
+  // Resetar botões seletores — primeiro ativo de cada grupo
+  ['grp-tipo','grp-piso','grp-forro','grp-tipoforro','grp-cobertura','grp-conserv'].forEach(g=>{
+    const btns=document.querySelectorAll('#'+g+' .vis-btn');
+    if(btns.length){ btns.forEach(b=>b.classList.remove('active')); btns[0].classList.add('active'); }
+  });
+  // Resetar contadores de cômodos
+  const defs={salas:1,quartos:2,banheiros:1,cozinha:1,vagas:0,outros:0};
+  Object.entries(defs).forEach(([k,v])=>{ const el=document.getElementById('cnt-'+k); if(el)el.textContent=v; });
+  // Resetar hidden inputs
+  [['vis-s-tipo','casa'],['vis-s-piso','cerâmica'],['vis-s-forro','toda forrada'],
+   ['vis-s-tipoforro','pvc'],['vis-s-cobertura','telha cerâmica'],['vis-s-conserv','bom']]
+   .forEach(([id,v])=>{ const el=document.getElementById(id); if(el)el.value=v; });
+  document.getElementById('lista-ambientes')?.remove();
+  document.getElementById('vis-materiais-form')?.remove();
   initVistoria();
 }
 
@@ -3076,6 +3176,9 @@ function gerarMemorialWord(){
     uso:    document.getElementById('vis-uso')?.value    || 'Residencial',
     pav:    document.getElementById('vis-pav')?.value    || '1 (Térreo)',
   };
+
+  // Pegar texto da prévia como descrição da edificação
+  const descEdif = document.getElementById('vis-s-preview')?.textContent?.trim() || '';
 
   const hoje    = new Date();
   const dataFmt = hoje.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
