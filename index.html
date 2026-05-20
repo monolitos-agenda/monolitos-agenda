@@ -598,6 +598,21 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
                 <input class="form-control" id="vis-s-unidades" placeholder="Ex: 24" oninput="previewSimples()" type="number" min="2">
               </div>
             </div>
+            <!-- ÁREA COMUM E FRAÇÃO IDEAL — aparecem para tipos condominiais -->
+            <div id="bloco-area-cond" style="display:none;margin-bottom:10px;padding:12px 14px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius)">
+              <div style="font-size:10.5px;font-weight:600;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">
+                📐 Dados do Condomínio
+              </div>
+              <div class="form-grid form-grid-2">
+                <div class="form-group"><label>Área Comum (m²) <span style="font-weight:400;color:var(--gray-400)">proporcional à unidade</span></label>
+                  <input class="form-control" type="number" id="vis-s-area-comum" placeholder="Ex: 18,50" min="0" step="0.01">
+                </div>
+                <div class="form-group"><label>Fração Ideal</label>
+                  <input class="form-control" id="vis-s-fracao" placeholder="Ex: 1/24 ou 0,041667">
+                </div>
+              </div>
+            </div>
+
             <div class="form-group" style="margin-bottom:10px">
               <label>Complemento <span style="font-weight:400;color:var(--gray-400)">(opcional)</span></label>
               <input class="form-control" id="vis-s-compl" placeholder="Ex: com área de lazer, piscina..." oninput="previewSimples()">
@@ -622,20 +637,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
                 <input class="form-control" type="number" id="vis-s-area-desc" placeholder="Ex: 20,00 (ou 0)" min="0" step="0.01" oninput="calcAreaSimples()">
               </div>
             </div>
-            <!-- ÁREA COMUM E FRAÇÃO IDEAL — aparecem quando há condomínio -->
-            <div id="bloco-area-cond" style="display:none;margin-bottom:10px">
-              <div style="font-size:10.5px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;margin-top:4px;border-top:1px solid var(--gray-100);padding-top:10px">
-                Dados do Condomínio
-              </div>
-              <div class="form-grid form-grid-2">
-                <div class="form-group"><label>Área Comum (m²) <span style="font-weight:400;color:var(--gray-400)">proporcional à unidade</span></label>
-                  <input class="form-control" type="number" id="vis-s-area-comum" placeholder="Ex: 18,50" min="0" step="0.01" oninput="calcAreaSimples()">
-                </div>
-                <div class="form-group"><label>Fração Ideal</label>
-                  <input class="form-control" id="vis-s-fracao" placeholder="Ex: 1/24 ou 0,041667">
-                </div>
-              </div>
-            </div>
+
             <div style="display:flex;justify-content:flex-end;align-items:center;gap:10px;padding-top:10px;border-top:1px solid var(--gray-100)">
               <span style="font-size:12px;color:var(--gray-500)">Área Total Construída:</span>
               <strong id="vis-s-total" style="color:var(--navy);font-size:14px">0,00 m²</strong>
@@ -3470,24 +3472,25 @@ async function gerarMemorialWord(){
     { align: AlignmentType.RIGHT, before: 360, after: 720 }
   );
 
-  const linhaAssin = new Paragraph({
-    children: [txtRun('', { size: 22 })],
-    spacing: { before: 0, after: 80 },
-    border: { top: { style: BorderStyle.SINGLE, size: 6, color: NAVY, space: 2 } },
-  });
-
-  const nomeAssin  = para([txtRun('José Airton Santiago Pereira', { bold: true, size: 22, color: NAVY })], { after: 40 });
-  const cargoAssin = para([txtRun('Gestor Ambiental e Técnico Agrimensor', { size: 20 })], { after: 40 });
-  const rnpAssin   = para([txtRun('CFT/RNP nº 22020241315', { size: 20 })], { after: 0 });
-
-  // Bloco de assinatura centralizado
+  // Assinatura centralizada — linha colada ao nome, sem espaço
   const tblAssin = new Table({
-    width: { size: 5000, type: WidthType.DXA },
-    columnWidths: [5000],
+    width: { size: W, type: WidthType.DXA },
+    columnWidths: [W],
     rows: [new TableRow({ children: [new TableCell({
-      width: { size: 5000, type: WidthType.DXA },
+      width: { size: W, type: WidthType.DXA },
       borders: noBorders,
-      children: [linhaAssin, nomeAssin, cargoAssin, rnpAssin],
+      margins: { top: 0, bottom: 0, left: 0, right: 0 },
+      children: [
+        new Paragraph({
+          children: [txtRun('', { size: 22 })],
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 0, after: 0 },
+          border: { top: { style: BorderStyle.SINGLE, size: 6, color: NAVY, space: 1 } },
+        }),
+        para([txtRun('José Airton Santiago Pereira', { bold: true, size: 22, color: NAVY })], { align: AlignmentType.CENTER, after: 40, before: 0 }),
+        para([txtRun('Gestor Ambiental e Técnico Agrimensor', { size: 20 })], { align: AlignmentType.CENTER, after: 40 }),
+        para([txtRun('CFT/RNP nº 22020241315', { size: 20 })], { align: AlignmentType.CENTER, after: 0 }),
+      ],
     })]})],
   });
 
@@ -3516,8 +3519,7 @@ async function gerarMemorialWord(){
     consid,
     dataLinha,
     tblAssin,
-    emptyLine(), emptyLine(),
-    rodape,
+
   ];
 
   const doc = new Document({
