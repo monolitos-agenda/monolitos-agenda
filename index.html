@@ -2841,8 +2841,10 @@ function selVis(grpId, btn, hiddenId){
   // Mostrar/ocultar área comum e fração ideal
   if(grpId === 'grp-tipo'){
     const bloco = document.getElementById('bloco-area-cond');
-    const cond = ['apartamento','prédio res.','prédio com.','sala comercial'].includes(val);
-    if(bloco) bloco.style.display = cond ? 'block' : 'none';
+    // Normaliza para comparação segura
+    const valNorm = val.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+    const tiposCond = ['apartamento','predio res.','predio com.','sala comercial'];
+    if(bloco) bloco.style.display = tiposCond.includes(valNorm) ? 'block' : 'none';
   }
   previewSimples();
 }
@@ -3287,12 +3289,12 @@ async function gerarMemorialWord(){
         new TableCell({
           width: { size: W, type: WidthType.DXA },
           shading: { fill: NAVY, type: ShadingType.CLEAR },
-          margins: { top: 180, bottom: 180, left: 280, right: 280 },
+          margins: { top: 200, bottom: 200, left: 400, right: 400 },
           borders: noBorders,
           children: [
-            para([txtRun('MONÓLITOS TOPOGRAFIA', { size: 32, bold: true, color: GOLD })], { after: 40 }),
-            para([txtRun('Topografia, Georreferenciamento e Regularização de Imóveis', { size: 18, color: WHITE })], { after: 40 }),
-            para([txtRun('Resp. Técnico: José Airton Santiago Pereira  |  CFT/RNP nº 22020241315', { size: 17, bold: true, color: GOLD })], { after: 0 }),
+            para([txtRun('MONÓLITOS TOPOGRAFIA', { size: 32, bold: true, color: GOLD })], { align: AlignmentType.CENTER, after: 40 }),
+            para([txtRun('Topografia, Georreferenciamento e Regularização de Imóveis', { size: 18, color: WHITE })], { align: AlignmentType.CENTER, after: 40 }),
+            para([txtRun('Resp. Técnico: José Airton Santiago Pereira | CFT/RNP nº 22020241315', { size: 17, bold: true, color: GOLD })], { align: AlignmentType.CENTER, after: 0 }),
           ],
         })
       ]}),
@@ -3491,13 +3493,13 @@ async function gerarMemorialWord(){
 
   // ── RODAPÉ ───────────────────────────────────────────────────────────────
   const rodape = new Paragraph({
-    children: [txtRun(
-      'F de Oliveira Topografia e Regularização de Imóveis Ltda  –  CNPJ 60.694.439/0001-93  |  Email: monolitostopografia@gmail.com  |  Telezap: (85) 99976.5111',
-      { size: 16, italic: true, color: GRAY }
-    )],
+    children: [
+      txtRun('F de Oliveira Topografia e Regularização de Imóveis Ltda', { size: 16, italic: true, color: GRAY }),
+      txtRun('  –  CNPJ 60.694.439/0001-93  |  Email: monolitostopografia@gmail.com  |  Telezap: (85) 99976.5111', { size: 16, italic: true, color: GRAY }),
+    ],
     alignment: AlignmentType.CENTER,
-    spacing: { before: 0, after: 0 },
-    border: { top: { style: BorderStyle.SINGLE, size: 4, color: 'CCCCCC', space: 2 } },
+    spacing: { before: 120, after: 0 },
+    border: { top: { style: BorderStyle.SINGLE, size: 4, color: 'CCCCCC', space: 4 } },
   });
 
   // ── MONTAR DOCUMENTO ─────────────────────────────────────────────────────
