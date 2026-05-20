@@ -117,18 +117,7 @@ select.form-control{cursor:pointer}
 .custo-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-100)}
 .custo-item:last-child{border-bottom:none}
 .garantia-banner{background:var(--navy);border-radius:var(--radius);padding:11px 14px;display:flex;align-items:flex-start;gap:9px;margin-top:10px}
-/* ── Vistoria botões seletores ── */
-  .vis-label{font-size:10.5px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
-  .vis-btn-group{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:2px}
-  .vis-btn{padding:9px 16px;border-radius:20px;border:1.5px solid var(--gray-200);background:white;font-size:13px;color:var(--gray-600);cursor:pointer;transition:all .15s;font-weight:500;line-height:1}
-  .vis-btn.active{background:var(--navy);color:white;border-color:var(--navy)}
-  .vis-btn:active{transform:scale(.96)}
-  .vis-counter{display:flex;justify-content:space-between;align-items:center;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--gray-700)}
-  .vis-cnt-ctrl{display:flex;align-items:center;gap:0}
-  .vis-cnt-ctrl button{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--gray-200);background:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--navy);font-weight:600;line-height:1;padding:0}
-  .vis-cnt-ctrl span{min-width:32px;text-align:center;font-size:16px;font-weight:600;color:var(--navy)}
-  .vis-cnt-ctrl button:active{transform:scale(.9)}
-  .garantia-text{color:rgba(255,255,255,.88);font-size:11px;line-height:1.55}
+.garantia-text{color:rgba(255,255,255,.88);font-size:11px;line-height:1.55}
 .garantia-text strong{color:var(--gold-light)}
 .obs-fixa{background:var(--amber-light);border:1px solid #dbb96644;border-radius:var(--radius);padding:9px 13px;margin-top:8px;font-size:11px;color:var(--amber);line-height:1.6;display:flex;gap:7px;align-items:flex-start}
 .banco-display{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px 14px}
@@ -175,6 +164,8 @@ select.form-control{cursor:pointer}
 .tipo-btn{flex:1;padding:7px 10px;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:500;color:var(--gray-500);background:none;transition:all .2s;text-align:center}
 .tipo-btn.active{background:white;color:var(--navy);box-shadow:0 1px 4px rgba(15,34,64,.12);font-weight:600}
 </style>
+<!-- docx.js para geração de Word nativo -->
+<script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -504,104 +495,62 @@ select.form-control{cursor:pointer}
       <!-- MODO SIMPLES -->
       <div id="bloco-simples">
 
-        <!-- DESCRIÇÃO COM BOTÕES SELETORES -->
+        <!-- DESCRIÇÃO TEXTUAL -->
         <div class="card" style="margin-bottom:14px">
-          <div class="card-header"><span class="card-title">2. Descrição da Edificação</span></div>
+          <div class="card-header"><span class="card-title">2. Descrição da Edificação</span><span style="font-size:11px;color:var(--gray-400)">Preencha os campos — o texto é gerado automaticamente</span></div>
           <div class="card-body">
-
-            <div style="margin-bottom:14px">
-              <div class="vis-label">Tipo de Edificação</div>
-              <div class="vis-btn-group" id="grp-tipo">
-                <button class="vis-btn active" onclick="selVis('grp-tipo',this,'vis-s-tipo')">Casa</button>
-                <button class="vis-btn" onclick="selVis('grp-tipo',this,'vis-s-tipo')">Apartamento</button>
-                <button class="vis-btn" onclick="selVis('grp-tipo',this,'vis-s-tipo')">Prédio Res.</button>
-                <button class="vis-btn" onclick="selVis('grp-tipo',this,'vis-s-tipo')">Prédio Com.</button>
-                <button class="vis-btn" onclick="selVis('grp-tipo',this,'vis-s-tipo')">Sala Comercial</button>
-                <button class="vis-btn" onclick="selVis('grp-tipo',this,'vis-s-tipo')">Galpão</button>
-              </div>
-              <input type="hidden" id="vis-s-tipo" value="casa">
-            </div>
-
-            <div style="margin-bottom:14px">
-              <div class="vis-label">Piso</div>
-              <div class="vis-btn-group" id="grp-piso">
-                <button class="vis-btn active" onclick="selVis('grp-piso',this,'vis-s-piso')">Cerâmica</button>
-                <button class="vis-btn" onclick="selVis('grp-piso',this,'vis-s-piso')">Porcelanato</button>
-                <button class="vis-btn" onclick="selVis('grp-piso',this,'vis-s-piso')">Cimento</button>
-                <button class="vis-btn" onclick="selVis('grp-piso',this,'vis-s-piso')">Mármore/Granito</button>
-                <button class="vis-btn" onclick="selVis('grp-piso',this,'vis-s-piso')">Vinílico</button>
-                <button class="vis-btn" onclick="selVis('grp-piso',this,'vis-s-piso')">Misto</button>
-              </div>
-              <input type="hidden" id="vis-s-piso" value="cerâmica">
-            </div>
-
-            <div style="margin-bottom:14px">
-              <div class="vis-label">Forro</div>
-              <div class="vis-btn-group" id="grp-forro">
-                <button class="vis-btn active" onclick="selVis('grp-forro',this,'vis-s-forro')">Toda forrada</button>
-                <button class="vis-btn" onclick="selVis('grp-forro',this,'vis-s-forro')">Parcialmente</button>
-                <button class="vis-btn" onclick="selVis('grp-forro',this,'vis-s-forro')">Sem forro</button>
-              </div>
-              <input type="hidden" id="vis-s-forro" value="toda forrada">
-            </div>
-
-            <div style="margin-bottom:14px">
-              <div class="vis-label">Material do Forro</div>
-              <div class="vis-btn-group" id="grp-tipoforro">
-                <button class="vis-btn active" onclick="selVis('grp-tipoforro',this,'vis-s-tipoforro')">PVC</button>
-                <button class="vis-btn" onclick="selVis('grp-tipoforro',this,'vis-s-tipoforro')">Gesso</button>
-                <button class="vis-btn" onclick="selVis('grp-tipoforro',this,'vis-s-tipoforro')">Madeira</button>
-                <button class="vis-btn" onclick="selVis('grp-tipoforro',this,'vis-s-tipoforro')">Laje aparente</button>
-                <button class="vis-btn" onclick="selVis('grp-tipoforro',this,'vis-s-tipoforro')">Fibra mineral</button>
-              </div>
-              <input type="hidden" id="vis-s-tipoforro" value="PVC">
-            </div>
-
-            <div style="margin-bottom:14px">
-              <div class="vis-label">Cobertura</div>
-              <div class="vis-btn-group" id="grp-cobertura">
-                <button class="vis-btn active" onclick="selVis('grp-cobertura',this,'vis-s-cobertura')">Telha cerâmica</button>
-                <button class="vis-btn" onclick="selVis('grp-cobertura',this,'vis-s-cobertura')">Fibrocimento</button>
-                <button class="vis-btn" onclick="selVis('grp-cobertura',this,'vis-s-cobertura')">Laje</button>
-                <button class="vis-btn" onclick="selVis('grp-cobertura',this,'vis-s-cobertura')">Metálica</button>
-                <button class="vis-btn" onclick="selVis('grp-cobertura',this,'vis-s-cobertura')">Mista</button>
-              </div>
-              <input type="hidden" id="vis-s-cobertura" value="telha cerâmica">
-            </div>
-
-            <div style="margin-bottom:14px">
-              <div class="vis-label">Cômodos</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <div class="vis-counter"><span>🛋 Salas</span><div class="vis-cnt-ctrl"><button onclick="adjCnt('cnt-salas',-1)">−</button><span id="cnt-salas">1</span><button onclick="adjCnt('cnt-salas',1)">+</button></div></div>
-                <div class="vis-counter"><span>🛏 Quartos</span><div class="vis-cnt-ctrl"><button onclick="adjCnt('cnt-quartos',-1)">−</button><span id="cnt-quartos">2</span><button onclick="adjCnt('cnt-quartos',1)">+</button></div></div>
-                <div class="vis-counter"><span>🚿 Banheiros</span><div class="vis-cnt-ctrl"><button onclick="adjCnt('cnt-banheiros',-1)">−</button><span id="cnt-banheiros">1</span><button onclick="adjCnt('cnt-banheiros',1)">+</button></div></div>
-                <div class="vis-counter"><span>🍳 Cozinha</span><div class="vis-cnt-ctrl"><button onclick="adjCnt('cnt-cozinha',-1)">−</button><span id="cnt-cozinha">1</span><button onclick="adjCnt('cnt-cozinha',1)">+</button></div></div>
-                <div class="vis-counter"><span>🚗 Vagas</span><div class="vis-cnt-ctrl"><button onclick="adjCnt('cnt-vagas',-1)">−</button><span id="cnt-vagas">0</span><button onclick="adjCnt('cnt-vagas',1)">+</button></div></div>
-                <div class="vis-counter"><span>🏠 Outros</span><div class="vis-cnt-ctrl"><button onclick="adjCnt('cnt-outros',-1)">−</button><span id="cnt-outros">0</span><button onclick="adjCnt('cnt-outros',1)">+</button></div></div>
-              </div>
-            </div>
-
             <div class="form-grid form-grid-2" style="margin-bottom:10px">
+              <div class="form-group"><label>Tipo da Edificação</label>
+                <select class="form-control" id="vis-s-tipo" onchange="previewSimples()">
+                  <option>casa</option><option>apartamento</option><option>prédio residencial</option><option>prédio comercial</option><option>sala comercial</option><option>galpão</option><option>barracão</option>
+                </select>
+              </div>
               <div class="form-group"><label>Condomínio / Residencial (se houver)</label>
-                <input class="form-control" id="vis-s-cond" placeholder="Ex: Res. Legado 2000 (opcional)" oninput="previewSimples()">
-              </div>
-              <div class="form-group"><label>Nº de Unidades <span style="font-weight:400;color:var(--gray-400)">(se condomínio)</span></label>
-                <input class="form-control" id="vis-s-unidades" placeholder="Ex: 24" oninput="previewSimples()" type="number" min="2">
+                <input class="form-control" id="vis-s-cond" placeholder="Ex: Residencial Legado 2000" oninput="previewSimples()">
               </div>
             </div>
-            <div class="form-group" style="margin-bottom:10px">
-              <label>Complemento <span style="font-weight:400;color:var(--gray-400)">(opcional)</span></label>
-              <input class="form-control" id="vis-s-compl" placeholder="Ex: com área de lazer, piscina..." oninput="previewSimples()">
+            <div class="form-grid form-grid-3" style="margin-bottom:10px">
+              <div class="form-group"><label>Forro</label>
+                <select class="form-control" id="vis-s-forro" onchange="previewSimples()">
+                  <option value="toda forrada">toda forrada</option>
+                  <option value="parcialmente forrada">parcialmente forrada</option>
+                  <option value="sem forro">sem forro</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Tipo de Forro</label>
+                <select class="form-control" id="vis-s-tipoforro" onchange="previewSimples()">
+                  <option>PVC</option><option>gesso</option><option>madeira</option><option>laje aparente</option><option>fibra mineral</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Piso</label>
+                <select class="form-control" id="vis-s-piso" onchange="previewSimples()">
+                  <option>cerâmica</option><option>porcelanato</option><option>cimento desempenado</option><option>mármore/granito</option><option>vinílico/laminado</option><option>misto</option>
+                </select>
+              </div>
             </div>
-
+            <div class="form-grid form-grid-2" style="margin-bottom:10px">
+              <div class="form-group"><label>Nº de Unidades no Condomínio</label>
+                <input class="form-control" id="vis-s-unidades" placeholder="Ex: 24 (deixe em branco se não se aplica)" oninput="previewSimples()">
+              </div>
+              <div class="form-group"><label>Complemento livre (opcional)</label>
+                <input class="form-control" id="vis-s-compl" placeholder="Ex: com área de lazer, piscina..." oninput="previewSimples()">
+              </div>
+            </div>
+            <!-- PREVIEW DO TEXTO -->
             <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px 16px;margin-top:4px">
-              <div style="font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Prévia do texto gerado:</div>
-              <div id="vis-s-preview" style="font-size:13px;color:var(--gray-700);line-height:1.6;font-style:italic">Selecione as opções acima...</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <div style="font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em">Prévia do texto gerado:</div>
+                <button class="btn btn-outline btn-sm" id="btn-ia-desc" onclick="gerarDescricaoIA()"
+                  style="font-size:11px;display:flex;align-items:center;gap:4px;padding:4px 10px;background:var(--navy);color:white;border-color:var(--navy)">
+                  🤖 Gerar Descrição com IA
+                </button>
+              </div>
+              <div id="vis-s-preview" style="font-size:13px;color:var(--gray-700);line-height:1.6;font-style:italic">Preencha os campos acima...</div>
             </div>
           </div>
         </div>
 
-        <!-- QUADRO DE ÁREAS -->
+        <!-- QUADRO DE ÁREAS SIMPLES -->
         <div class="card" style="margin-bottom:14px">
           <div class="card-header"><span class="card-title">3. Quadro de Áreas</span></div>
           <div class="card-body">
@@ -620,23 +569,19 @@ select.form-control{cursor:pointer}
           </div>
         </div>
 
-        <!-- CONSERVAÇÃO -->
+        <!-- CONSERVAÇÃO SIMPLES -->
         <div class="card" style="margin-bottom:14px">
           <div class="card-header"><span class="card-title">4. Conservação</span></div>
           <div class="card-body">
-            <div style="margin-bottom:14px">
-              <div class="vis-label">Estado de Conservação</div>
-              <div class="vis-btn-group" id="grp-conserv">
-                <button class="vis-btn" onclick="selVis('grp-conserv',this,'vis-s-conserv')">Ótimo</button>
-                <button class="vis-btn active" onclick="selVis('grp-conserv',this,'vis-s-conserv')">Bom</button>
-                <button class="vis-btn" onclick="selVis('grp-conserv',this,'vis-s-conserv')">Regular</button>
-                <button class="vis-btn" onclick="selVis('grp-conserv',this,'vis-s-conserv')">Precário</button>
+            <div class="form-grid form-grid-2">
+              <div class="form-group"><label>Estado de Conservação</label>
+                <select class="form-control" id="vis-s-conserv">
+                  <option>ótimo</option><option>bom</option><option>regular</option><option>precário</option>
+                </select>
               </div>
-              <input type="hidden" id="vis-s-conserv" value="bom">
-            </div>
-            <div class="form-group">
-              <label>Ano de Construção (aprox.)</label>
-              <input class="form-control" id="vis-s-ano" placeholder="Ex: 2005" type="number" min="1900" max="2030">
+              <div class="form-group"><label>Ano de Construção (aprox.)</label>
+                <input class="form-control" id="vis-s-ano" placeholder="Ex: 2005" type="number" min="1900" max="2026">
+              </div>
             </div>
           </div>
         </div>
@@ -2809,63 +2754,25 @@ function setModoVistoria(modo){
   document.getElementById('bloco-completo').style.display = modo==='completo' ? '' : 'none';
 }
 
-// Vistoria: selecionar botão
-function selVis(grpId, btn, hiddenId){
-  document.querySelectorAll('#'+grpId+' .vis-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  const hid = document.getElementById(hiddenId);
-  if(hid) hid.value = btn.textContent.trim().toLowerCase();
-  previewSimples();
-}
-
-// Vistoria: contador de cômodos
-function adjCnt(id, delta){
-  const el = document.getElementById(id);
-  if(!el) return;
-  const v = Math.max(0, parseInt(el.textContent||'0') + delta);
-  el.textContent = v;
-  previewSimples();
-}
-function getCnt(id){ const el=document.getElementById(id); return el?parseInt(el.textContent||'0'):0; }
-
 function previewSimples(){
-  const tipo   = document.getElementById('vis-s-tipo')?.value      || 'casa';
-  const forro  = document.getElementById('vis-s-forro')?.value     || 'toda forrada';
-  const tforro = document.getElementById('vis-s-tipoforro')?.value || 'PVC';
-  const piso   = document.getElementById('vis-s-piso')?.value      || 'cerâmica';
-  const cobVal = document.getElementById('vis-s-cobertura')?.value || 'telha cerâmica';
-  const cond   = document.getElementById('vis-s-cond')?.value      || '';
-  const unid   = document.getElementById('vis-s-unidades')?.value  || '';
-  const compl  = document.getElementById('vis-s-compl')?.value     || '';
-  const pav    = document.getElementById('vis-pav')?.value         || '1 (Térreo)';
-  const salas  = getCnt('cnt-salas'),  quartos = getCnt('cnt-quartos');
-  const banh   = getCnt('cnt-banheiros'), coz  = getCnt('cnt-cozinha');
-  const vagas  = getCnt('cnt-vagas'),  outros  = getCnt('cnt-outros');
+  const tipo    = document.getElementById('vis-s-tipo')?.value     || 'casa';
+  const forro   = document.getElementById('vis-s-forro')?.value    || 'toda forrada';
+  const tforro  = document.getElementById('vis-s-tipoforro')?.value|| 'PVC';
+  const piso    = document.getElementById('vis-s-piso')?.value     || 'cerâmica';
+  const cond    = document.getElementById('vis-s-cond')?.value     || '';
+  const unid    = document.getElementById('vis-s-unidades')?.value || '';
+  const compl   = document.getElementById('vis-s-compl')?.value    || '';
+  const pav     = document.getElementById('vis-pav')?.value        || '1 (Térreo)';
 
-  const pavNum = pav.split(' ')[0];
-  const pavTxt = pavNum === '1' ? 'com 1 pavimento' : 'com ' + pavNum + ' pavimentos';
-  const forroDesc = forro === 'sem forro' ? 'sem forro' : 'forro ' + forro + ' em ' + tforro;
-  const condTxt   = cond ? ', integrante do ' + cond + (unid ? ', com ' + unid + ' unidades' : '') : '';
-  const complTxt  = compl ? ', ' + compl : '';
+  const forroTxt = forro === 'sem forro' ? 'sem forro' : `${forro} em ${tforro}`;
+  const condTxt  = cond  ? `, integrante do ${cond}${unid ? ', composto de ' + unid + ' unidades' : ''}` : '';
+  const complTxt = compl ? `, ${compl}` : '';
+  const pavNum   = pav.split(' ')[0];
+  const pavTxt   = pavNum === '1' ? 'com 1 pavimento' : `com ${pavNum} pavimentos`;
 
-  const comodos = [];
-  if(salas)   comodos.push(salas   + (salas===1   ? ' sala'      : ' salas'));
-  if(quartos) comodos.push(quartos + (quartos===1 ? ' quarto'    : ' quartos'));
-  if(banh)    comodos.push(banh    + (banh===1    ? ' banheiro'  : ' banheiros'));
-  if(coz)     comodos.push(coz     + (coz===1     ? ' cozinha'   : ' cozinhas'));
-  if(vagas)   comodos.push(vagas   + (vagas===1   ? ' vaga de garagem' : ' vagas de garagem'));
-  if(outros)  comodos.push(outros  + ' ambiente' + (outros===1 ? '' : 's') + ' auxiliar' + (outros===1 ? '' : 'es'));
-  const comodTxt = comodos.length ? ', com ' + comodos.join(', ') : '';
-
-  const texto = tipo.charAt(0).toUpperCase() + tipo.slice(1) + ' ' + pavTxt
-    + comodTxt
-    + ', cobertura em ' + cobVal
-    + ', ' + forroDesc
-    + ', piso em ' + piso
-    + condTxt + complTxt + '.';
-
+  const texto = `${tipo.charAt(0).toUpperCase()+tipo.slice(1)} ${pavTxt}, ${forroTxt}, com piso em ${piso}${condTxt}${complTxt}.`;
   const el = document.getElementById('vis-s-preview');
-  if(el){ el.textContent = texto; el.style.fontStyle='normal'; el.style.color='var(--navy)'; }
+  if(el) el.textContent = texto;
 }
 
 function calcAreaSimples(){
@@ -3157,8 +3064,20 @@ async function gerarDescricaoIA(){
   }
 }
 
-// ===== GERAR MEMORIAL WORD =====
-function gerarMemorialWord(){
+// ===== GERAR MEMORIAL WORD (docx.js nativo) =====
+async function gerarMemorialWord(){
+  if(typeof docx === 'undefined'){
+    alert('Biblioteca docx ainda carregando. Aguarde alguns segundos e tente novamente.');
+    return;
+  }
+
+  const {
+    Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+    AlignmentType, WidthType, ShadingType, BorderStyle, VerticalAlign,
+    PageBreak, UnderlineType
+  } = docx;
+
+  // ── DADOS ────────────────────────────────────────────────────────────────
   const D = {
     prop:   document.getElementById('vis-prop')?.value   || '___________________',
     cpf:    document.getElementById('vis-cpf')?.value    || '___________________',
@@ -3167,183 +3086,312 @@ function gerarMemorialWord(){
     bairro: document.getElementById('vis-bairro')?.value || '___________________',
     cep:    document.getElementById('vis-cep')?.value    || '__________',
     iptu:   document.getElementById('vis-iptu')?.value   || '___________________',
-    intim:  document.getElementById('vis-intim')?.value  || '______',
+    intim:  document.getElementById('vis-intim')?.value  || '',
     uso:    document.getElementById('vis-uso')?.value    || 'Residencial',
     pav:    document.getElementById('vis-pav')?.value    || '1 (Térreo)',
   };
 
   const hoje    = new Date();
   const dataFmt = hoje.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  const descEdif = document.getElementById('vis-s-preview')?.textContent?.trim() || '';
+  const conserv  = document.getElementById('vis-s-conserv')?.value || 'bom';
+  const ano      = document.getElementById('vis-s-ano')?.value     || '';
+  const areaCob  = parseFloat(document.getElementById('vis-s-area-cob')?.value  || '0') || 0;
+  const areaDesc = parseFloat(document.getElementById('vis-s-area-desc')?.value || '0') || 0;
+  const areaTotal = areaCob + areaDesc;
+  const fmtArea = v => v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' m²';
+  const modoSimples = modoVistoria === 'simples';
 
-  const ESTILO = `
-    body { font-family: Arial, sans-serif; font-size: 11pt; margin: 2cm 2cm 1.5cm 2.5cm; color: #111; }
-    .timbre { border-bottom: 1.5pt solid #0f2240; padding-bottom: 8pt; margin-bottom: 14pt; }
-    .timbre-nome { font-size: 15pt; font-weight: bold; color: #c8a227; letter-spacing: 0.04em; text-transform: uppercase; }
-    .timbre-sub  { font-size: 9pt; color: #444; margin-top: 2pt; }
-    .timbre-rt   { font-size: 9pt; color: #444; margin-top: 3pt; font-weight: bold; }
-    h1   { font-size: 13pt; font-weight: bold; text-align: center; color: #0f2240; text-transform: uppercase; margin-bottom: 4pt; }
-    h2   { font-size: 11pt; font-weight: bold; color: #0f2240; border-bottom: 1.5pt solid #e8c96a; margin: 14pt 0 6pt; padding-bottom: 2pt; text-transform: uppercase; }
-    .sub { font-size: 10pt; text-align: center; color: #555; margin-bottom: 14pt; font-style: italic; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 10pt; font-size: 10pt; }
-    th   { background: #0f2240; color: #e8c96a; padding: 5pt 7pt; text-align: left; font-size: 9.5pt; letter-spacing: 0.03em; }
-    td   { padding: 4pt 7pt; border: 0.5pt solid #CCC; vertical-align: top; }
-    .label { background: #e8f0f8; font-weight: bold; width: 32%; color: #0f2240; }
-    .odd { background: #f8f8f8; }
-    p    { text-align: justify; font-size: 11pt; margin: 6pt 0; line-height: 1.6; }
-    .assinatura { margin-top: 36pt; }
-    .linha-assin { border-top: 1pt solid #0f2240; width: 220pt; margin: 0 0 4pt; padding-top: 5pt; font-size: 10pt; }
-    .rodape { font-size: 8.5pt; color: #666; margin-top: 20pt; border-top: 0.5pt solid #CCC; padding-top: 5pt; text-align: center; font-style: italic; }`;
+  // ── CORES ────────────────────────────────────────────────────────────────
+  const NAVY   = '0F2240';
+  const GOLD   = 'C8A227';
+  const WHITE  = 'FFFFFF';
+  const LIGHT  = 'E8F0F8';
+  const GRAY   = '666666';
 
-  const CABECALHO = `
-    <div class="timbre">
-      <div class="timbre-nome">Mon&oacute;litos Topografia</div>
-      <div class="timbre-sub">Topografia, Georreferenciamento e Regulariza&ccedil;&atilde;o de Im&oacute;veis</div>
-      <div class="timbre-rt">Resp. T&eacute;cnico: Jos&eacute; Airton Santiago Pereira &nbsp;|&nbsp; CFT/RNP n&ordm; 22020241315</div>
-    </div>
-    <h1>Memorial Descritivo de Edifica&ccedil;&atilde;o</h1>
-    <div class="sub">${modoVistoria==='simples' ? 'Atualização Cadastral – SEFIN / CECAD – Prefeitura Municipal de Fortaleza' : 'Laudo de Avaliação de Imóvel'}
-    ${D.intim !== '______' ? '<br>Ref. Intimação nº ' + D.intim + '/2026 – CECAD' : ''}</div>
-    <h2>1. Identifica&ccedil;&atilde;o do Im&oacute;vel e do Propriet&aacute;rio</h2>
-    <table>
-      <tr><th colspan="4" style="text-align:left">Dados do Propriet&aacute;rio / Respons&aacute;vel</th></tr>
-      <tr><td class="label">Nome</td><td colspan="3">${D.prop}</td></tr>
-      <tr><td class="label odd">CPF</td><td class="odd" colspan="3">${D.cpf}</td></tr>
-      <tr><th colspan="4" style="text-align:left">Localiza&ccedil;&atilde;o do Im&oacute;vel</th></tr>
-      <tr><td class="label">Endere&ccedil;o</td><td>${D.end}, n&ordm; ${D.num}</td><td class="label">Bairro</td><td>${D.bairro}</td></tr>
-      <tr><td class="label odd">Munic&iacute;pio / UF</td><td class="odd">Fortaleza &ndash; CE</td><td class="label odd">CEP</td><td class="odd">${D.cep}</td></tr>
-      <tr><td class="label">Insc. Municipal (IPTU)</td><td>${D.iptu}</td><td class="label">Uso da Edifica&ccedil;&atilde;o</td><td>${D.uso}</td></tr>
-      <tr><td class="label odd">Pavimentos</td><td class="odd">${D.pav}</td><td class="label odd">Intima&ccedil;&atilde;o CECAD</td><td class="odd">${D.intim !== '______' ? D.intim : '&mdash;'}</td></tr>
-    </table>`;
+  // ── HELPERS ──────────────────────────────────────────────────────────────
+  const noBorder = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+  const noBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder };
+  const thinBorder = { style: BorderStyle.SINGLE, size: 4, color: 'CCCCCC' };
+  const cellBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
+  const cellPad = { top: 80, bottom: 80, left: 140, right: 140 };
 
-  const ASSINATURA = `
-    <div class="assinatura">
-      <p style="text-align:right">Fortaleza, ${dataFmt}.</p>
-      <br><br>
-      <div class="linha-assin">
-        <strong>Jos&eacute; Airton Santiago Pereira</strong><br>
-        Gestor Ambiental e T&eacute;cnico Agrimensor<br>
-        CFT/RNP n&ordm; 22020241315
-      </div>
-    </div>
-    <div class="rodape">F de Oliveira Topografia e Regulariza&ccedil;&atilde;o de Im&oacute;veis Ltda &nbsp;&ndash;&nbsp; CNPJ 60.694.439/0001-93 &nbsp;|&nbsp; Email: monolitostopografia@gmail.com &nbsp;|&nbsp; Telezap: (85) 99976.5111</div>`;
+  const W = 9638; // largura útil A4 com margens 2.5cm/2cm (DXA)
 
-  // Coletar fotos por setor — layout em tabela (Word-compatible)
-  let fotosHTML = '';
-  const COLS = 2; // fotos por linha
-  if(typeof VIS_SETORES !== 'undefined'){
-    VIS_SETORES.forEach(s => {
-      const imgs = Array.from(document.querySelectorAll('#setor-' + s.id + ' img'));
-      if(!imgs.length) return;
-      // Título do setor
-      fotosHTML += '<p style="font-size:10pt;font-weight:bold;color:#0f2240;margin:10pt 0 4pt;'                 + 'text-transform:uppercase;letter-spacing:.04em;border-bottom:0.5pt solid #e8c96a;padding-bottom:2pt">' + s.label + '</p>';
-      // Fotos em tabela de 2 colunas
-      fotosHTML += '<table style="border-collapse:collapse;margin-bottom:8pt;width:100%"><tr>';
-      imgs.forEach((img, idx) => {
-        if(idx > 0 && idx % COLS === 0) fotosHTML += '</tr><tr>';
-        fotosHTML += '<td style="border:none;padding:3pt 6pt 3pt 0;vertical-align:top;width:50%">'
-          + '<img src="' + img.src + '" style="width:220pt;height:160pt;object-fit:cover;'
-          + 'border:0.5pt solid #CCC;display:block">'
-          + '</td>';
-      });
-      // Completar linha com célula vazia se ímpar
-      if(imgs.length % COLS !== 0) fotosHTML += '<td style="border:none"></td>';
-      fotosHTML += '</tr></table>';
-    });
-  } else {
-    // Fallback: fotos genéricas sem setor
-    const imgs = Array.from(document.querySelectorAll('#vis-fotos-preview img'));
-    if(imgs.length){
-      fotosHTML += '<table style="border-collapse:collapse;margin-bottom:8pt;width:100%"><tr>';
-      imgs.forEach((img, idx) => {
-        if(idx > 0 && idx % 2 === 0) fotosHTML += '</tr><tr>';
-        fotosHTML += '<td style="border:none;padding:3pt 6pt 3pt 0;vertical-align:top;width:50%">'
-          + '<img src="' + img.src + '" style="width:220pt;height:160pt;object-fit:cover;border:0.5pt solid #CCC;display:block">'
-          + '</td>';
-      });
-      if(imgs.length % 2 !== 0) fotosHTML += '<td style="border:none"></td>';
-      fotosHTML += '</tr></table>';
-    }
-  }
+  const txtRun = (text, opts={}) => new TextRun({
+    text, font: 'Arial',
+    size: opts.size || 22,
+    bold: opts.bold || false,
+    color: opts.color || '111111',
+    italics: opts.italic || false,
+  });
 
-  let corpo = '';
+  const para = (children, opts={}) => new Paragraph({
+    children,
+    alignment: opts.align || AlignmentType.LEFT,
+    spacing: { before: opts.before || 0, after: opts.after || 120 },
+    border: opts.border || undefined,
+  });
 
-  if(modoVistoria === 'simples'){
-    // ---- MODO SIMPLES ----
-    const descTexto = document.getElementById('vis-s-preview')?.textContent || '';
-    const areaCob   = parseFloat(document.getElementById('vis-s-area-cob')?.value)  || 0;
-    const areaDesc  = parseFloat(document.getElementById('vis-s-area-desc')?.value) || 0;
-    const totalArea = areaCob + areaDesc;
-    const conserv   = document.getElementById('vis-s-conserv')?.value || 'bom';
-    const ano       = document.getElementById('vis-s-ano')?.value     || '';
+  const emptyLine = () => new Paragraph({ children: [new TextRun({ text: '', font: 'Arial', size: 22 })], spacing: { before: 0, after: 80 } });
 
-    corpo = `
-      <h2>2. Descrição da Edificação</h2>
-      <p>${descTexto || '(descrição não preenchida)'}</p>
+  // ── TIMBRE (fundo azul marinho) ──────────────────────────────────────────
+  const timbre = new Table({
+    width: { size: W, type: WidthType.DXA },
+    columnWidths: [W],
+    rows: [
+      new TableRow({ children: [
+        new TableCell({
+          width: { size: W, type: WidthType.DXA },
+          shading: { fill: NAVY, type: ShadingType.CLEAR },
+          margins: { top: 180, bottom: 180, left: 280, right: 280 },
+          borders: noBorders,
+          children: [
+            para([txtRun('MONÓLITOS TOPOGRAFIA', { size: 32, bold: true, color: GOLD })], { after: 40 }),
+            para([txtRun('Topografia, Georreferenciamento e Regularização de Imóveis', { size: 18, color: WHITE })], { after: 40 }),
+            para([txtRun('Resp. Técnico: José Airton Santiago Pereira  |  CFT/RNP nº 22020241315', { size: 17, bold: true, color: GOLD })], { after: 0 }),
+          ],
+        })
+      ]}),
+    ],
+  });
 
-      <h2>3. Quadro de Áreas</h2>
-      <table>
-        <tr><th>Descrição</th><th style="width:120pt;text-align:right">Área (m²)</th></tr>
-        <tr><td>Área Construída Coberta</td><td style="text-align:right">${areaCob.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr>
-        ${areaDesc>0?`<tr class="odd"><td>Área Descoberta / Garagem / Coberta aberta</td><td style="text-align:right">${areaDesc.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr>`:''}
-        <tr><td style="text-align:right;font-weight:bold;background:#D6E4F0;color:#1F4E79">Área Total Construída</td><td style="text-align:right;font-weight:bold;background:#D6E4F0;color:#1F4E79">${totalArea.toLocaleString('pt-BR',{minimumFractionDigits:2})} m²</td></tr>
-      </table>
-      <p style="font-size:9.5pt;font-style:italic;color:#555">* Áreas obtidas por levantamento métrico in loco. Conferir com a planta baixa anexa.</p>
+  // ── TÍTULO ───────────────────────────────────────────────────────────────
+  const titulo = para(
+    [txtRun('MEMORIAL DESCRITIVO DE EDIFICAÇÃO', { size: 26, bold: true, color: NAVY })],
+    { align: AlignmentType.CENTER, before: 240, after: 60 }
+  );
+  const subtitulo = para(
+    [txtRun(modoSimples
+      ? 'Atualização Cadastral – SEFIN / CECAD – Prefeitura Municipal de Fortaleza'
+      : 'Laudo de Avaliação de Imóvel',
+      { size: 20, italic: true, color: GRAY })],
+    { align: AlignmentType.CENTER, after: 240 }
+  );
 
-      <h2>4. Considerações Finais</h2>
-      <p>Em vistoria técnica realizada no imóvel acima identificado, constatou-se que a edificação encontra-se em <strong>${conserv}</strong> estado de conservação${ano ? ', construída aproximadamente no ano de ' + ano : ''}. As informações constantes neste memorial refletem fielmente as condições verificadas na data do levantamento, sendo elaborado para fins de atualização do Cadastro Imobiliário Municipal, em atendimento à Intimação nº ${D.intim}/2026 – CECAD / SEFIN.</p>`;
+  // ── FUNÇÃO SECAO ──────────────────────────────────────────────────────────
+  const secao = (num, titulo_txt) => new Paragraph({
+    children: [txtRun(num + '. ' + titulo_txt.toUpperCase(), { size: 22, bold: true, color: NAVY })],
+    spacing: { before: 240, after: 100 },
+    border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: GOLD, space: 2 } },
+  });
 
-  } else {
-    // ---- MODO COMPLETO ----
-    const ambRows = document.querySelectorAll('#lista-ambientes .form-grid');
-    let ambientes = []; let totalArea = 0;
-    ambRows.forEach(r => {
-      const inputs = r.querySelectorAll('input');
-      const sel    = r.querySelector('select');
-      const nome   = inputs[0]?.value || '';
-      const area   = parseFloat(inputs[1]?.value) || 0;
-      const pav    = sel?.value || 'Térreo';
-      if(nome){ ambientes.push({nome,pav,area}); totalArea += area; }
-    });
-    const mats    = {};
-    VIS_MATERIAIS.forEach(m => { mats[m.label] = getMat(m.id); });
-    const conserv = document.getElementById('vis-conserv')?.value || 'Bom';
-    const ano     = document.getElementById('vis-ano')?.value     || '____';
-    const obs     = document.getElementById('vis-obs')?.value     || '';
+  // ── TABELA HELPER ─────────────────────────────────────────────────────────
+  const makeRow = (label, value, isOdd, colWidths) => new TableRow({
+    children: [
+      new TableCell({
+        width: { size: colWidths[0], type: WidthType.DXA },
+        shading: { fill: LIGHT, type: ShadingType.CLEAR },
+        borders: cellBorders, margins: cellPad,
+        children: [para([txtRun(label, { bold: true, color: NAVY, size: 20 })], { after: 0 })],
+      }),
+      new TableCell({
+        width: { size: colWidths[1], type: WidthType.DXA },
+        shading: { fill: isOdd ? 'F8F8F8' : WHITE, type: ShadingType.CLEAR },
+        borders: cellBorders, margins: cellPad,
+        children: [para([txtRun(value || '—', { size: 20 })], { after: 0 })],
+      }),
+    ],
+  });
 
-    corpo = `
-      <h2>2. Quadro de Áreas Edificadas</h2>
-      <table>
-        <tr><th>Cômodo / Ambiente</th><th style="width:130pt">Pavimento</th><th style="width:90pt;text-align:right">Área (m²)</th></tr>
-        ${ambientes.map((a,i)=>`<tr ${i%2?'class="odd"':''}><td>${a.nome}</td><td>${a.pav}</td><td style="text-align:right">${a.area.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr>`).join('')}
-        <tr><td colspan="2" style="text-align:right;font-weight:bold;background:#D6E4F0;color:#1F4E79">Área Total Construída</td><td style="text-align:right;font-weight:bold;background:#D6E4F0;color:#1F4E79">${totalArea.toLocaleString('pt-BR',{minimumFractionDigits:2})} m²</td></tr>
-      </table>
-      <p style="font-size:9.5pt;font-style:italic;color:#555">* Áreas obtidas por levantamento métrico in loco. Conferir com a planta baixa anexa.</p>
+  const makeRow4 = (l1, v1, l2, v2, isOdd) => new TableRow({
+    children: [
+      new TableCell({ width: { size: 2400, type: WidthType.DXA }, shading: { fill: LIGHT, type: ShadingType.CLEAR }, borders: cellBorders, margins: cellPad,
+        children: [para([txtRun(l1, { bold: true, color: NAVY, size: 20 })], { after: 0 })] }),
+      new TableCell({ width: { size: 2419, type: WidthType.DXA }, shading: { fill: isOdd ? 'F8F8F8' : WHITE, type: ShadingType.CLEAR }, borders: cellBorders, margins: cellPad,
+        children: [para([txtRun(v1 || '—', { size: 20 })], { after: 0 })] }),
+      new TableCell({ width: { size: 2400, type: WidthType.DXA }, shading: { fill: LIGHT, type: ShadingType.CLEAR }, borders: cellBorders, margins: cellPad,
+        children: [para([txtRun(l2, { bold: true, color: NAVY, size: 20 })], { after: 0 })] }),
+      new TableCell({ width: { size: 2419, type: WidthType.DXA }, shading: { fill: isOdd ? 'F8F8F8' : WHITE, type: ShadingType.CLEAR }, borders: cellBorders, margins: cellPad,
+        children: [para([txtRun(v2 || '—', { size: 20 })], { after: 0 })] }),
+    ],
+  });
 
-      <h2>3. Características da Edificação e Materiais Empregados</h2>
-      <table>
-        <tr><th style="width:32%">Elemento</th><th>Especificação / Material Empregado</th></tr>
-        ${Object.entries(mats).map(([k,v],i)=>`<tr ${i%2?'class="odd"':''}><td style="font-weight:bold">${k}</td><td>${v}</td></tr>`).join('')}
-      </table>
+  const headerRow = (label, cols) => new TableRow({
+    children: [new TableCell({
+      columnSpan: cols,
+      width: { size: W, type: WidthType.DXA },
+      shading: { fill: NAVY, type: ShadingType.CLEAR },
+      borders: cellBorders, margins: cellPad,
+      children: [para([txtRun(label, { bold: true, color: GOLD, size: 20 })], { after: 0 })],
+    })],
+  });
 
-      <h2>4. Considerações Finais</h2>
-      <p>Em vistoria técnica realizada no imóvel acima identificado, constatou-se que a edificação encontra-se em <strong>${conserv.toLowerCase()}</strong> estado de conservação${ano && ano!=='____'?', construída aproximadamente no ano de '+ano:''}. As instalações hidrossanitárias e elétricas apresentam funcionamento adequado. As informações constantes neste memorial refletem fielmente as condições verificadas na data do levantamento.</p>
-      ${obs?`<p><strong>Observações:</strong> ${obs}</p>`:''}`;
-  }
+  // ── TABELA IDENTIFICAÇÃO ──────────────────────────────────────────────────
+  const tabelaId = new Table({
+    width: { size: W, type: WidthType.DXA },
+    columnWidths: [2400, 2419, 2400, 2419],
+    rows: [
+      headerRow('Dados do Proprietário / Responsável', 4),
+      new TableRow({ children: [
+        new TableCell({ columnSpan: 1, width: { size: 2400, type: WidthType.DXA }, shading: { fill: LIGHT, type: ShadingType.CLEAR }, borders: cellBorders, margins: cellPad,
+          children: [para([txtRun('Nome', { bold: true, color: NAVY, size: 20 })], { after: 0 })] }),
+        new TableCell({ columnSpan: 3, width: { size: 7238, type: WidthType.DXA }, shading: { fill: WHITE, type: ShadingType.CLEAR }, borders: cellBorders, margins: cellPad,
+          children: [para([txtRun(D.prop, { size: 20 })], { after: 0 })] }),
+      ]}),
+      new TableRow({ children: [
+        new TableCell({ width: { size: 2400, type: WidthType.DXA }, shading: { fill: LIGHT, type: ShadingType.CLEAR }, borders: cellBorders, margins: cellPad,
+          children: [para([txtRun('CPF', { bold: true, color: NAVY, size: 20 })], { after: 0 })] }),
+        new TableCell({ columnSpan: 3, width: { size: 7238, type: WidthType.DXA }, shading: { fill: 'F8F8F8', type: ShadingType.CLEAR }, borders: cellBorders, margins: cellPad,
+          children: [para([txtRun(D.cpf, { size: 20 })], { after: 0 })] }),
+      ]}),
+      headerRow('Localização do Imóvel', 4),
+      new TableRow({ children: [
+        new TableCell({ width: { size: 2400, type: WidthType.DXA }, shading: { fill: LIGHT, type: ShadingType.CLEAR }, borders: cellBorders, margins: cellPad,
+          children: [para([txtRun('Endereço', { bold: true, color: NAVY, size: 20 })], { after: 0 })] }),
+        new TableCell({ width: { size: 2419, type: WidthType.DXA }, shading: { fill: WHITE, type: ShadingType.CLEAR }, borders: cellBorders, margins: cellPad,
+          children: [para([txtRun(D.end + ', nº ' + D.num, { size: 20 })], { after: 0 })] }),
+        new TableCell({ width: { size: 2400, type: WidthType.DXA }, shading: { fill: LIGHT, type: ShadingType.CLEAR }, borders: cellBorders, margins: cellPad,
+          children: [para([txtRun('Bairro', { bold: true, color: NAVY, size: 20 })], { after: 0 })] }),
+        new TableCell({ width: { size: 2419, type: WidthType.DXA }, shading: { fill: WHITE, type: ShadingType.CLEAR }, borders: cellBorders, margins: cellPad,
+          children: [para([txtRun(D.bairro, { size: 20 })], { after: 0 })] }),
+      ]}),
+      makeRow4('Município / UF', 'Fortaleza – CE', 'CEP', D.cep, true),
+      makeRow4('Insc. Municipal (IPTU)', D.iptu, 'Uso da Edificação', D.uso, false),
+      makeRow4('Pavimentos', D.pav, 'Intimação CECAD', D.intim || '—', true),
+    ],
+  });
 
-  const secFotos = fotosHTML ? '<h2>5. Registro Fotográfico</h2><div style="margin:6pt 0">' + fotosHTML + '</div>' : '';
-  const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-<head><meta charset='UTF-8'><style>${ESTILO}</style></head>
-<body>${CABECALHO}${corpo}${secFotos}${ASSINATURA}</body></html>`;
+  // ── SEÇÃO 2: DESCRIÇÃO ───────────────────────────────────────────────────
+  const descPara = para([txtRun(descEdif, { size: 22 })], { align: AlignmentType.JUSTIFIED, after: 120 });
 
-  const blob = new Blob(['\ufeff'+html], {type:'application/msword'});
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = `Memorial_${D.prop.split(' ')[0]}_${new Date().toISOString().slice(0,10)}.doc`;
+  // ── SEÇÃO 3: QUADRO DE ÁREAS ─────────────────────────────────────────────
+  const areaW = [5500, 2069, 2069];
+  const areaRow = (label, val, isOdd) => new TableRow({
+    children: [
+      new TableCell({ width: { size: 5500, type: WidthType.DXA }, shading: { fill: isOdd ? 'F8F8F8' : WHITE, type: ShadingType.CLEAR }, borders: cellBorders, margins: cellPad,
+        children: [para([txtRun(label, { size: 20 })], { after: 0 })] }),
+      new TableCell({ width: { size: 2069, type: WidthType.DXA }, shading: { fill: isOdd ? 'F8F8F8' : WHITE, type: ShadingType.CLEAR }, borders: cellBorders, margins: cellPad,
+        children: [para([txtRun('m²', { size: 20 })], { align: AlignmentType.CENTER, after: 0 })] }),
+      new TableCell({ width: { size: 2069, type: WidthType.DXA }, shading: { fill: isOdd ? 'F8F8F8' : WHITE, type: ShadingType.CLEAR }, borders: cellBorders, margins: cellPad,
+        children: [para([txtRun(fmtArea(val), { size: 20 })], { align: AlignmentType.RIGHT, after: 0 })] }),
+    ],
+  });
+
+  const totalRow = new TableRow({
+    children: [
+      new TableCell({ width: { size: 5500, type: WidthType.DXA }, shading: { fill: NAVY, type: ShadingType.CLEAR }, borders: cellBorders, margins: cellPad,
+        children: [para([txtRun('ÁREA TOTAL CONSTRUÍDA', { bold: true, color: GOLD, size: 20 })], { after: 0 })] }),
+      new TableCell({ width: { size: 2069, type: WidthType.DXA }, shading: { fill: NAVY, type: ShadingType.CLEAR }, borders: cellBorders, margins: cellPad,
+        children: [para([txtRun('m²', { bold: true, color: WHITE, size: 20 })], { align: AlignmentType.CENTER, after: 0 })] }),
+      new TableCell({ width: { size: 2069, type: WidthType.DXA }, shading: { fill: NAVY, type: ShadingType.CLEAR }, borders: cellBorders, margins: cellPad,
+        children: [para([txtRun(fmtArea(areaTotal), { bold: true, color: WHITE, size: 20 })], { align: AlignmentType.RIGHT, after: 0 })] }),
+    ],
+  });
+
+  const tabelaAreas = new Table({
+    width: { size: W, type: WidthType.DXA },
+    columnWidths: [5500, 2069, 2069],
+    rows: [
+      new TableRow({ children: [
+        new TableCell({ width: { size: 5500, type: WidthType.DXA }, shading: { fill: NAVY, type: ShadingType.CLEAR }, borders: cellBorders, margins: cellPad,
+          children: [para([txtRun('Discriminação', { bold: true, color: GOLD, size: 20 })], { after: 0 })] }),
+        new TableCell({ width: { size: 2069, type: WidthType.DXA }, shading: { fill: NAVY, type: ShadingType.CLEAR }, borders: cellBorders, margins: cellPad,
+          children: [para([txtRun('Unid.', { bold: true, color: GOLD, size: 20 })], { align: AlignmentType.CENTER, after: 0 })] }),
+        new TableCell({ width: { size: 2069, type: WidthType.DXA }, shading: { fill: NAVY, type: ShadingType.CLEAR }, borders: cellBorders, margins: cellPad,
+          children: [para([txtRun('Área', { bold: true, color: GOLD, size: 20 })], { align: AlignmentType.RIGHT, after: 0 })] }),
+      ]}),
+      areaRow('Área Construída Coberta', areaCob, false),
+      areaRow('Área Descoberta / Garagem / Coberta aberta', areaDesc, true),
+      totalRow,
+    ],
+  });
+
+  const notaAreas = para(
+    [txtRun('* Áreas obtidas por levantamento métrico in loco. Conferir com a planta baixa anexa.', { size: 18, italic: true, color: GRAY })],
+    { after: 120 }
+  );
+
+  // ── SEÇÃO 4: CONSIDERAÇÕES FINAIS ────────────────────────────────────────
+  const anoTxt = ano ? 'no ano de ' + ano : 'em data não determinada';
+  const consid = para([txtRun(
+    'Em vistoria técnica realizada no imóvel acima identificado, constatou-se que a edificação encontra-se em ' +
+    conserv + ' estado de conservação, construída aproximadamente ' + anoTxt +
+    '. As informações constantes neste memorial refletem fielmente as condições verificadas na data do levantamento, sendo elaborado para fins de atualização do Cadastro Imobiliário Municipal' +
+    (D.intim ? ', em atendimento à Intimação nº ' + D.intim + ' – CECAD / SEFIN' : '') + '.',
+    { size: 22 }
+  )], { align: AlignmentType.JUSTIFIED, after: 120 });
+
+  // ── ASSINATURA ───────────────────────────────────────────────────────────
+  const dataLinha = para(
+    [txtRun('Fortaleza, ' + dataFmt + '.', { size: 22 })],
+    { align: AlignmentType.RIGHT, before: 360, after: 720 }
+  );
+
+  const linhaAssin = new Paragraph({
+    children: [txtRun('', { size: 22 })],
+    spacing: { before: 0, after: 80 },
+    border: { top: { style: BorderStyle.SINGLE, size: 6, color: NAVY, space: 2 } },
+  });
+
+  const nomeAssin  = para([txtRun('José Airton Santiago Pereira', { bold: true, size: 22, color: NAVY })], { after: 40 });
+  const cargoAssin = para([txtRun('Gestor Ambiental e Técnico Agrimensor', { size: 20 })], { after: 40 });
+  const rnpAssin   = para([txtRun('CFT/RNP nº 22020241315', { size: 20 })], { after: 0 });
+
+  // Bloco de assinatura centralizado
+  const tblAssin = new Table({
+    width: { size: 5000, type: WidthType.DXA },
+    columnWidths: [5000],
+    rows: [new TableRow({ children: [new TableCell({
+      width: { size: 5000, type: WidthType.DXA },
+      borders: noBorders,
+      children: [linhaAssin, nomeAssin, cargoAssin, rnpAssin],
+    })]})],
+  });
+
+  // ── RODAPÉ ───────────────────────────────────────────────────────────────
+  const rodape = new Paragraph({
+    children: [txtRun(
+      'F de Oliveira Topografia e Regularização de Imóveis Ltda  –  CNPJ 60.694.439/0001-93  |  Email: monolitostopografia@gmail.com  |  Telezap: (85) 99976.5111',
+      { size: 16, italic: true, color: GRAY }
+    )],
+    alignment: AlignmentType.CENTER,
+    spacing: { before: 0, after: 0 },
+    border: { top: { style: BorderStyle.SINGLE, size: 4, color: 'CCCCCC', space: 2 } },
+  });
+
+  // ── MONTAR DOCUMENTO ─────────────────────────────────────────────────────
+  const children = [
+    timbre, emptyLine(),
+    titulo, subtitulo,
+    secao('1', 'Identificação do Imóvel e do Proprietário'),
+    tabelaId, emptyLine(),
+    secao('2', 'Descrição da Edificação'),
+    descPara,
+    secao('3', 'Quadro de Áreas'),
+    tabelaAreas, notaAreas,
+    secao('4', 'Considerações Finais'),
+    consid,
+    dataLinha,
+    tblAssin,
+    emptyLine(), emptyLine(),
+    rodape,
+  ];
+
+  const doc = new Document({
+    styles: {
+      default: { document: { run: { font: 'Arial', size: 22 } } },
+    },
+    sections: [{
+      properties: {
+        page: {
+          size: { width: 11906, height: 16838 },
+          margin: { top: 1134, right: 1134, bottom: 1134, left: 1418 },
+        },
+      },
+      children,
+    }],
+  });
+
+  // ── GERAR E BAIXAR ───────────────────────────────────────────────────────
+  const buffer = await Packer.toBlob(doc);
+  const nome   = 'Memorial_' + (D.prop.split(' ')[0]||'Vistoria') + '_' + new Date().toISOString().slice(0,10) + '.docx';
+  const url    = URL.createObjectURL(buffer);
+  const a      = document.createElement('a');
+  a.href = url; a.download = nome;
   document.body.appendChild(a); a.click();
   document.body.removeChild(a); URL.revokeObjectURL(url);
 }
-
 function _nomeMemorial(){
   const prop = document.getElementById('vis-prop')?.value || 'Memorial';
   return 'Memorial_' + prop.split(' ')[0] + '_' + new Date().toISOString().slice(0,10) + '.doc';
