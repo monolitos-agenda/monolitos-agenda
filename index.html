@@ -1701,15 +1701,16 @@ function renderDash(){
 }
 
 // ===== ORÇAMENTOS =====
+function norm(t){return(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')}
 function renderOrc(){
-  const s=(document.getElementById('search-orc')?.value||'').toLowerCase();
+  const s=norm(document.getElementById('search-orc')?.value||'');
   const f=document.getElementById('filter-st')?.value||'';
   const list=ST.orcamentos.filter(o=>{
     const matchStatus=!f||o.status===f;
     if(!s)return matchStatus;
-    const matchBase=o.num?.toLowerCase().includes(s)||o.cliente?.toLowerCase().includes(s)||o.matricula?.toLowerCase().includes(s);
-    const matchSrv=(o.servicos||[]).some(sv=>sv.desc?.toLowerCase().includes(s));
-    const matchDesc=(o.descricao||'').toLowerCase().includes(s);
+    const matchBase=norm(o.num).includes(s)||norm(o.cliente).includes(s)||norm(o.matricula).includes(s);
+    const matchSrv=(o.servicos||[]).some(sv=>norm(sv.desc).includes(s));
+    const matchDesc=norm(o.descricao).includes(s);
     return matchStatus&&(matchBase||matchSrv||matchDesc);
   });
   const tbody=document.getElementById('tbody-orc');
