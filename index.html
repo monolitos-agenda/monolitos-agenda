@@ -746,7 +746,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
       </div>
     </div>
     <div class="form-grid form-grid-2" style="margin-bottom:11px">
-      <div class="form-group"><label>Cliente</label><input class="form-control" id="orc-cli" placeholder="Nome completo" list="dl-cli"><datalist id="dl-cli"></datalist></div>
+      <div class="form-group"><label>Cliente</label><input class="form-control" id="orc-cli" placeholder="Nome completo" list="dl-cli" oninput="autoPreencherCliente(this.value)"><datalist id="dl-cli"></datalist></div>
       <div class="form-group"><label>Matrícula do Imóvel</label><input class="form-control" id="orc-mat" placeholder="Ex: nº 38319 — 1ª Zona de Fortaleza/CE"></div>
     </div>
     <div class="form-group" style="margin-bottom:11px;position:relative">
@@ -780,6 +780,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
         <label style="font-size:10.5px;font-weight:500;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em">Condições de Pagamento</label>
         <div style="display:flex;gap:5px">
           <button class="btn btn-green btn-xs" onclick="addParcAVista()" title="Configura pagamento integral à vista (100%)">💵 À vista</button>
+          <button class="btn btn-outline btn-xs" onclick="addParcRestante()" title="Divide o saldo restante em mais parcelas">÷ Dividir restante</button>
           <button class="btn btn-outline btn-xs" onclick="addParc()">+ Parcela</button>
         </div>
       </div>
@@ -797,6 +798,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
   <div class="modal-footer">
     <button class="btn btn-outline" onclick="closeM('modal-orc')">Cancelar</button>
     <button class="btn btn-primary" onclick="imprimir()">🖨 Imprimir</button>
+    <button class="btn btn-outline" onclick="salvarPdfOrc()" title="Salvar PDF e enviar no WhatsApp" style="background:#25d366;color:white;border-color:#25d366">📄 PDF/WhatsApp</button>
     <button class="btn btn-green" onclick="enviarWhatsApp()" title="Enviar orçamento pelo WhatsApp">📲 WhatsApp</button>
     <button class="btn btn-gold" onclick="salvarOrc()">Salvar</button>
     <button class="btn btn-gold" style="background:var(--navy);color:white" onclick="salvarOrc(true)">Salvar e Fechar</button>
@@ -919,6 +921,46 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
   <div class="modal-footer">
     <button class="btn btn-outline" onclick="closeM('modal-andamento')">Fechar</button>
     <button class="btn btn-gold" onclick="salvarAndamento()">Salvar Anotação</button>
+  </div>
+</div></div>
+
+<!-- MODAL CONCLUSÃO -->
+<div class="modal-overlay" id="modal-conclusao" style="display:none">
+<div class="modal" style="max-width:480px">
+  <div class="modal-header">
+    <div class="modal-title">✅ Registrar Conclusão</div>
+    <button class="btn btn-ghost" onclick="closeM('modal-conclusao')">✕</button>
+  </div>
+  <div class="modal-body">
+    <input type="hidden" id="mconcl-orc-id">
+    <p style="font-size:13px;color:var(--gray-600);margin-bottom:16px">Informe o status de entrega do serviço ao marcar como concluído:</p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+      <label style="display:flex;align-items:center;gap:12px;padding:14px;border:2px solid var(--gray-200);border-radius:var(--radius-lg);cursor:pointer;transition:all .15s" id="lbl-entregue" onclick="selecionarConcl('entregue')">
+        <span style="font-size:22px">✅</span>
+        <div>
+          <div style="font-weight:600;color:var(--navy);font-size:13px">Concluído e Entregue</div>
+          <div style="font-size:11.5px;color:var(--gray-500);margin-top:2px">Documentação entregue ao cliente</div>
+        </div>
+      </label>
+      <label style="display:flex;align-items:center;gap:12px;padding:14px;border:2px solid var(--gray-200);border-radius:var(--radius-lg);cursor:pointer;transition:all .15s" id="lbl-nao-entregue" onclick="selecionarConcl('nao-entregue')">
+        <span style="font-size:22px">📦</span>
+        <div>
+          <div style="font-weight:600;color:var(--amber);font-size:13px">Concluído e Não Entregue</div>
+          <div style="font-size:11.5px;color:var(--gray-500);margin-top:2px">Serviço concluído mas ainda não entregue</div>
+        </div>
+      </label>
+    </div>
+    <div id="motivo-nao-entrega-box" style="display:none">
+      <div class="form-group">
+        <label>Motivo da não entrega</label>
+        <textarea class="form-control" id="motivo-nao-entrega" rows="3" placeholder="Ex: Cliente não compareceu para retirar, aguardando pagamento final..."></textarea>
+      </div>
+    </div>
+    <input type="hidden" id="mconcl-tipo" value="">
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-outline" onclick="closeM('modal-conclusao')">Cancelar</button>
+    <button class="btn btn-gold" id="btn-confirmar-concl" onclick="confirmarConclusao()" disabled style="opacity:.5">Confirmar Conclusão</button>
   </div>
 </div></div>
 
@@ -1289,9 +1331,17 @@ let srvCnt=0;
 function initSrvs(lista){srvCnt=0;document.getElementById('srvs').innerHTML='';(lista&&lista.length?lista:[{}]).forEach(s=>addSrv(s.desc||'',s.valor||''))}
 function addSrv(desc='',valor=''){
   srvCnt++;const id='s'+srvCnt;const div=document.createElement('div');div.className='srv-linha';div.id=id;
-  div.innerHTML=`<textarea class="form-control" placeholder="Descrição do serviço..." oninput="calcTotal()" style="min-height:110px;flex:1;text-align:justify;line-height:1.65">${desc}</textarea>
-    <input type="number" class="form-control" placeholder="Valor R$" value="${valor}" oninput="calcTotal()" style="width:115px;flex-shrink:0">
+  const ehNovo=!desc; // se sem desc, é linha em branco adicionada manualmente
+  div.innerHTML=`<textarea class="form-control srv-desc" placeholder="Descrição do serviço..." oninput="calcTotal()" style="min-height:110px;flex:1;text-align:justify;line-height:1.65">${desc}</textarea>
+    <input type="number" class="form-control srv-val" placeholder="Valor R$" value="${valor}" oninput="calcTotal()" style="width:115px;flex-shrink:0">
     ${srvCnt>1?`<button class="btn btn-danger btn-sm" onclick="rmSrv('${id}')" style="flex-shrink:0;align-self:flex-start">✕</button>`:'<div style="width:0"></div>'}`;
+  // Caixa "salvar no cadastro" apenas para linhas digitadas manualmente (não vindas do cadastro)
+  if(ehNovo){
+    const saveBox=document.createElement('div');
+    saveBox.style.cssText='display:flex;align-items:center;gap:6px;margin-top:4px;width:100%';
+    saveBox.innerHTML=`<input type="checkbox" id="srv-save-${id}" style="width:14px;height:14px;cursor:pointer"><label for="srv-save-${id}" style="font-size:11px;color:var(--gray-500);cursor:pointer">Salvar este serviço no cadastro</label>`;
+    div.appendChild(saveBox);
+  }
   document.getElementById('srvs').appendChild(div);calcTotal();
 }
 function rmSrv(id){document.getElementById(id).remove();calcTotal()}
@@ -1299,13 +1349,35 @@ function calcTotal(){
   let t=0;document.querySelectorAll('#srvs .srv-linha').forEach(d=>{t+=parseFloat(d.querySelector('input[type=number]')?.value||0)});
   document.getElementById('orc-total').textContent=fmtM(t);calcParcs();
 }
-function getSrvs(){const o=[];document.querySelectorAll('#srvs .srv-linha').forEach(d=>{const ta=d.querySelector('textarea');const inp=d.querySelector('input[type=number]');if(ta&&inp)o.push({desc:ta.value,valor:parseFloat(inp.value)||0})});return o}
+function getSrvs(){
+  const o=[];
+  document.querySelectorAll('#srvs .srv-linha').forEach(d=>{
+    const ta=d.querySelector('textarea');const inp=d.querySelector('input[type=number]');
+    if(ta&&inp)o.push({desc:ta.value,valor:parseFloat(inp.value)||0});
+  });
+  return o;
+}
+
+// Salva no cadastro os serviços marcados para salvar (melhoria 7)
+function salvarSrvsMarcados(){
+  if(!ST.servicos)ST.servicos=[];
+  document.querySelectorAll('#srvs .srv-linha').forEach(d=>{
+    const chk=d.querySelector('input[type=checkbox]');
+    if(!chk||!chk.checked)return;
+    const ta=d.querySelector('textarea');const inp=d.querySelector('input[type=number]');
+    const desc=(ta?.value||'').trim();const valor=parseFloat(inp?.value||0)||0;
+    if(!desc)return;
+    const nome=desc.length>60?desc.slice(0,60)+'...':desc;
+    // Não duplicar se já existir descrição igual
+    const jaExiste=ST.servicos.some(s=>s.desc===desc);
+    if(!jaExiste) ST.servicos.push({id:Date.now().toString()+Math.random(),nome,desc,valor});
+  });
+}
 function totalSrvs(){return getSrvs().reduce((a,s)=>a+s.valor,0)}
 
 // ===== PARCELAS =====
 let parcCnt=0;
-function initParcs(lista){parcCnt=0;document.getElementById('parcs').innerHTML='';if(lista&&lista.length){lista.forEach(p=>addParc(p.label||'',p.tipo||'%',p.val||''))}else{addParc('Sinal (entrada)','%',50);addParc('Valor restante (conclusão)','R$','')}}
-function addParc(label='',tipo='%',val=''){
+function initParcs(lista){parcCnt=0;document.getElementById('parcs').innerHTML='';if(lista&&lista.length){lista.forEach(p=>addParc(p.label||'',p.tipo||'%',p.val||''))}else{addParc('Sinal (entrada)','%',50);addParc('Valor restante (conclusão)','%',50)}}function addParc(label='',tipo='%',val=''){
   parcCnt++;const id='p'+parcCnt;const div=document.createElement('div');div.className='parc-linha';div.id=id;
   div.innerHTML=`<input class="form-control" placeholder="Nome da parcela" value="${label}" style="flex:2;min-width:110px" oninput="calcParcs()">
     <select class="form-control" style="width:66px;flex-shrink:0" onchange="calcParcs()">
@@ -1335,7 +1407,25 @@ function addParcAVista(){
   cont.appendChild(div);
   calcParcs();
 }
-function rmParc(id){document.getElementById(id).remove();calcParcs()}
+function addParcRestante(){
+  // Calcular o percentual já alocado nas parcelas existentes
+  const total=totalSrvs();
+  let somaPorc=0;
+  document.querySelectorAll('#parcs .parc-linha').forEach(d=>{
+    const tipo=d.querySelector('select').value;
+    const val=parseFloat(d.querySelectorAll('input[type=number]')[0]?.value||0);
+    if(tipo==='%') somaPorc+=val;
+    else if(total>0) somaPorc+=(val/total)*100;
+  });
+  const restante=Math.max(0,100-somaPorc);
+  const n=parseInt(prompt('Quantas parcelas quer criar com o percentual restante ('+(Math.round(restante*10)/10)+'%)?','2'));
+  if(!n||n<1)return;
+  const porcCada=Math.round((restante/n)*100)/100;
+  for(let i=1;i<=n;i++){
+    addParc('Parcela '+i+'/'+n,'%',porcCada);
+  }
+}
+
 function calcParcs(){
   const total=totalSrvs();let soma=0;
   document.querySelectorAll('#parcs .parc-linha').forEach(d=>{
@@ -1395,6 +1485,7 @@ function salvarOrc(){
     status:novoStatus,
     tipo:document.getElementById('orc-tipo').value||'orcamento'};
   if(!o.cliente||!o.valor){alert('Informe cliente e pelo menos um serviço com valor.');return}
+  salvarSrvsMarcados(); // Melhoria 7: salva serviços marcados no cadastro
   const idx=ST.orcamentos.findIndex(x=>x.id===id);
   if(idx>=0)ST.orcamentos[idx]=o;else ST.orcamentos.unshift(o);
   if(!ST.clientes.find(c=>c.nome.toLowerCase()===o.cliente.toLowerCase()))
@@ -1506,7 +1597,28 @@ function confirmarClonar(){
   },100);
 }
 
-// ===== IMPRIMIR =====
+// ===== MELHORIA 1: SALVAR PDF e WHATSAPP =====
+function salvarPdfOrc(){
+  // Salvar orçamento primeiro se tiver dados
+  const cli=document.getElementById('orc-cli').value;
+  const num=document.getElementById('orc-num').value;
+  if(!cli||!num){alert('Preencha os dados do orçamento antes de gerar o PDF.');return}
+  // Abrir janela de impressão com instrução específica para celular
+  const w=imprimir(true); // pass true = modo PDF
+}
+
+function _instrucaoPdf(tipo){
+  return `<div style="margin-top:14px;padding:12px 14px;background:#e6f7ff;border:1px solid #91d5ff;border-radius:8px;font-size:11.5px;color:#003a8c;line-height:1.7">
+    <strong>📱 No celular — Como salvar e enviar o PDF:</strong><br>
+    1. Toque em <strong>"Salvar PDF"</strong> abaixo ou use o menu de compartilhamento do navegador<br>
+    2. Escolha <strong>"Salvar como PDF"</strong> ou <strong>"Imprimir → PDF"</strong><br>
+    3. Abra o WhatsApp e envie o arquivo diretamente ao cliente<br>
+    <strong>💡 Chrome/Android:</strong> Menu ⋮ → Compartilhar → PDF
+  </div>`;
+}
+
+// Modificar imprimir() para aceitar modo PDF
+
 function imprimir(){
   const num=document.getElementById('orc-num').value;
   const data=fmtD(document.getElementById('orc-data').value);
@@ -1591,6 +1703,15 @@ function imprimir(){
     <div class="no-print" style="margin-top:18px;background:#e6f0fb;border:1px solid #b5d4f4;border-radius:6px;padding:10px 14px;font-size:11.5px;color:#1a4a7a;line-height:1.6">
       <strong>💡 Para ocultar data e "about:blank":</strong> No diálogo de impressão, clique em <strong>"Mais configurações"</strong> e desmarque <strong>"Cabeçalhos e rodapés"</strong> (Chrome) ou desmarque <strong>"Imprimir cabeçalhos e rodapés"</strong> (Firefox/Edge). Isso só precisa ser feito uma vez — o navegador memoriza a preferência.
     </div>
+    <div class="no-print" style="margin-top:10px;padding:12px 14px;background:#f0fff4;border:1px solid #b7eb8f;border-radius:6px;font-size:11.5px;color:#135200;line-height:1.7">
+      <strong>📱 Celular — Salvar PDF e enviar pelo WhatsApp:</strong><br>
+      1. Toque nos 3 pontos (⋮) do navegador → <strong>Compartilhar</strong> ou <strong>Imprimir</strong><br>
+      2. Escolha <strong>Salvar como PDF</strong> → Salve no dispositivo<br>
+      3. Abra o WhatsApp → Selecione o contato → Anexe o PDF
+    </div>
+    <div class="no-print" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+      <button style="padding:9px 18px;background:#0f2240;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600" onclick="window.print()">🖨 Imprimir / Salvar PDF</button>
+    </div>
   </div>
   <style>.no-print{display:block}@media print{.no-print{display:none!important}}</style>
   ${'<'+'script>'}window.onload=function(){setTimeout(()=>window.print(),300)};window.onafterprint=()=>window.close();${'</'+'script>'}</body></html>`);
@@ -1616,9 +1737,7 @@ function renderDash(){
     o.num && o.num.length<30
   ).length;
   const emAndamento=ST.orcamentos.filter(o=>
-    o.status==='Em andamento' &&
-    o.status!=='Concluído' &&
-    o.status!=='Cancelado' &&
+    (o.status==='Em andamento' || (o.status==='Concluído' && o.entregue===false)) &&
     o.num && o.num.length < 30  // exclude corrupted records
   );
   const emAnd=emAndamento.length;
@@ -1700,6 +1819,15 @@ function renderDash(){
   }).join('');
 }
 
+function autoPreencherCliente(val){
+  const cli=ST.clientes.find(c=>c.nome.toLowerCase()===val.toLowerCase());
+  if(cli){
+    // Preencher intermediário se tiver
+    if(cli.inter&&!document.getElementById('orc-inter').value)
+      document.getElementById('orc-inter').value=cli.inter;
+  }
+}
+
 // ===== ORÇAMENTOS =====
 function norm(t){return(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')}
 function renderOrc(){
@@ -1717,7 +1845,9 @@ function renderOrc(){
   if(!list.length){tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Nenhum orçamento</div></div></td></tr>';return}
   tbody.innerHTML=list.map(o=>{const r=recPorOrc(o.id);const p=o.valor>0?Math.round((r/o.valor)*100):0;
     const dispNum=o.num&&o.num.length<20?o.num:(o.num?o.num.slice(-8):'—');
-    return`<tr style="cursor:pointer" onclick="verOrc('${o.id}')"><td><strong style="color:var(--navy)">${dispNum}</strong>${o.tipo==='os'?'<br><span class="chip" style="background:#e6f0fb;color:#1a4a7a;font-size:9.5px;margin-top:2px">OS</span>':''}</td>
+    const entregaBadge=o.status==='Concluído'?(o.entregue===false?'<br><span class="chip" style="background:var(--amber-light);color:var(--amber);font-size:9.5px;margin-top:2px">📦 Não entregue</span>':'<br><span class="chip" style="background:var(--green-light);color:var(--green);font-size:9.5px;margin-top:2px">✅ Entregue</span>'):'';
+    const rowStyle=o.status==='Concluído'&&o.entregue!==false?'opacity:.65':'';
+    return`<tr style="cursor:pointer;${rowStyle}" onclick="verOrc('${o.id}')"><td><strong style="color:var(--navy)">${dispNum}</strong>${o.tipo==='os'?'<br><span class="chip" style="background:#e6f0fb;color:#1a4a7a;font-size:9.5px;margin-top:2px">OS</span>':''}${entregaBadge}</td>
     <td style="font-size:11px;color:var(--gray-500)">${fmtD(o.data)}${o.status==='Concluído'&&o.dataConclusao?`<br><span style="color:var(--green)">✓ ${fmtD(o.dataConclusao)}</span>`:''}</td><td>${o.cliente}</td>
     <td><strong>${fmtM(o.valor)}</strong></td>
     <td><div style="min-width:78px"><div style="font-size:11px;color:var(--green);margin-bottom:3px">${fmtM(r)} (${p}%)</div><div class="progress-bar"><div class="progress-fill" style="width:${p}%"></div></div></div></td>
@@ -1828,8 +1958,15 @@ function printRecibo(r){
   const b=ST.banco;
   const dataFmt=r.data?new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}):'—';
   const srvs=r.desc||'';
+  // Calcular sequência do recibo dentro deste orçamento (melhoria 3)
+  let reciboSeq='';
+  if(r.orcId){
+    const recsOrc=ST.recebimentos.filter(x=>x.orcId===r.orcId&&x.temRecibo).sort((a,b)=>a.data?.localeCompare(b.data)||a.id.localeCompare(b.id));
+    const pos=recsOrc.findIndex(x=>x.id===r.id);
+    reciboSeq=pos>=0?String(pos+1):'';
+  }
   _abrirRecibo({
-    cliente:r.cliente,orcNum:r.orcNum||'Avulso',parcela:r.parcela||'',
+    cliente:r.cliente,orcNum:r.orcNum||'Avulso',parcela:r.parcela||'',reciboSeq,
     forma:r.forma,valor:r.valor,dataFmt,servicos:srvs,
     emp:b.fantasia||'Monólitos Topografia',
     razao:b.razao||EMP.razao,cnpj:EMP.cnpj,end:EMP.end,
@@ -1904,7 +2041,7 @@ td.vl{font-weight:500}
     </div>
   </div>
   <div class="titulo">Recibo de Pagamento</div>
-  <div class="num">${d.orcNum!=='Avulso'?d.orcNum:'Recibo Avulso'}</div>
+  <div class="num">${d.orcNum&&d.orcNum!=='Avulso'?'Ref. '+d.orcNum+(d.reciboSeq?'/R'+d.reciboSeq:''):'Recibo Avulso'}</div>
   <table>
     <tr><td class="lb">Declaramos ter recebido de</td><td class="vl"><strong>${d.cliente}</strong></td></tr>
     <tr><td class="lb">O valor de</td><td class="vl"><strong style="color:#2d6a4f">R$ ${d.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong> ${_numExt(d.valor)}</td></tr>
@@ -1929,6 +2066,10 @@ td.vl{font-weight:500}
   <button class="btn-a" style="background:#0f2240;color:white" onclick="window.print()">🖨 Imprimir / Salvar PDF</button>
   <a class="btn-a" style="background:#25d366;color:white" href="https://wa.me/?text=${waMsg}" target="_blank">📲 WhatsApp</a>
   <a class="btn-a" style="background:#1a73e8;color:white" href="mailto:?subject=${emailAssunto}&body=${emailCorpo}">✉ E-mail</a>
+</div>
+<div style="margin-top:10px;padding:10px 14px;background:#f0fff4;border:1px solid #b7eb8f;border-radius:8px;font-size:11px;color:#135200;line-height:1.7">
+  <strong>📱 No celular:</strong> Toque em <strong>⋮ → Imprimir → Salvar como PDF</strong>, depois envie pelo WhatsApp.<br>
+  Ou toque em <strong>📲 WhatsApp</strong> acima para compartilhar o link do recibo.
 </div>
 <script>window.onload=()=>{setTimeout(()=>window.print(),400)};window.onafterprint=()=>{}<\/script>
 </body></html>`);
@@ -2302,7 +2443,10 @@ function renderFinanceiro(o){
     <div style="padding:12px 18px;background:var(--amber-light);border-top:1px solid #dbb96644;display:flex;justify-content:space-between;align-items:center">
       <span style="font-size:12.5px;color:var(--amber);font-weight:500">⏳ Aguardando: ${fmtM(saldo)}</span>
       <button class="btn btn-gold btn-sm" onclick="abrirRec_orc('${o.id}')">Registrar Recebimento →</button>
-    </div>`:'<div style="padding:10px 18px;background:var(--green-light);border-top:1px solid #b7e4c7;text-align:center;font-size:12.5px;color:var(--green);font-weight:500">✓ Pagamento completo</div>'}
+    </div>`:`<div style="padding:10px 18px;background:var(--green-light);border-top:1px solid #b7e4c7;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <span style="font-size:12.5px;color:var(--green);font-weight:500">✓ Pagamento completo</span>
+      ${o.status!=='Concluído'?`<button class="btn btn-sm" style="background:var(--navy);color:white" onclick="abrirConclusao('${o.id}')">✅ Marcar como Concluído</button>`:`<span style="font-size:12px;color:var(--green)">${o.entregue===false?'📦 Aguardando entrega'+(o.motivoNaoEntrega?' — '+o.motivoNaoEntrega:''):'✅ Entregue'}</span>`}
+    </div>`}
   </div>`;
 
   document.getElementById('fin-content').innerHTML=html;
@@ -2403,7 +2547,27 @@ function filtrarSrvSel(){
 
 function selecionarServico(id){
   const s=ST.servicos?.find(x=>x.id===id);if(!s)return;
-  addSrv(s.desc,s.valor);
+  // Melhoria 6: usar última linha vazia se existir, senão criar nova
+  const linhas=document.querySelectorAll('#srvs .srv-linha');
+  let ultimaLinha=linhas.length?linhas[linhas.length-1]:null;
+  const ultimaDesc=ultimaLinha?.querySelector('textarea')?.value?.trim()||'';
+  if(ultimaLinha&&!ultimaDesc){
+    // Preencher a linha vazia existente com o serviço selecionado
+    ultimaLinha.querySelector('textarea').value=s.desc||'';
+    ultimaLinha.querySelector('input[type=number]').value=s.valor||'';
+    // Remover checkbox "salvar no cadastro" se houver (veio do cadastro)
+    const chkBox=ultimaLinha.querySelector('input[type=checkbox]')?.closest('div');
+    if(chkBox)chkBox.remove();
+  }else{
+    // Última linha tem conteúdo — criar nova linha com o serviço
+    addSrv(s.desc,s.valor);
+    // Remover o checkbox da linha recém criada (veio do cadastro)
+    const linhasNow=document.querySelectorAll('#srvs .srv-linha');
+    const novaLinha=linhasNow[linhasNow.length-1];
+    const chkBox=novaLinha?.querySelector('input[type=checkbox]')?.closest('div');
+    if(chkBox)chkBox.remove();
+  }
+  calcTotal();
   closeM('modal-srv-sel');
 }
 
@@ -2650,7 +2814,48 @@ function compCard(comp,destaque){
   </div>`;
 }
 
-// ===== ANDAMENTO =====
+function selecionarConcl(tipo){
+  document.getElementById('mconcl-tipo').value=tipo;
+  document.getElementById('lbl-entregue').style.border=tipo==='entregue'?'2px solid var(--green)':'2px solid var(--gray-200)';
+  document.getElementById('lbl-entregue').style.background=tipo==='entregue'?'var(--green-light)':'';
+  document.getElementById('lbl-nao-entregue').style.border=tipo==='nao-entregue'?'2px solid var(--amber)':'2px solid var(--gray-200)';
+  document.getElementById('lbl-nao-entregue').style.background=tipo==='nao-entregue'?'var(--amber-light)':'';
+  document.getElementById('motivo-nao-entrega-box').style.display=tipo==='nao-entregue'?'block':'none';
+  const btn=document.getElementById('btn-confirmar-concl');
+  btn.disabled=false;btn.style.opacity='1';
+}
+function abrirConclusao(id){
+  document.getElementById('mconcl-orc-id').value=id;
+  document.getElementById('mconcl-tipo').value='';
+  document.getElementById('motivo-nao-entrega').value='';
+  document.getElementById('motivo-nao-entrega-box').style.display='none';
+  document.getElementById('lbl-entregue').style.border='2px solid var(--gray-200)';
+  document.getElementById('lbl-entregue').style.background='';
+  document.getElementById('lbl-nao-entregue').style.border='2px solid var(--gray-200)';
+  document.getElementById('lbl-nao-entregue').style.background='';
+  const btn=document.getElementById('btn-confirmar-concl');
+  btn.disabled=true;btn.style.opacity='.5';
+  openM('modal-conclusao');
+}
+function confirmarConclusao(){
+  const id=document.getElementById('mconcl-orc-id').value;
+  const tipo=document.getElementById('mconcl-tipo').value;
+  const motivo=document.getElementById('motivo-nao-entrega').value.trim();
+  if(!tipo)return;
+  if(tipo==='nao-entregue'&&!motivo){alert('Informe o motivo da não entrega.');return}
+  const idx=ST.orcamentos.findIndex(x=>x.id===id);if(idx<0)return;
+  ST.orcamentos[idx].status='Concluído';
+  ST.orcamentos[idx].dataConclusao=today();
+  ST.orcamentos[idx].entregue=tipo==='entregue';
+  ST.orcamentos[idx].motivoNaoEntrega=tipo==='nao-entregue'?motivo:'';
+  save();closeM('modal-conclusao');renderOrc();renderDash();
+  const badge=document.createElement('div');
+  badge.style.cssText='position:fixed;bottom:16px;right:16px;background:var(--green-light);color:var(--green);padding:8px 14px;border-radius:20px;font-size:12px;font-weight:500;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,.15)';
+  badge.textContent=tipo==='entregue'?'✅ Concluído e Entregue!':'📦 Concluído — Aguardando Entrega';
+  document.body.appendChild(badge);setTimeout(()=>badge.remove(),3500);
+}
+
+
 function abrirAndamento(id){
   const o=ST.orcamentos.find(x=>x.id===id);if(!o)return;
   document.getElementById('mand-orc-id').value=id;
