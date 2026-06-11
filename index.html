@@ -801,7 +801,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
     <button class="btn btn-outline" onclick="salvarPdfOrc()" title="Salvar PDF e enviar no WhatsApp" style="background:#25d366;color:white;border-color:#25d366">📄 PDF/WhatsApp</button>
     <button class="btn btn-green" onclick="enviarWhatsApp()" title="Enviar orçamento pelo WhatsApp">📲 WhatsApp</button>
     <button class="btn btn-gold" onclick="salvarOrc()">Salvar</button>
-    <button class="btn btn-gold" style="background:var(--navy);color:white" onclick="salvarOrc(true)">Salvar e Fechar</button>
+    <button class="btn btn-gold" style="background:var(--navy);color:white" onclick="salvarComoPdf()">💾 Salvar Como</button>
   </div>
 </div></div>
 
@@ -1492,6 +1492,16 @@ function salvarOrc(){
     ST.clientes.push({id:Date.now().toString(),nome:o.cliente,cpf:'',tel:'',email:'',end:'',inter:'',interTel:'',obs:''});
   save();closeM('modal-orc');renderOrc();renderDash();
 }
+function salvarComoPdf(){
+  const num=document.getElementById('orc-num').value||'';
+  const cli=document.getElementById('orc-cli').value||'';
+  const tipo=document.getElementById('orc-tipo').value==='os'?'OS':'ORC';
+  if(!cli||!num){alert('Informe cliente e número do orçamento.');return}
+  salvarOrc();
+  // Abre janela de impressão — no Chrome: destino "Salvar como PDF" já sugere o nome
+  setTimeout(function(){ imprimir(); }, 300);
+}
+
 function editarOrc(id){
   const o=ST.orcamentos.find(x=>x.id===id);if(!o)return;
   document.getElementById('dl-cli').innerHTML=ST.clientes.map(c=>`<option value="${c.nome}">`).join('');
@@ -1628,15 +1638,15 @@ function imprimir(){
   const obs=document.getElementById('orc-obs').value;
   const srvs=getSrvs();const parcs=getParcs();const total=srvs.reduce((a,s)=>a+s.valor,0);
   const b=ST.banco;
-  const srvHTML=srvs.map(s=>`<tr><td style="padding:11px;border-bottom:1px solid #f0ede8;font-size:12.5px;vertical-align:top;text-align:justify;line-height:1.7;white-space:pre-wrap">${s.desc}</td><td style="padding:11px;border-bottom:1px solid #f0ede8;font-size:12.5px;text-align:right;white-space:nowrap;vertical-align:top">${fmtM(s.valor)}</td></tr>`).join('');
+  const srvHTML=srvs.map(s=>`<tr><td style="padding:11px;border-bottom:1px solid #f0ede8;font-size:12.5px;font-weight:300;vertical-align:top;text-align:justify;line-height:1.7;white-space:pre-wrap">${s.desc}</td><td style="padding:11px;border-bottom:1px solid #f0ede8;font-size:12.5px;text-align:right;white-space:nowrap;vertical-align:top">${fmtM(s.valor)}</td></tr>`).join('');
   const parcHTML=parcs.map(p=>{const calc=p.tipo==='%'?(total*(parseFloat(p.val)||0)/100):(parseFloat(p.val)||0);return`<tr><td style="padding:7px 11px;border-bottom:1px solid #f0ede8;font-size:12px">${p.label}</td><td style="padding:7px 11px;border-bottom:1px solid #f0ede8;font-size:12px;text-align:right;color:#6b6560">${p.tipo==='%'?parseFloat(p.val||0)+'%':'—'}</td><td style="padding:7px 11px;border-bottom:1px solid #f0ede8;font-size:12px;text-align:right;font-weight:600">${fmtM(calc)}</td></tr>`}).join('');
   const tipo=document.getElementById('orc-tipo').value==='os'?'OS':'ORC';
   const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${tipo}-${num} — ${cli}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${tipo}-${num}_${cli.replace(/[^a-zA-ZÀ-ÿ0-9 ]/g,"").trim()}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'DM Sans',sans-serif;color:#1c1a17;font-size:12px}
+  *{box-sizing:border-box;margin:0;padding:0;font-synthesis:none}
+  body{font-family:Calibri,'Trebuchet MS','Segoe UI',Arial,sans-serif;color:#1c1a17;font-size:12px;font-weight:400;-webkit-font-smoothing:antialiased}
   .doc{max-width:100%;margin:0;padding:12mm 14mm 10mm}
   .hdr{margin-bottom:14px;padding-bottom:12px;border-bottom:2.5px solid #0f2240}
   .hdr-center{text-align:center;padding:10px 0 8px}
