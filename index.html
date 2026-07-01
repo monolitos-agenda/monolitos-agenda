@@ -1567,10 +1567,10 @@ function verOrc(id){
     </div>
     ${parcs.length?`<div style="margin-bottom:13px">
       <div style="font-size:10.5px;font-weight:500;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">Condições de Pagamento</div>
-      ${parcs.map(p=>`<div style="display:flex;justify-content:space-between;padding:7px 10px;border-bottom:1px solid var(--gray-100);font-size:12px">
-        <span>${p.desc||'Parcela'}</span>
-        <span style="color:var(--amber)">${p.pct?p.pct+'%':''} · <strong>${fmtM(p.valor)}</strong></span>
-      </div>`).join('')}
+      ${parcs.map(p=>{const calc=p.tipo==='%'?(parseFloat(o.valor||0)*(parseFloat(p.val)||0)/100):(parseFloat(p.val)||0);return`<div style="display:flex;justify-content:space-between;padding:7px 10px;border-bottom:1px solid var(--gray-100);font-size:12px">
+        <span>${p.label||'Parcela'}</span>
+        <span style="color:var(--amber)">${p.tipo==='%'?(parseFloat(p.val)||0)+'%':''} · <strong>${fmtM(calc)}</strong></span>
+      </div>`;}).join('')}
     </div>`:''}
     ${o.andamento?`<div style="background:var(--blue-light);border-radius:var(--radius);padding:10px 12px;font-size:12px;color:var(--blue);margin-bottom:10px">📌 <strong>Andamento:</strong> ${o.andamento}</div>`:''}
     ${o.obs?`<div style="background:var(--amber-light);border-radius:var(--radius);padding:10px 12px;font-size:12px;color:var(--amber)">📝 ${o.obs}</div>`:''}
@@ -1642,8 +1642,9 @@ function imprimir(){
   const srvHTML=srvs.map(s=>`<tr><td style="padding:11px;border-bottom:1px solid #f0ede8;font-size:12.5px;font-weight:300;vertical-align:top;text-align:justify;line-height:1.7;white-space:pre-wrap">${s.desc}</td><td style="padding:11px;border-bottom:1px solid #f0ede8;font-size:12.5px;text-align:right;white-space:nowrap;vertical-align:top">${fmtM(s.valor)}</td></tr>`).join('');
   const parcHTML=parcs.map(p=>{const calc=p.tipo==='%'?(total*(parseFloat(p.val)||0)/100):(parseFloat(p.val)||0);return`<tr><td style="padding:7px 11px;border-bottom:1px solid #f0ede8;font-size:12px">${p.label}</td><td style="padding:7px 11px;border-bottom:1px solid #f0ede8;font-size:12px;text-align:right;color:#6b6560">${p.tipo==='%'?parseFloat(p.val||0)+'%':'—'}</td><td style="padding:7px 11px;border-bottom:1px solid #f0ede8;font-size:12px;text-align:right;font-weight:600">${fmtM(calc)}</td></tr>`}).join('');
   const tipo=document.getElementById('orc-tipo').value==='os'?'OS':'ORC';
+  const nomeArquivo=`${tipo}-${num} - ${cli.replace(/[^a-zA-ZÀ-ÿ0-9 ]/g,"").trim()}`;
   const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${tipo}-${num}_${cli.replace(/[^a-zA-ZÀ-ÿ0-9 ]/g,"").trim()}</title>
+  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${nomeArquivo}</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
   *{box-sizing:border-box;margin:0;padding:0;font-synthesis:none}
@@ -1721,11 +1722,11 @@ function imprimir(){
       3. Abra o WhatsApp → Selecione o contato → Anexe o PDF
     </div>
     <div class="no-print" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
-      <button style="padding:9px 18px;background:#0f2240;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600" onclick="window.print()">🖨 Imprimir / Salvar PDF</button>
+      <button style="padding:9px 18px;background:#0f2240;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600" onclick="document.title=${JSON.stringify(nomeArquivo)};window.print()">🖨 Imprimir / Salvar PDF</button>
     </div>
   </div>
   <style>.no-print{display:block}@media print{.no-print{display:none!important}}</style>
-  ${'<'+'script>'}window.onload=function(){setTimeout(()=>window.print(),300)};window.onafterprint=()=>window.close();${'</'+'script>'}</body></html>`);
+  ${'<'+'script>'}document.title=${JSON.stringify(nomeArquivo)};window.onload=function(){document.title=${JSON.stringify(nomeArquivo)};setTimeout(()=>{document.title=${JSON.stringify(nomeArquivo)};window.print();},300)};window.onafterprint=()=>window.close();${'</'+'script>'}</body></html>`);
   w.document.close();
 }
 function printById(id){editarOrc(id);setTimeout(()=>imprimir(),250)}
