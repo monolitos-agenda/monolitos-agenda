@@ -1643,8 +1643,7 @@ function imprimir(){
   const parcHTML=parcs.map(p=>{const calc=p.tipo==='%'?(total*(parseFloat(p.val)||0)/100):(parseFloat(p.val)||0);return`<tr><td style="padding:7px 11px;border-bottom:1px solid #f0ede8;font-size:12px">${p.label}</td><td style="padding:7px 11px;border-bottom:1px solid #f0ede8;font-size:12px;text-align:right;color:#6b6560">${p.tipo==='%'?parseFloat(p.val||0)+'%':'—'}</td><td style="padding:7px 11px;border-bottom:1px solid #f0ede8;font-size:12px;text-align:right;font-weight:600">${fmtM(calc)}</td></tr>`}).join('');
   const tipo=document.getElementById('orc-tipo').value==='os'?'OS':'ORC';
   const nomeArquivo=`${tipo}-${num} - ${cli.replace(/[^a-zA-ZÀ-ÿ0-9 ]/g,"").trim()}`;
-  const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${nomeArquivo}</title>
+  const htmlDoc=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${nomeArquivo}</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
   *{box-sizing:border-box;margin:0;padding:0;font-synthesis:none}
@@ -1726,8 +1725,9 @@ function imprimir(){
     </div>
   </div>
   <style>.no-print{display:block}@media print{.no-print{display:none!important}}</style>
-  ${'<'+'script>'}document.title=${JSON.stringify(nomeArquivo)};window.onload=function(){document.title=${JSON.stringify(nomeArquivo)};setTimeout(()=>{document.title=${JSON.stringify(nomeArquivo)};window.print();},300)};window.onafterprint=()=>window.close();${'</'+'script>'}</body></html>`);
-  w.document.close();
+  ${'<'+'script>'}document.title=${JSON.stringify(nomeArquivo)};window.onload=function(){document.title=${JSON.stringify(nomeArquivo)};setTimeout(()=>{document.title=${JSON.stringify(nomeArquivo)};window.print();},300)};window.onafterprint=()=>window.close();${'</'+'script>'}</body></html>`;
+  const blobUrl=URL.createObjectURL(new Blob([htmlDoc],{type:'text/html'}));
+  window.open(blobUrl,'_blank');
 }
 function printById(id){editarOrc(id);setTimeout(()=>imprimir(),250)}
 
@@ -2061,7 +2061,6 @@ function _numExt(v){
 }
 
 function _abrirRecibo(d){
-  const w=window.open('','_blank');
   const srvHtml=d.servicos?`
     <div style="background:#f7f6f3;border:1px solid #ddd;border-radius:6px;padding:10px 14px;margin:14px 0">
       <div style="font-size:9px;font-weight:bold;color:#555;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Serviços</div>
@@ -2070,7 +2069,8 @@ function _abrirRecibo(d){
   const waMsg=encodeURIComponent(`🧾 *Recibo de Pagamento*\n\n*${d.orcNum!=='Avulso'?'OS/Orçamento nº '+d.orcNum:'Recibo Avulso'}*\nCliente: ${d.cliente}\nData: ${d.dataFmt}\n${d.parcela?'Parcela: '+d.parcela+'\n':''}Forma: ${d.forma}\n💰 *Valor: R$ ${d.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}*\n\n_Monólitos Topografia e Regularização de Imóveis_`);
   const emailAssunto=encodeURIComponent('Recibo — '+(d.orcNum!=='Avulso'?'OS '+d.orcNum:'Avulso')+' — '+d.cliente);
   const emailCorpo=encodeURIComponent('Prezado(a) '+d.cliente+',\n\nSegue o recibo de pagamento.\n\nValor: R$ '+d.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})+'\nData: '+d.dataFmt+'\n\nAtenciosamente,\nMonólitos Topografia');
-  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Recibo — ${d.orcNum} — ${d.cliente}</title>
+  const nomeReciboArquivo=`Recibo - ${d.orcNum} - ${d.cliente}`.replace(/[^a-zA-ZÀ-ÿ0-9 -]/g,"").trim();
+  const htmlDoc=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${nomeReciboArquivo}</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,sans-serif;font-size:11pt;color:#111;background:#fff}
@@ -2136,7 +2136,7 @@ td.vl{font-weight:500}
   </div>
 </div>
 <div class="acoes">
-  <button class="btn-a" style="background:#0f2240;color:white" onclick="window.print()">🖨 Imprimir / Salvar PDF</button>
+  <button class="btn-a" style="background:#0f2240;color:white" onclick="document.title=${JSON.stringify(nomeReciboArquivo)};window.print()">🖨 Imprimir / Salvar PDF</button>
   <a class="btn-a" style="background:#25d366;color:white" href="https://wa.me/?text=${waMsg}" target="_blank">📲 WhatsApp</a>
   <a class="btn-a" style="background:#1a73e8;color:white" href="mailto:?subject=${emailAssunto}&body=${emailCorpo}">✉ E-mail</a>
 </div>
@@ -2144,9 +2144,10 @@ td.vl{font-weight:500}
   <strong>📱 No celular:</strong> Toque em <strong>⋮ → Imprimir → Salvar como PDF</strong>, depois envie pelo WhatsApp.<br>
   Ou toque em <strong>📲 WhatsApp</strong> acima para compartilhar o link do recibo.
 </div>
-<script>window.onload=()=>{setTimeout(()=>window.print(),400)};window.onafterprint=()=>{}<\/script>
-</body></html>`);
-  w.document.close();
+<script>document.title=${JSON.stringify(nomeReciboArquivo)};window.onload=()=>{document.title=${JSON.stringify(nomeReciboArquivo)};setTimeout(()=>{document.title=${JSON.stringify(nomeReciboArquivo)};window.print();},400)};window.onafterprint=()=>{}<\/script>
+</body></html>`;
+  const blobUrl=URL.createObjectURL(new Blob([htmlDoc],{type:'text/html'}));
+  window.open(blobUrl,'_blank');
 }
 
 function renderRec(){
