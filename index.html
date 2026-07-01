@@ -136,7 +136,7 @@ select.form-control{cursor:pointer}
 .banco-row:last-child{border-bottom:none}
 .banco-label{color:var(--gray-500);font-size:11px}
 .banco-value{font-weight:500;color:var(--navy);text-align:right;max-width:58%;font-size:12px}
-.srv-linha{display:flex;gap:7px;align-items:flex-start;margin-bottom:7px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);padding:9px}
+.srv-linha{display:flex;flex-wrap:wrap;gap:7px;align-items:flex-start;margin-bottom:7px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);padding:9px}
 .parc-linha{display:flex;gap:7px;align-items:center;margin-bottom:6px;padding:7px 10px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);flex-wrap:wrap}
 .parc-calc{font-size:12px;color:var(--navy);font-weight:600;min-width:76px;text-align:right}
 .sync-banner{background:var(--blue-light);border:1px solid #b5d4f4;border-radius:var(--radius);padding:10px 13px;display:flex;align-items:center;gap:10px;margin-bottom:15px;font-size:12px;color:var(--blue)}
@@ -1333,7 +1333,7 @@ function initSrvs(lista){srvCnt=0;document.getElementById('srvs').innerHTML='';(
 function addSrv(desc='',valor=''){
   srvCnt++;const id='s'+srvCnt;const div=document.createElement('div');div.className='srv-linha';div.id=id;
   const ehNovo=!desc; // se sem desc, é linha em branco adicionada manualmente
-  div.innerHTML=`<textarea class="form-control srv-desc" placeholder="Descrição do serviço..." oninput="calcTotal()" style="min-height:110px;flex:1;text-align:justify;line-height:1.65">${desc}</textarea>
+  div.innerHTML=`<textarea class="form-control srv-desc" placeholder="Descrição do serviço..." oninput="calcTotal()" style="min-height:110px;min-width:200px;flex:1;text-align:justify;line-height:1.65">${desc}</textarea>
     <input type="number" class="form-control srv-val" placeholder="Valor R$" value="${valor}" oninput="calcTotal()" style="width:115px;flex-shrink:0">
     ${srvCnt>1?`<button class="btn btn-danger btn-sm" onclick="rmSrv('${id}')" style="flex-shrink:0;align-self:flex-start">✕</button>`:'<div style="width:0"></div>'}`;
   // Caixa "salvar no cadastro" apenas para linhas digitadas manualmente (não vindas do cadastro)
