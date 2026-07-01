@@ -2420,9 +2420,9 @@ function renderRel(){
   document.getElementById('rel-luc').style.color=luc>=0?'var(--green)':'var(--red)';
   document.getElementById('rel-mar').textContent=mar+'%';
   const pm={};
-  ST.orcamentos.forEach(o=>{if(!o.data)return;const d=new Date(o.data);const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(!pm[k])pm[k]={q:0,r:0,c:0};pm[k].q++});
-  ST.recebimentos.forEach(r=>{if(!r.data)return;const d=new Date(r.data);const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(!pm[k])pm[k]={q:0,r:0,c:0};pm[k].r+=parseFloat(r.valor||0)});
-  ST.custos.forEach(c=>{if(!c.data)return;const d=new Date(c.data);const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(!pm[k])pm[k]={q:0,r:0,c:0};pm[k].c+=parseFloat(c.valor||0)});
+  ST.orcamentos.forEach(o=>{if(!o.data)return;const d=new Date(o.data+'T12:00:00');const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(!pm[k])pm[k]={q:0,r:0,c:0};pm[k].q++});
+  ST.recebimentos.forEach(r=>{if(!r.data)return;const d=new Date(r.data+'T12:00:00');const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(!pm[k])pm[k]={q:0,r:0,c:0};pm[k].r+=parseFloat(r.valor||0)});
+  ST.custos.forEach(c=>{if(!c.data)return;const d=new Date(c.data+'T12:00:00');const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(!pm[k])pm[k]={q:0,r:0,c:0};pm[k].c+=parseFloat(c.valor||0)});
   const ms=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   const keys=Object.keys(pm).sort().reverse();
   document.getElementById('tbody-rel').innerHTML=!keys.length?'<tr><td colspan="5"><div class="empty-state" style="padding:18px"><div class="empty-text">Sem dados</div></div></td></tr>':
