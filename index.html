@@ -925,6 +925,22 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
 </div></div>
 
 <!-- MODAL CONCLUSÃO -->
+<div class="modal-overlay" id="modal-fatmes" style="display:none">
+<div class="modal" style="max-width:640px">
+  <div class="modal-header">
+    <div class="modal-title" id="fatmes-title">Faturamento do Mês</div>
+    <button class="btn btn-ghost" onclick="closeM('modal-fatmes')">✕</button>
+  </div>
+  <div class="modal-body">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <span style="font-size:12.5px;color:var(--gray-500)">Total recebido no mês</span>
+      <strong style="color:var(--green);font-size:16px" id="fatmes-total">R$ 0</strong>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>Data</th><th>Cliente</th><th>Orçamento/OS</th><th>Forma</th><th>Valor</th></tr></thead><tbody id="tbody-fatmes"></tbody></table></div>
+  </div>
+</div>
+</div>
+
 <div class="modal-overlay" id="modal-conclusao" style="display:none">
 <div class="modal" style="max-width:480px">
   <div class="modal-header">
@@ -1963,6 +1979,24 @@ function updRecPrev(){
   document.getElementById('rp-forma').textContent=document.getElementById('rec-forma')?.value||'—';
   document.getElementById('rp-val').textContent=fmtM(parseFloat(document.getElementById('rec-valor')?.value)||0);
 }
+// Melhorias: (1) 1º pagamento -> vira Ordem de Serviço; (2) recebimento que completa o valor total -> status Concluído
+function atualizarStatusAutoOrc(orcId){
+  const orcIdx=ST.orcamentos.findIndex(o=>o.id===orcId);
+  if(orcIdx<0)return;
+  const orc=ST.orcamentos[orcIdx];
+  const recebido=recPorOrc(orc.id);
+  const totalOrc=parseFloat(orc.valor||0);
+  // (1) Primeiro pagamento: Orçamento -> Ordem de Serviço + status Em andamento
+  if(recebido>0){
+    if(orc.tipo!=='os')orc.tipo='os';
+    if(orc.status==='Aberto'||orc.status==='Aprovado')orc.status='Em andamento';
+  }
+  // (2) Último recebimento (valor total atingido): status Concluído
+  if(totalOrc>0&&recebido>=totalOrc&&orc.status!=='Concluído'){
+    orc.status='Concluído';
+    orc.dataConclusao=orc.dataConclusao||today();
+  }
+}
 function salvarRec(){
   const orcId=document.getElementById('rec-orc').value;
   const orc=ST.orcamentos.find(o=>o.id===orcId);
@@ -1984,6 +2018,7 @@ function salvarRec(){
       valor,forma:document.getElementById('rec-forma').value,
       temRecibo:original.temRecibo||gr
     };
+    atualizarStatusAutoOrc(orcId);
     save();closeM('modal-rec');renderRec();renderDash();
     const editedId=editingRecId;editingRecId=null;
     if(gr&&!original.temRecibo)printRecibo(ST.recebimentos.find(x=>x.id===editedId));
@@ -2007,14 +2042,7 @@ function salvarRec(){
     desc:document.getElementById('rec-desc').value,valor,
     forma:document.getElementById('rec-forma').value,temRecibo:gr};
   ST.recebimentos.push(r);
-  // Auto-update status to Em andamento on first payment
-  const orcIdx = ST.orcamentos.findIndex(o=>o.id===orcId);
-  if(orcIdx>=0){
-    const orc = ST.orcamentos[orcIdx];
-    if(orc.status==='Aberto'||orc.status==='Aprovado'){
-      ST.orcamentos[orcIdx].status='Em andamento';
-    }
-  }
+  atualizarStatusAutoOrc(orcId);
   save();closeM('modal-rec');renderRec();renderDash();
   if(gr)printRecibo(r);
   // Return to financeiro panel if opened from there
@@ -2429,8 +2457,24 @@ function renderRel(){
   const keys=Object.keys(pm).sort().reverse();
   document.getElementById('tbody-rel').innerHTML=!keys.length?'<tr><td colspan="5"><div class="empty-state" style="padding:18px"><div class="empty-text">Sem dados</div></div></td></tr>':
     keys.map(k=>{const[y,m]=k.split('-');const nm=ms[parseInt(m)-1]+'/'+y;const d=pm[k];const lc=d.r-d.c;
-      return`<tr><td><strong>${nm}</strong></td><td>${d.q}</td><td style="color:var(--green)">${fmtM(d.r)}</td><td style="color:var(--red)">${fmtM(d.c)}</td><td style="color:${lc>=0?'var(--green)':'var(--red)'}"><strong>${fmtM(lc)}</strong></td></tr>`;
+      return`<tr style="cursor:pointer" onclick="abrirDetalheFatMes('${k}','${nm}')"><td><strong>${nm}</strong></td><td>${d.q}</td><td style="color:var(--green)">${fmtM(d.r)}</td><td style="color:var(--red)">${fmtM(d.c)}</td><td style="color:${lc>=0?'var(--green)':'var(--red)'}"><strong>${fmtM(lc)}</strong></td></tr>`;
     }).join('');
+}
+// Melhoria 3: detalhamento do faturamento de um mês, com todas as entradas por data
+function abrirDetalheFatMes(k,nm){
+  const recsMes=ST.recebimentos.filter(r=>{
+    if(!r.data)return false;
+    const d=new Date(r.data+'T12:00:00');
+    const rk=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    return rk===k;
+  }).sort((a,b)=>(a.data||'').localeCompare(b.data||'')||a.id.localeCompare(b.id));
+  document.getElementById('fatmes-title').textContent='Faturamento — '+nm;
+  const total=recsMes.reduce((a,r)=>a+parseFloat(r.valor||0),0);
+  document.getElementById('fatmes-total').textContent=fmtM(total);
+  document.getElementById('tbody-fatmes').innerHTML=!recsMes.length?
+    '<tr><td colspan="5"><div class="empty-state" style="padding:18px"><div class="empty-text">Sem recebimentos neste mês</div></div></td></tr>':
+    recsMes.map(r=>`<tr><td style="font-size:11.5px;color:var(--gray-500)">${fmtD(r.data)}</td><td>${r.cliente||'—'}</td><td>${r.orcNum||'—'}</td><td>${r.forma||'—'}</td><td style="color:var(--green)"><strong>${fmtM(r.valor)}</strong></td></tr>`).join('');
+  openM('modal-fatmes');
 }
 
 // ===== TIPO DOC =====
