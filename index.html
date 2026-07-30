@@ -1646,6 +1646,26 @@ function _instrucaoPdf(tipo){
 
 // Modificar imprimir() para aceitar modo PDF
 
+// Abre um documento HTML de impressão (orçamento/OS, recibo) de forma robusta em PC e Android.
+// No PC mantém o fluxo já validado (nova aba via Blob URL, necessário para o nome do arquivo no driver de impressão).
+// No Android, abrir em nova aba pode deixar o preview de impressão (inclusive "Salvar como PDF") em branco,
+// pois o conteúdo blob: perde o contexto quando o diálogo nativo do sistema assume a tela.
+// Por isso, no Android usamos um iframe oculto dentro da própria página, que é mais estável.
+function abrirDocParaImpressao(htmlDoc){
+  const isAndroid=/Android/i.test(navigator.userAgent);
+  const blobUrl=URL.createObjectURL(new Blob([htmlDoc],{type:'text/html'}));
+  if(!isAndroid){
+    window.open(blobUrl,'_blank');
+    return;
+  }
+  const iframe=document.createElement('iframe');
+  iframe.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+  document.body.appendChild(iframe);
+  const limpar=()=>{try{document.body.removeChild(iframe)}catch(e){}URL.revokeObjectURL(blobUrl)};
+  iframe.onload=()=>{try{iframe.contentWindow.onafterprint=limpar}catch(e){}};
+  setTimeout(limpar,120000);
+  iframe.src=blobUrl;
+}
 function imprimir(){
   const num=document.getElementById('orc-num').value;
   const data=fmtD(document.getElementById('orc-data').value);
@@ -1742,8 +1762,7 @@ function imprimir(){
   </div>
   <style>.no-print{display:block}@media print{.no-print{display:none!important}}</style>
   ${'<'+'script>'}document.title=${JSON.stringify(nomeArquivo)};window.onload=function(){document.title=${JSON.stringify(nomeArquivo)};setTimeout(()=>{document.title=${JSON.stringify(nomeArquivo)};window.print();},300)};window.onafterprint=()=>window.close();${'</'+'script>'}</body></html>`;
-  const blobUrl=URL.createObjectURL(new Blob([htmlDoc],{type:'text/html'}));
-  window.open(blobUrl,'_blank');
+  abrirDocParaImpressao(htmlDoc);
 }
 function printById(id){editarOrc(id);setTimeout(()=>imprimir(),250)}
 
@@ -2174,8 +2193,7 @@ td.vl{font-weight:500}
 </div>
 <script>document.title=${JSON.stringify(nomeReciboArquivo)};window.onload=()=>{document.title=${JSON.stringify(nomeReciboArquivo)};setTimeout(()=>{document.title=${JSON.stringify(nomeReciboArquivo)};window.print();},400)};window.onafterprint=()=>{}<\/script>
 </body></html>`;
-  const blobUrl=URL.createObjectURL(new Blob([htmlDoc],{type:'text/html'}));
-  window.open(blobUrl,'_blank');
+  abrirDocParaImpressao(htmlDoc);
 }
 
 function renderRec(){
