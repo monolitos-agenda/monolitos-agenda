@@ -1648,23 +1648,81 @@ function _instrucaoPdf(tipo){
 
 // Abre um documento HTML de impressão (orçamento/OS, recibo) de forma robusta em PC e Android.
 // No PC mantém o fluxo já validado (nova aba via Blob URL, necessário para o nome do arquivo no driver de impressão).
-// No Android, abrir em nova aba pode deixar o preview de impressão (inclusive "Salvar como PDF") em branco,
-// pois o conteúdo blob: perde o contexto quando o diálogo nativo do sistema assume a tela.
-// Por isso, no Android usamos um iframe oculto dentro da própria página, que é mais estável.
-function abrirDocParaImpressao(htmlDoc){
+// No Android, o diálogo nativo de impressão do navegador se mostrou não confiável (chegou a imprimir a
+// tela do app por trás, em branco, ou sem o número/nome do cliente). Por isso, no Android geramos o PDF
+// diretamente no aparelho (a partir do mesmo layout usado na impressão) e oferecemos salvar/compartilhar
+// (inclusive direto pelo WhatsApp, quando o aparelho suporta).
+function _carregarHtml2Pdf(){
+  return new Promise((resolve,reject)=>{
+    if(window.html2pdf){resolve();return}
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    s.onload=()=>resolve();
+    s.onerror=()=>reject(new Error('Falha ao carregar gerador de PDF'));
+    document.head.appendChild(s);
+  });
+}
+function _baixarBlobComoArquivo(blob,filename){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
+}
+function _compartilharOuBaixarPdf(blob,filename){
+  try{
+    const file=new File([blob],filename,{type:'application/pdf'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      navigator.share({files:[file],title:filename}).catch(()=>_baixarBlobComoArquivo(blob,filename));
+      return;
+    }
+  }catch(e){}
+  _baixarBlobComoArquivo(blob,filename);
+}
+function abrirDocParaImpressao(htmlDoc,nomeArquivo){
   const isAndroid=/Android/i.test(navigator.userAgent);
-  const blobUrl=URL.createObjectURL(new Blob([htmlDoc],{type:'text/html'}));
   if(!isAndroid){
+    const blobUrl=URL.createObjectURL(new Blob([htmlDoc],{type:'text/html'}));
     window.open(blobUrl,'_blank');
     return;
   }
-  const iframe=document.createElement('iframe');
-  iframe.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
-  document.body.appendChild(iframe);
-  const limpar=()=>{try{document.body.removeChild(iframe)}catch(e){}URL.revokeObjectURL(blobUrl)};
-  iframe.onload=()=>{try{iframe.contentWindow.onafterprint=limpar}catch(e){}};
-  setTimeout(limpar,120000);
-  iframe.src=blobUrl;
+  const filename=(nomeArquivo||'documento').replace(/[\\/:*?"<>|]/g,'')+'.pdf';
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:#0f2240;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;z-index:99999;gap:10px;flex-direction:column;text-align:center;padding:20px';
+  overlay.innerHTML='<div style="font-size:30px">📄</div><div>Gerando PDF…</div>';
+  document.body.appendChild(overlay);
+  _carregarHtml2Pdf().then(()=>{
+    const parser=new DOMParser();
+    const parsed=parser.parseFromString(htmlDoc,'text/html');
+    const styleTags=Array.from(parsed.head.querySelectorAll('style')).map(s=>s.outerHTML).join('');
+    const container=document.createElement('div');
+    // Importante: o container precisa ficar no fluxo normal do documento (não fixed/absolute/opacity:0)
+    // para o html2canvas medir a altura corretamente. Por isso ele fica coberto pelo overlay acima,
+    // em vez de escondido via CSS.
+    container.style.cssText='width:794px;background:#fff';
+    container.innerHTML=styleTags+parsed.body.innerHTML;
+    container.querySelectorAll('.no-print,.acoes').forEach(el=>el.remove());
+    document.body.appendChild(container);
+    window.html2pdf().set({
+      margin:0,
+      filename,
+      image:{type:'jpeg',quality:0.95},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},
+      jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+    }).from(container).outputPdf('blob').then(blob=>{
+      try{document.body.removeChild(container)}catch(e){}
+      try{document.body.removeChild(overlay)}catch(e){}
+      _compartilharOuBaixarPdf(blob,filename);
+    }).catch(err=>{
+      try{document.body.removeChild(container)}catch(e){}
+      try{document.body.removeChild(overlay)}catch(e){}
+      console.error(err);
+      alert('Não foi possível gerar o PDF. Tente novamente.');
+    });
+  }).catch(()=>{
+    try{document.body.removeChild(overlay)}catch(e){}
+    alert('Não foi possível carregar o gerador de PDF. Verifique sua conexão com a internet e tente novamente.');
+  });
 }
 function imprimir(){
   const num=document.getElementById('orc-num').value;
@@ -1762,7 +1820,7 @@ function imprimir(){
   </div>
   <style>.no-print{display:block}@media print{.no-print{display:none!important}}</style>
   ${'<'+'script>'}document.title=${JSON.stringify(nomeArquivo)};window.onload=function(){document.title=${JSON.stringify(nomeArquivo)};setTimeout(()=>{document.title=${JSON.stringify(nomeArquivo)};window.print();},300)};window.onafterprint=()=>window.close();${'</'+'script>'}</body></html>`;
-  abrirDocParaImpressao(htmlDoc);
+  abrirDocParaImpressao(htmlDoc,nomeArquivo);
 }
 function printById(id){editarOrc(id);setTimeout(()=>imprimir(),250)}
 
@@ -2187,13 +2245,13 @@ td.vl{font-weight:500}
   <a class="btn-a" style="background:#25d366;color:white" href="https://wa.me/?text=${waMsg}" target="_blank">📲 WhatsApp</a>
   <a class="btn-a" style="background:#1a73e8;color:white" href="mailto:?subject=${emailAssunto}&body=${emailCorpo}">✉ E-mail</a>
 </div>
-<div style="margin-top:10px;padding:10px 14px;background:#f0fff4;border:1px solid #b7eb8f;border-radius:8px;font-size:11px;color:#135200;line-height:1.7">
+<div class="no-print" style="margin-top:10px;padding:10px 14px;background:#f0fff4;border:1px solid #b7eb8f;border-radius:8px;font-size:11px;color:#135200;line-height:1.7">
   <strong>📱 No celular:</strong> Toque em <strong>⋮ → Imprimir → Salvar como PDF</strong>, depois envie pelo WhatsApp.<br>
   Ou toque em <strong>📲 WhatsApp</strong> acima para compartilhar o link do recibo.
 </div>
 <script>document.title=${JSON.stringify(nomeReciboArquivo)};window.onload=()=>{document.title=${JSON.stringify(nomeReciboArquivo)};setTimeout(()=>{document.title=${JSON.stringify(nomeReciboArquivo)};window.print();},400)};window.onafterprint=()=>{}<\/script>
 </body></html>`;
-  abrirDocParaImpressao(htmlDoc);
+  abrirDocParaImpressao(htmlDoc,nomeReciboArquivo);
 }
 
 function renderRec(){
