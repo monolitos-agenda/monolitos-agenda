@@ -1703,12 +1703,17 @@ function abrirDocParaImpressao(htmlDoc,nomeArquivo){
     container.innerHTML=styleTags+parsed.body.innerHTML;
     container.querySelectorAll('.no-print,.acoes').forEach(el=>el.remove());
     document.body.appendChild(container);
+    // Página do PDF do tamanho exato do conteúdo (largura A4 = 210mm), evitando uma 2ª página
+    // quase em branco quando o conteúdo passa por poucos milímetros da altura padrão do A4.
+    const pxParaMm=210/794;
+    const alturaMm=Math.max(1,container.scrollHeight*pxParaMm);
     window.html2pdf().set({
       margin:0,
       filename,
       image:{type:'jpeg',quality:0.95},
       html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},
-      jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+      jsPDF:{unit:'mm',format:[210,alturaMm],orientation:'portrait'},
+      pagebreak:{mode:['avoid-all']}
     }).from(container).outputPdf('blob').then(blob=>{
       try{document.body.removeChild(container)}catch(e){}
       try{document.body.removeChild(overlay)}catch(e){}
