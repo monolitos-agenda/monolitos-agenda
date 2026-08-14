@@ -1756,8 +1756,8 @@ function imprimir(){
   const obs=document.getElementById('orc-obs').value;
   const srvs=getSrvs();const parcs=getParcs();const total=srvs.reduce((a,s)=>a+s.valor,0);
   const b=ST.banco;
-  const srvHTML=srvs.map(s=>s.titulo?`<tr><td colspan="2" style="padding:10px 11px 6px;border-bottom:1px solid #f0ede8;font-size:12.5px;font-weight:700;color:#0f2240;text-transform:uppercase;letter-spacing:.03em">${s.desc}</td></tr>`:`<tr><td style="padding:9px 11px;border-bottom:1px solid #f0ede8;font-size:12.5px;font-weight:300;vertical-align:top;text-align:justify;line-height:1.35;white-space:pre-wrap">${s.desc}</td><td style="padding:9px 11px;border-bottom:1px solid #f0ede8;font-size:12.5px;text-align:right;white-space:nowrap;vertical-align:top">${fmtM(s.valor)}</td></tr>`).join('');
-  const parcHTML=parcs.map(p=>{const calc=p.tipo==='%'?(total*(parseFloat(p.val)||0)/100):(parseFloat(p.val)||0);return`<tr><td style="padding:7px 11px;border-bottom:1px solid #f0ede8;font-size:12px">${p.label}</td><td style="padding:7px 11px;border-bottom:1px solid #f0ede8;font-size:12px;text-align:right;color:#6b6560">${p.tipo==='%'?parseFloat(p.val||0)+'%':'—'}</td><td style="padding:7px 11px;border-bottom:1px solid #f0ede8;font-size:12px;text-align:right;font-weight:600">${fmtM(calc)}</td></tr>`}).join('');
+  const srvHTML=srvs.map(s=>s.titulo?`<tr><td colspan="2" style="padding:7px 11px 4px;border-bottom:1px solid #f0ede8;font-size:12px;font-weight:700;color:#0f2240;text-transform:uppercase;letter-spacing:.03em">${s.desc}</td></tr>`:`<tr><td style="padding:6px 11px;border-bottom:1px solid #f0ede8;font-size:12px;font-weight:300;vertical-align:top;text-align:justify;line-height:1.22;white-space:pre-wrap">${s.desc}</td><td style="padding:6px 11px;border-bottom:1px solid #f0ede8;font-size:12px;text-align:right;white-space:nowrap;vertical-align:top">${fmtM(s.valor)}</td></tr>`).join('');
+  const parcHTML=parcs.map(p=>{const calc=p.tipo==='%'?(total*(parseFloat(p.val)||0)/100):(parseFloat(p.val)||0);return`<tr><td style="padding:5px 11px;border-bottom:1px solid #f0ede8;font-size:11.5px">${p.label}</td><td style="padding:5px 11px;border-bottom:1px solid #f0ede8;font-size:11.5px;text-align:right;color:#6b6560">${p.tipo==='%'?parseFloat(p.val||0)+'%':'—'}</td><td style="padding:5px 11px;border-bottom:1px solid #f0ede8;font-size:11.5px;text-align:right;font-weight:600">${fmtM(calc)}</td></tr>`}).join('');
   const tipo=document.getElementById('orc-tipo').value==='os'?'OS':'ORC';
   const nomeArquivo=`${tipo}-${num} - ${cli.replace(/[^a-zA-ZÀ-ÿ0-9 ]/g,"").trim()}`;
   const htmlDoc=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${nomeArquivo}</title>
@@ -1765,34 +1765,34 @@ function imprimir(){
   <style>
   *{box-sizing:border-box;margin:0;padding:0;font-synthesis:none}
   body{font-family:Calibri,'Trebuchet MS','Segoe UI',Arial,sans-serif;color:#1c1a17;font-size:12px;font-weight:400;-webkit-font-smoothing:antialiased}
-  .doc{max-width:100%;margin:0;padding:12mm 14mm 10mm}
-  .hdr{margin-bottom:14px;padding-bottom:12px;border-bottom:2.5px solid #0f2240}
-  .hdr-center{text-align:center;padding:10px 0 8px}
+  .doc{max-width:100%;margin:0;padding:9mm 14mm 7mm}
+  .hdr{margin-bottom:9px;padding-bottom:7px;border-bottom:2.5px solid #0f2240}
+  .hdr-center{text-align:center;padding:5px 0 4px}
   .cn{font-family:'Playfair Display',serif;font-size:16.5px;color:#9e6b1a;font-weight:700;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;line-height:1}
-  .doc-num-block{margin-top:8px;padding-top:8px;border-top:1px solid #e2ddd6}
-  .doc-num-block h2{font-family:'Playfair Display',serif;font-size:18px;color:#0f2240;font-weight:700;text-align:center}
-  .doc-num-block p{font-size:10.5px;color:#6b6560;text-align:center;margin-top:2px}
-  .ci{font-size:10px;color:#6b6560;line-height:1.75;margin-top:6px;text-align:center}
-  .cp{margin-top:4px;font-size:9px;color:#9e9890;line-height:1.5;text-align:center}
-  .sec{margin-bottom:12px}.sec h3{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:#9e9890;font-weight:600;margin-bottom:5px}
+  .doc-num-block{margin-top:5px;padding-top:5px;border-top:1px solid #e2ddd6}
+  .doc-num-block h2{font-family:'Playfair Display',serif;font-size:16px;color:#0f2240;font-weight:700;text-align:center}
+  .doc-num-block p{font-size:10px;color:#6b6560;text-align:center;margin-top:1px}
+  .ci{font-size:9.5px;color:#6b6560;line-height:1.5;margin-top:4px;text-align:center}
+  .cp{margin-top:3px;font-size:9px;color:#9e9890;line-height:1.3;text-align:center}
+  .sec{margin-bottom:8px}.sec h3{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:#9e9890;font-weight:600;margin-bottom:3px}
   .clnm{font-size:14px;font-weight:600;color:#0f2240}
   table{width:100%;border-collapse:collapse}
-  th{background:#f0ede8;font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#6b6560;padding:6px 10px;text-align:left}
-  .tft td{background:#0f2240;color:white;font-weight:600;font-size:12.5px;padding:8px 10px}
-  .ig{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .ib{background:#f8f7f5;border-radius:6px;padding:9px 12px}
-  .ib h4{font-size:9px;text-transform:uppercase;color:#9e9890;letter-spacing:.06em;margin-bottom:5px}
-  .ib p{font-size:11px;color:#3d3830;line-height:1.7}
+  th{background:#f0ede8;font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#6b6560;padding:5px 9px;text-align:left}
+  .tft td{background:#0f2240;color:white;font-weight:600;font-size:12px;padding:6px 10px}
+  .ig{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .ib{background:#f8f7f5;border-radius:6px;padding:7px 10px}
+  .ib h4{font-size:9px;text-transform:uppercase;color:#9e9890;letter-spacing:.06em;margin-bottom:3px}
+  .ib p{font-size:11px;color:#3d3830;line-height:1.5}
   .gold{color:#c8a84b;font-weight:600}
-  .obs-av{background:#fdf3dc;border:1px solid #dbb96644;border-radius:6px;padding:8px 11px;margin-top:8px;font-size:11px;color:#7a5c1e;line-height:1.55}
-  .gar{background:#0f2240;color:white;border-radius:6px;padding:10px 13px;margin-top:7px;font-size:11px;line-height:1.6}
+  .obs-av{background:#fdf3dc;border:1px solid #dbb96644;border-radius:6px;padding:6px 10px;margin-top:6px;font-size:10.5px;color:#7a5c1e;line-height:1.35}
+  .gar{background:#0f2240;color:white;border-radius:6px;padding:7px 11px;margin-top:5px;font-size:10.5px;line-height:1.35}
   .gar strong{color:#e8c96a}
-  .fsig{margin-top:20px;padding-top:12px;border-top:1px solid #e2ddd6;display:flex;justify-content:space-between;align-items:flex-end}
-  .sl{border-top:1px solid #3d3830;padding-top:6px;margin-top:40px;font-size:10px;color:#3d3830;text-align:center;width:200px}
+  .fsig{margin-top:12px;padding-top:8px;border-top:1px solid #e2ddd6;display:flex;justify-content:space-between;align-items:flex-end}
+  .sl{border-top:1px solid #3d3830;padding-top:5px;margin-top:20px;font-size:10px;color:#3d3830;text-align:center;width:200px}
   @media print{
     @page{size:A4;margin:0}
     body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .doc{padding:12mm 14mm 10mm}
+    .doc{padding:9mm 14mm 7mm}
   }
   </style></head><body>
   <div class="doc">
@@ -1825,9 +1825,9 @@ function imprimir(){
     ${obs?`<div class="sec"><div class="ib"><h4>Informações Adicionais</h4><p style="font-size:11.5px;line-height:1.7">${obs}</p></div></div>`:''}
     <div class="obs-av">⚠ <strong>Atenção:</strong> O serviço somente entrará em pauta após o recebimento do pagamento inicial (sinal/entrada). Sem a confirmação do pagamento, o prazo de execução não será iniciado.</div>
     <div class="gar"><strong>⚠ Prazo de Arquivamento:</strong> A documentação técnica (plantas, memoriais, ART/RRT) ficará disponível por no máximo <strong>2 (dois) anos</strong> a partir da entrega. Após esse prazo, não será possível reemissão ou cópias. <strong>Este orçamento não inclui taxas cartoriais ou de registro.</strong></div>
-    <div class="fsig"><div style="font-size:10.5px;color:#9e9890">Fortaleza, ${data}</div>
+    <div class="fsig"><div style="font-size:10px;color:#9e9890">Fortaleza, ${data}</div>
     <div style="text-align:center"><div class="sl">${EMP.fantasia}<br>${EMP.resp}<br>${EMP.cft}</div></div></div>
-    <div style="margin-top:16px;padding-top:8px;border-top:1px solid #e2ddd6;text-align:center;font-size:9px;color:#9e9890">${b.razao||EMP.razao} &nbsp;·&nbsp; CNPJ ${EMP.cnpj}</div>
+    <div style="margin-top:9px;padding-top:6px;border-top:1px solid #e2ddd6;text-align:center;font-size:9px;color:#9e9890">${b.razao||EMP.razao} &nbsp;·&nbsp; CNPJ ${EMP.cnpj}</div>
     <div class="no-print" style="margin-top:18px;background:#e6f0fb;border:1px solid #b5d4f4;border-radius:6px;padding:10px 14px;font-size:11.5px;color:#1a4a7a;line-height:1.6">
       <strong>💡 Para ocultar data e "about:blank":</strong> No diálogo de impressão, clique em <strong>"Mais configurações"</strong> e desmarque <strong>"Cabeçalhos e rodapés"</strong> (Chrome) ou desmarque <strong>"Imprimir cabeçalhos e rodapés"</strong> (Firefox/Edge). Isso só precisa ser feito uma vez — o navegador memoriza a preferência.
     </div>
