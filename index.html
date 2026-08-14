@@ -1345,13 +1345,18 @@ function openM(id){document.getElementById(id).style.display='flex'}
 
 // ===== SERVIÇOS =====
 let srvCnt=0;
-function initSrvs(lista){srvCnt=0;document.getElementById('srvs').innerHTML='';(lista&&lista.length?lista:[{}]).forEach(s=>addSrv(s.desc||'',s.valor||''))}
-function addSrv(desc='',valor=''){
+function initSrvs(lista){srvCnt=0;document.getElementById('srvs').innerHTML='';(lista&&lista.length?lista:[{}]).forEach(s=>addSrv(s.desc||'',s.valor||'',!!s.titulo))}
+function addSrv(desc='',valor='',titulo=false){
   srvCnt++;const id='s'+srvCnt;const div=document.createElement('div');div.className='srv-linha';div.id=id;
   const ehNovo=!desc; // se sem desc, é linha em branco adicionada manualmente
   div.innerHTML=`<textarea class="form-control srv-desc" placeholder="Descrição do serviço..." oninput="calcTotal()" style="min-height:110px;min-width:200px;flex:1;text-align:justify;line-height:1.65">${desc}</textarea>
-    <input type="number" class="form-control srv-val" placeholder="Valor R$" value="${valor}" oninput="calcTotal()" style="width:115px;flex-shrink:0">
+    <input type="number" class="form-control srv-val" placeholder="Valor R$" value="${valor}" oninput="calcTotal()" style="width:115px;flex-shrink:0;${titulo?'display:none':''}">
     ${srvCnt>1?`<button class="btn btn-danger btn-sm" onclick="rmSrv('${id}')" style="flex-shrink:0;align-self:flex-start">✕</button>`:'<div style="width:0"></div>'}`;
+  // Caixa "apenas título" — disponível em qualquer linha
+  const tituloBox=document.createElement('div');
+  tituloBox.style.cssText='display:flex;align-items:center;gap:6px;margin-top:4px;width:100%';
+  tituloBox.innerHTML=`<input type="checkbox" class="srv-titulo-chk" id="srv-titulo-${id}" ${titulo?'checked':''} onchange="toggleSrvTitulo('${id}')" style="width:14px;height:14px;cursor:pointer"><label for="srv-titulo-${id}" style="font-size:11px;color:var(--gray-500);cursor:pointer">📌 Apenas título (sem valor) — usar para o título principal do serviço</label>`;
+  div.appendChild(tituloBox);
   // Caixa "salvar no cadastro" apenas para linhas digitadas manualmente (não vindas do cadastro)
   if(ehNovo){
     const saveBox=document.createElement('div');
@@ -1361,16 +1366,29 @@ function addSrv(desc='',valor=''){
   }
   document.getElementById('srvs').appendChild(div);calcTotal();
 }
+function toggleSrvTitulo(id){
+  const div=document.getElementById(id);if(!div)return;
+  const chk=div.querySelector('.srv-titulo-chk');
+  const inp=div.querySelector('input[type=number]');
+  if(!chk||!inp)return;
+  if(chk.checked){inp.style.display='none';inp.value='';}
+  else{inp.style.display='';}
+  calcTotal();
+}
 function rmSrv(id){document.getElementById(id).remove();calcTotal()}
 function calcTotal(){
-  let t=0;document.querySelectorAll('#srvs .srv-linha').forEach(d=>{t+=parseFloat(d.querySelector('input[type=number]')?.value||0)});
+  let t=0;document.querySelectorAll('#srvs .srv-linha').forEach(d=>{
+    const ehTitulo=d.querySelector('.srv-titulo-chk')?.checked;
+    if(!ehTitulo)t+=parseFloat(d.querySelector('input[type=number]')?.value||0);
+  });
   document.getElementById('orc-total').textContent=fmtM(t);calcParcs();
 }
 function getSrvs(){
   const o=[];
   document.querySelectorAll('#srvs .srv-linha').forEach(d=>{
     const ta=d.querySelector('textarea');const inp=d.querySelector('input[type=number]');
-    if(ta&&inp)o.push({desc:ta.value,valor:parseFloat(inp.value)||0});
+    const titulo=!!d.querySelector('.srv-titulo-chk')?.checked;
+    if(ta&&inp)o.push({desc:ta.value,valor:titulo?0:(parseFloat(inp.value)||0),titulo});
   });
   return o;
 }
@@ -1576,7 +1594,7 @@ function verOrc(id){
     </div>
     <div style="margin-bottom:13px">
       <div style="font-size:10.5px;font-weight:500;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">Serviços</div>
-      ${srvs.map(s=>`<div style="display:flex;justify-content:space-between;padding:8px 10px;background:var(--gray-50);border-radius:var(--radius);margin-bottom:4px;font-size:12.5px">
+      ${srvs.map(s=>s.titulo?`<div style="padding:8px 10px;background:var(--gray-50);border-radius:var(--radius);margin-bottom:4px;font-size:12.5px;font-weight:600;color:var(--navy);text-transform:uppercase;letter-spacing:.03em">${s.desc||'—'}</div>`:`<div style="display:flex;justify-content:space-between;padding:8px 10px;background:var(--gray-50);border-radius:var(--radius);margin-bottom:4px;font-size:12.5px">
         <span>${s.desc||'—'}</span>
         <strong style="color:var(--navy);white-space:nowrap;margin-left:10px">${fmtM(s.valor)}</strong>
       </div>`).join('')}
@@ -1738,7 +1756,7 @@ function imprimir(){
   const obs=document.getElementById('orc-obs').value;
   const srvs=getSrvs();const parcs=getParcs();const total=srvs.reduce((a,s)=>a+s.valor,0);
   const b=ST.banco;
-  const srvHTML=srvs.map(s=>`<tr><td style="padding:9px 11px;border-bottom:1px solid #f0ede8;font-size:12.5px;font-weight:300;vertical-align:top;text-align:justify;line-height:1.35;white-space:pre-wrap">${s.desc}</td><td style="padding:9px 11px;border-bottom:1px solid #f0ede8;font-size:12.5px;text-align:right;white-space:nowrap;vertical-align:top">${fmtM(s.valor)}</td></tr>`).join('');
+  const srvHTML=srvs.map(s=>s.titulo?`<tr><td colspan="2" style="padding:10px 11px 6px;border-bottom:1px solid #f0ede8;font-size:12.5px;font-weight:700;color:#0f2240;text-transform:uppercase;letter-spacing:.03em">${s.desc}</td></tr>`:`<tr><td style="padding:9px 11px;border-bottom:1px solid #f0ede8;font-size:12.5px;font-weight:300;vertical-align:top;text-align:justify;line-height:1.35;white-space:pre-wrap">${s.desc}</td><td style="padding:9px 11px;border-bottom:1px solid #f0ede8;font-size:12.5px;text-align:right;white-space:nowrap;vertical-align:top">${fmtM(s.valor)}</td></tr>`).join('');
   const parcHTML=parcs.map(p=>{const calc=p.tipo==='%'?(total*(parseFloat(p.val)||0)/100):(parseFloat(p.val)||0);return`<tr><td style="padding:7px 11px;border-bottom:1px solid #f0ede8;font-size:12px">${p.label}</td><td style="padding:7px 11px;border-bottom:1px solid #f0ede8;font-size:12px;text-align:right;color:#6b6560">${p.tipo==='%'?parseFloat(p.val||0)+'%':'—'}</td><td style="padding:7px 11px;border-bottom:1px solid #f0ede8;font-size:12px;text-align:right;font-weight:600">${fmtM(calc)}</td></tr>`}).join('');
   const tipo=document.getElementById('orc-tipo').value==='os'?'OS':'ORC';
   const nomeArquivo=`${tipo}-${num} - ${cli.replace(/[^a-zA-ZÀ-ÿ0-9 ]/g,"").trim()}`;
