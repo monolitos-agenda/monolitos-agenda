@@ -1345,18 +1345,36 @@ function openM(id){document.getElementById(id).style.display='flex'}
 
 // ===== SERVIÇOS =====
 let srvCnt=0;
-function initSrvs(lista){srvCnt=0;document.getElementById('srvs').innerHTML='';(lista&&lista.length?lista:[{}]).forEach(s=>addSrv(s.desc||'',s.valor||'',!!s.titulo))}
-function addSrv(desc='',valor='',titulo=false){
+function initSrvs(lista){srvCnt=0;document.getElementById('srvs').innerHTML='';(lista&&lista.length?lista:[{}]).forEach(s=>addSrv(s.desc||'',s.valor||'',!!s.titulo,s.qtd||'',s.valorUnit!=null?s.valorUnit:''))}
+// Formata o valor de um serviço, mostrando "valor unit. × qtd = total" quando o serviço usa quantidade
+function _srvValorTexto(s){
+  if(s.qtd&&s.valorUnit!=null&&s.valorUnit!==''&&parseFloat(s.qtd)>0){
+    return `${fmtM(s.valorUnit)} × ${s.qtd}<br>= ${fmtM(s.valor)}`;
+  }
+  return fmtM(s.valor);
+}
+function addSrv(desc='',valor='',titulo=false,qtd='',valorUnit=''){
   srvCnt++;const id='s'+srvCnt;const div=document.createElement('div');div.className='srv-linha';div.id=id;
   const ehNovo=!desc; // se sem desc, é linha em branco adicionada manualmente
+  const temQtd=qtd!==''&&qtd!=null&&parseFloat(qtd)>0&&valorUnit!==''&&valorUnit!=null;
   div.innerHTML=`<textarea class="form-control srv-desc" placeholder="Descrição do serviço..." oninput="calcTotal()" style="min-height:110px;min-width:200px;flex:1;text-align:justify;line-height:1.65">${desc}</textarea>
-    <input type="number" class="form-control srv-val" placeholder="Valor R$" value="${valor}" oninput="calcTotal()" style="width:115px;flex-shrink:0;${titulo?'display:none':''}">
+    <input type="number" class="form-control srv-val" placeholder="Valor R$" value="${valor}" oninput="calcTotal()" style="width:115px;flex-shrink:0;${titulo||temQtd?'display:none':''}">
+    <div class="srv-qtd-box" style="display:${temQtd?'flex':'none'};flex-direction:column;gap:4px;width:115px;flex-shrink:0">
+      <input type="number" class="form-control srv-valorunit" placeholder="Valor unit." value="${valorUnit}" oninput="calcTotal()" style="width:115px">
+      <input type="number" class="form-control srv-qtd" placeholder="Qtd" value="${qtd||1}" oninput="calcTotal()" style="width:115px">
+      <div class="srv-qtd-total" style="font-size:10px;color:var(--gray-500);text-align:right;line-height:1.3"></div>
+    </div>
     ${srvCnt>1?`<button class="btn btn-danger btn-sm" onclick="rmSrv('${id}')" style="flex-shrink:0;align-self:flex-start">✕</button>`:'<div style="width:0"></div>'}`;
   // Caixa "apenas título" — disponível em qualquer linha
   const tituloBox=document.createElement('div');
   tituloBox.style.cssText='display:flex;align-items:center;gap:6px;margin-top:4px;width:100%';
   tituloBox.innerHTML=`<input type="checkbox" class="srv-titulo-chk" id="srv-titulo-${id}" ${titulo?'checked':''} onchange="toggleSrvTitulo('${id}')" style="width:14px;height:14px;cursor:pointer"><label for="srv-titulo-${id}" style="font-size:11px;color:var(--gray-500);cursor:pointer">📌 Apenas título (sem valor) — usar para o título principal do serviço</label>`;
   div.appendChild(tituloBox);
+  // Caixa "valor por unidade" (ex.: preço unitário x quantidade de imóveis)
+  const qtdBox=document.createElement('div');
+  qtdBox.style.cssText='display:flex;align-items:center;gap:6px;margin-top:4px;width:100%';
+  qtdBox.innerHTML=`<input type="checkbox" class="srv-qtd-chk" id="srv-qtd-${id}" ${temQtd?'checked':''} onchange="toggleSrvQtd('${id}')" style="width:14px;height:14px;cursor:pointer"><label for="srv-qtd-${id}" style="font-size:11px;color:var(--gray-500);cursor:pointer">📦 Valor por unidade (ex.: preço unitário × quantidade de imóveis)</label>`;
+  div.appendChild(qtdBox);
   // Caixa "salvar no cadastro" apenas para linhas digitadas manualmente (não vindas do cadastro)
   if(ehNovo){
     const saveBox=document.createElement('div');
@@ -1366,29 +1384,71 @@ function addSrv(desc='',valor='',titulo=false){
   }
   document.getElementById('srvs').appendChild(div);calcTotal();
 }
+function toggleSrvQtd(id){
+  const div=document.getElementById(id);if(!div)return;
+  const chk=div.querySelector('.srv-qtd-chk');
+  const valInp=div.querySelector('.srv-val');
+  const qtdBox=div.querySelector('.srv-qtd-box');
+  if(!chk||!valInp||!qtdBox)return;
+  if(chk.checked){
+    valInp.style.display='none';
+    qtdBox.style.display='flex';
+    const vu=qtdBox.querySelector('.srv-valorunit');
+    const qd=qtdBox.querySelector('.srv-qtd');
+    if(!qd.value)qd.value='1';
+    if(!vu.value&&valInp.value)vu.value=valInp.value;
+  }else{
+    qtdBox.style.display='none';
+    valInp.style.display='';
+  }
+  calcTotal();
+}
 function toggleSrvTitulo(id){
   const div=document.getElementById(id);if(!div)return;
   const chk=div.querySelector('.srv-titulo-chk');
-  const inp=div.querySelector('input[type=number]');
+  const inp=div.querySelector('.srv-val');
   if(!chk||!inp)return;
   if(chk.checked){inp.style.display='none';inp.value='';}
-  else{inp.style.display='';}
+  else{const temQtd=div.querySelector('.srv-qtd-chk')?.checked;if(!temQtd)inp.style.display='';}
   calcTotal();
 }
 function rmSrv(id){document.getElementById(id).remove();calcTotal()}
 function calcTotal(){
   let t=0;document.querySelectorAll('#srvs .srv-linha').forEach(d=>{
     const ehTitulo=d.querySelector('.srv-titulo-chk')?.checked;
-    if(!ehTitulo)t+=parseFloat(d.querySelector('input[type=number]')?.value||0);
+    if(ehTitulo)return;
+    const ehQtd=d.querySelector('.srv-qtd-chk')?.checked;
+    let valor=0;
+    if(ehQtd){
+      const vu=parseFloat(d.querySelector('.srv-valorunit')?.value||0);
+      const qd=parseFloat(d.querySelector('.srv-qtd')?.value||0);
+      valor=vu*qd;
+      const totalEl=d.querySelector('.srv-qtd-total');
+      if(totalEl)totalEl.textContent=(vu||qd)?`${fmtM(vu)} × ${qd||0} =\n${fmtM(valor)}`:'';
+      const valInp=d.querySelector('.srv-val');if(valInp)valInp.value=valor||'';
+    }else{
+      valor=parseFloat(d.querySelector('.srv-val')?.value||0);
+    }
+    t+=valor;
   });
   document.getElementById('orc-total').textContent=fmtM(t);calcParcs();
 }
 function getSrvs(){
   const o=[];
   document.querySelectorAll('#srvs .srv-linha').forEach(d=>{
-    const ta=d.querySelector('textarea');const inp=d.querySelector('input[type=number]');
+    const ta=d.querySelector('.srv-desc');
     const titulo=!!d.querySelector('.srv-titulo-chk')?.checked;
-    if(ta&&inp)o.push({desc:ta.value,valor:titulo?0:(parseFloat(inp.value)||0),titulo});
+    const ehQtd=!!d.querySelector('.srv-qtd-chk')?.checked;
+    let valor=0,extra={};
+    if(ehQtd){
+      const valorUnit=parseFloat(d.querySelector('.srv-valorunit')?.value||0);
+      const qtd=parseFloat(d.querySelector('.srv-qtd')?.value||0);
+      valor=titulo?0:(valorUnit*qtd);
+      extra={qtd,valorUnit};
+    }else{
+      valor=titulo?0:(parseFloat(d.querySelector('.srv-val')?.value||0));
+    }
+    if(ta)o.push({desc:ta.value,valor,titulo,...extra});
   });
   return o;
 }
@@ -1397,10 +1457,11 @@ function getSrvs(){
 function salvarSrvsMarcados(){
   if(!ST.servicos)ST.servicos=[];
   document.querySelectorAll('#srvs .srv-linha').forEach(d=>{
-    const chk=d.querySelector('input[type=checkbox]');
+    const chk=d.querySelector('input[id^="srv-save-"]');
     if(!chk||!chk.checked)return;
-    const ta=d.querySelector('textarea');const inp=d.querySelector('input[type=number]');
-    const desc=(ta?.value||'').trim();const valor=parseFloat(inp?.value||0)||0;
+    const ta=d.querySelector('.srv-desc');const desc=(ta?.value||'').trim();
+    const ehQtd=!!d.querySelector('.srv-qtd-chk')?.checked;
+    const valor=ehQtd?(parseFloat(d.querySelector('.srv-valorunit')?.value||0)*parseFloat(d.querySelector('.srv-qtd')?.value||0))||0:(parseFloat(d.querySelector('.srv-val')?.value||0)||0);
     if(!desc)return;
     const nome=desc.length>60?desc.slice(0,60)+'...':desc;
     // Não duplicar se já existir descrição igual
@@ -1596,7 +1657,7 @@ function verOrc(id){
       <div style="font-size:10.5px;font-weight:500;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">Serviços</div>
       ${srvs.map(s=>s.titulo?`<div style="padding:8px 10px;background:var(--gray-50);border-radius:var(--radius);margin-bottom:4px;font-size:12.5px;font-weight:600;color:var(--navy);text-transform:uppercase;letter-spacing:.03em">${s.desc||'—'}</div>`:`<div style="display:flex;justify-content:space-between;padding:8px 10px;background:var(--gray-50);border-radius:var(--radius);margin-bottom:4px;font-size:12.5px">
         <span>${s.desc||'—'}</span>
-        <strong style="color:var(--navy);white-space:nowrap;margin-left:10px">${fmtM(s.valor)}</strong>
+        <strong style="color:var(--navy);white-space:nowrap;margin-left:10px">${_srvValorTexto(s)}</strong>
       </div>`).join('')}
     </div>
     ${parcs.length?`<div style="margin-bottom:13px">
@@ -1756,7 +1817,7 @@ function imprimir(){
   const obs=document.getElementById('orc-obs').value;
   const srvs=getSrvs();const parcs=getParcs();const total=srvs.reduce((a,s)=>a+s.valor,0);
   const b=ST.banco;
-  const srvHTML=srvs.map(s=>s.titulo?`<tr><td colspan="2" style="padding:7px 11px 4px;border-bottom:1px solid #f0ede8;font-size:12px;font-weight:700;color:#0f2240;text-transform:uppercase;letter-spacing:.03em">${s.desc}</td></tr>`:`<tr><td style="padding:6px 11px;border-bottom:1px solid #f0ede8;font-size:12px;font-weight:300;vertical-align:top;text-align:justify;line-height:1.22;white-space:pre-wrap">${s.desc}</td><td style="padding:6px 11px;border-bottom:1px solid #f0ede8;font-size:12px;text-align:right;white-space:nowrap;vertical-align:top">${fmtM(s.valor)}</td></tr>`).join('');
+  const srvHTML=srvs.map(s=>s.titulo?`<tr><td colspan="2" style="padding:7px 11px 4px;border-bottom:1px solid #f0ede8;font-size:12px;font-weight:700;color:#0f2240;text-transform:uppercase;letter-spacing:.03em">${s.desc}</td></tr>`:`<tr><td style="padding:6px 11px;border-bottom:1px solid #f0ede8;font-size:12px;font-weight:300;vertical-align:top;text-align:justify;line-height:1.22;white-space:pre-wrap">${s.desc}</td><td style="padding:6px 11px;border-bottom:1px solid #f0ede8;font-size:12px;text-align:right;white-space:nowrap;vertical-align:top">${_srvValorTexto(s)}</td></tr>`).join('');
   const parcHTML=parcs.map(p=>{const calc=p.tipo==='%'?(total*(parseFloat(p.val)||0)/100):(parseFloat(p.val)||0);return`<tr><td style="padding:5px 11px;border-bottom:1px solid #f0ede8;font-size:11.5px">${p.label}</td><td style="padding:5px 11px;border-bottom:1px solid #f0ede8;font-size:11.5px;text-align:right;color:#6b6560">${p.tipo==='%'?parseFloat(p.val||0)+'%':'—'}</td><td style="padding:5px 11px;border-bottom:1px solid #f0ede8;font-size:11.5px;text-align:right;font-weight:600">${fmtM(calc)}</td></tr>`}).join('');
   const tipo=document.getElementById('orc-tipo').value==='os'?'OS':'ORC';
   const nomeArquivo=`${tipo}-${num} - ${cli.replace(/[^a-zA-ZÀ-ÿ0-9 ]/g,"").trim()}`;
