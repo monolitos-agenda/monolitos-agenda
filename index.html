@@ -1038,7 +1038,8 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
         </select>
       </div>
       <div class="form-group"><label>Valor (R$)</label><input class="form-control" type="number" id="rec-valor" placeholder="0.00" oninput="updRecPrev()"></div>
-      <div class="form-group"><label>Descrição (opcional)</label><input class="form-control" id="rec-desc" placeholder="Detalhe..."></div>
+      <div class="form-group"><label>Custo (R$) <span style="font-weight:400;color:var(--gray-500)">— opcional</span></label><input class="form-control" type="number" id="rec-custo" placeholder="0.00"></div>
+      <div class="form-group" style="grid-column:1/-1"><label>Descrição (opcional)</label><input class="form-control" id="rec-desc" placeholder="Detalhe..." oninput="checkRecDescTrigger()"></div>
     </div>
     <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px;padding:9px 12px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius)">
       <input type="checkbox" id="rec-recibo" style="width:15px;height:15px;cursor:pointer" onchange="togRecPrev()">
@@ -2102,6 +2103,7 @@ function abrirRec(){
   document.getElementById('rec-orc').innerHTML=ST.orcamentos.map(o=>`<option value="${o.id}">${o.num} — ${o.cliente}</option>`).join('');
   document.getElementById('rec-orc').disabled=false;
   document.getElementById('rec-valor').value='';
+  document.getElementById('rec-custo').value='';
   document.getElementById('rec-parc').value='';
   document.getElementById('rec-forma').selectedIndex=0;
   document.getElementById('rec-desc').value='';
@@ -2122,6 +2124,8 @@ function editarRec(id){
   document.getElementById('rec-parc').value=r.parcela||'';
   document.getElementById('rec-forma').value=r.forma||'PIX';
   document.getElementById('rec-valor').value=r.valor||'';
+  const custoVinculado=r.custoId?ST.custos.find(c=>c.id===r.custoId):null;
+  document.getElementById('rec-custo').value=custoVinculado?custoVinculado.valor:'';
   document.getElementById('rec-desc').value=r.desc||'';
   // Já possui recibo emitido: não reemitir automaticamente ao salvar correção
   document.getElementById('rec-recibo').checked=false;
@@ -2158,6 +2162,41 @@ function atualizarStatusAutoOrc(orcId){
     orc.dataConclusao=orc.dataConclusao||today();
   }
 }
+// Sincroniza o custo (opcional) informado no recebimento com o lançamento em Custos
+function _syncCustoRec(rec,orc,custoValor){
+  const existente=rec.custoId?ST.custos.find(c=>c.id===rec.custoId):null;
+  if(!custoValor||custoValor<=0){
+    // Sem custo informado: remove o lançamento vinculado, se houver
+    if(existente)ST.custos=ST.custos.filter(c=>c.id!==existente.id);
+    return '';
+  }
+  const desc=`Custo referente ao recebimento${rec.parcela?' ('+rec.parcela+')':''} — ${orc?.num||rec.orcNum||''} — ${orc?.cliente||rec.cliente||''}`;
+  if(existente){
+    existente.valor=custoValor;existente.data=rec.data;existente.desc=desc;
+    existente.orcId=rec.orcId;existente.orcNum=orc?.num||rec.orcNum||'';
+    return existente.id;
+  }
+  const c={id:Date.now().toString()+Math.random().toString(36).slice(2,6),data:rec.data,desc,cat:'Outros',
+    valor:custoValor,orcId:rec.orcId||'',orcNum:orc?.num||rec.orcNum||'',recId:rec.id};
+  ST.custos.push(c);
+  return c.id;
+}
+// Ao digitar a frase-gatilho na Descrição do recibo, completa automaticamente com o texto do serviço
+function checkRecDescTrigger(){
+  const chk=document.getElementById('rec-recibo');
+  if(!chk||!chk.checked)return;
+  const el=document.getElementById('rec-desc');
+  if(!el)return;
+  const TRIGGER='como pagamento inicial, da parcela ou complementar do';
+  const semEspacoFinal=el.value.replace(/\s+$/,'');
+  if(semEspacoFinal.toLowerCase()!==TRIGGER)return;
+  const orc=ST.orcamentos.find(o=>o.id===document.getElementById('rec-orc').value);
+  const srvTxt=orc&&Array.isArray(orc.servicos)?orc.servicos.filter(s=>!s.titulo).map(s=>s.desc).filter(Boolean).join('; '):'';
+  if(!srvTxt)return;
+  el.value=semEspacoFinal+' '+srvTxt;
+  el.setSelectionRange(el.value.length,el.value.length);
+  updRecPrev();
+}
 function salvarRec(){
   const orcId=document.getElementById('rec-orc').value;
   const orc=ST.orcamentos.find(o=>o.id===orcId);
@@ -2170,6 +2209,10 @@ function salvarRec(){
     const idx=ST.recebimentos.findIndex(x=>x.id===editingRecId);
     if(idx<0){alert('Recebimento não encontrado.');editingRecId=null;closeM('modal-rec');return}
     const original=ST.recebimentos[idx];
+    const custoValor=parseFloat(document.getElementById('rec-custo').value)||0;
+    const recTmp={...original,data:document.getElementById('rec-data').value,orcId,orcNum:orc?.num||original.orcNum,
+      cliente:orc?.cliente||original.cliente,parcela:document.getElementById('rec-parc').value};
+    const custoId=_syncCustoRec(recTmp,orc,custoValor);
     ST.recebimentos[idx]={
       ...original,
       data:document.getElementById('rec-data').value,
@@ -2177,7 +2220,8 @@ function salvarRec(){
       parcela:document.getElementById('rec-parc').value,
       desc:document.getElementById('rec-desc').value,
       valor,forma:document.getElementById('rec-forma').value,
-      temRecibo:original.temRecibo||gr
+      temRecibo:original.temRecibo||gr,
+      custoId:custoId||undefined
     };
     atualizarStatusAutoOrc(orcId);
     save();closeM('modal-rec');renderRec();renderDash();
@@ -2202,6 +2246,9 @@ function salvarRec(){
     cliente:orc?.cliente||'',parcela:document.getElementById('rec-parc').value,
     desc:document.getElementById('rec-desc').value,valor,
     forma:document.getElementById('rec-forma').value,temRecibo:gr};
+  const custoValorNovo=parseFloat(document.getElementById('rec-custo').value)||0;
+  const custoIdNovo=_syncCustoRec(r,orc,custoValorNovo);
+  if(custoIdNovo)r.custoId=custoIdNovo;
   ST.recebimentos.push(r);
   atualizarStatusAutoOrc(orcId);
   save();closeM('modal-rec');renderRec();renderDash();
@@ -2353,6 +2400,8 @@ function renderRec(){
 
 function excluirRec(id){
   if(!confirm('Excluir este recebimento? Esta ação não pode ser desfeita.'))return;
+  const rec=ST.recebimentos.find(r=>r.id===id);
+  if(rec?.custoId)ST.custos=ST.custos.filter(c=>c.id!==rec.custoId);
   ST.recebimentos=ST.recebimentos.filter(r=>r.id!==id);
   save();renderRec();renderDash();
   if(_finOrcAberto){
@@ -2751,6 +2800,7 @@ function abrirRec_orc(orcId){
   document.getElementById('rec-parc').value='';
   document.getElementById('rec-forma').selectedIndex=0;
   document.getElementById('rec-valor').value='';
+  document.getElementById('rec-custo').value='';
   document.getElementById('rec-desc').value='';
   document.getElementById('rec-recibo').checked=false;
   document.getElementById('rec-recibo').disabled=false;
