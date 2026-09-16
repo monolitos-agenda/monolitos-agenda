@@ -35,6 +35,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--gray-50);color:var(--gray
 .sidebar-nav{flex:1;padding:12px 8px;overflow-y:auto}
 .nav-label{font-size:9px;color:rgba(255,255,255,.26);letter-spacing:.1em;text-transform:uppercase;padding:4px 12px 5px;margin-top:8px}
 .nav-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:var(--radius);cursor:pointer;color:rgba(255,255,255,.52);font-size:12.5px;transition:all .15s;margin-bottom:1px;border:none;background:none;width:100%;text-align:left}
+.nav-item.notif-ativa{color:var(--gold,#e8c96a)}
 .nav-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.9)}
 .nav-item.active{background:rgba(200,168,75,.18);color:var(--gold-light);font-weight:500}
 .nav-icon{font-size:13px;width:17px;text-align:center;flex-shrink:0}
@@ -184,6 +185,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
 </head>
 <body>
 <div class="app">
@@ -211,6 +213,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
     <button class="nav-item" onclick="openM('modal-recibo-avulso');initRav()"><span class="nav-icon">🧾</span>Recibo Avulso</button>
     <div class="nav-label">Agenda</div>
     <button class="nav-item" onclick="nav('agenda')"><span class="nav-icon">📅</span>Compromissos</button>
+    <button class="nav-item" id="btn-notif" onclick="ativarNotificacoes()"><span class="nav-icon">🔕</span>Ativar notificações</button>
     <div class="nav-label">Configurações</div>
     <button class="nav-item" onclick="nav('configuracoes')"><span class="nav-icon">◉</span>Dados Bancários</button>
     <button class="nav-item" onclick="nav('sincronizar')"><span class="nav-icon">↕</span>Sincronizar</button>
@@ -1191,6 +1194,41 @@ try{
     db=firebase.firestore();
   }
 }catch(e){console.warn('Firebase indisponível (modo offline):',e.message);}
+
+// ===== NOTIFICAÇÕES PUSH (lembretes de compromissos mesmo com o app fechado) =====
+// IMPORTANTE: troque VAPID_KEY pela chave gerada em Firebase Console → Configurações
+// do projeto → Cloud Messaging → Certificados push da Web → Gerar par de chaves.
+const VAPID_KEY = 'BA93BF4Z-xmqXrgZ1qIy4aLWRjaA_ZoEr2rPmtlkyEAAOqn50NsLeMnf8S58bjA_g0KfKk5WmFIbdkcYA7xP258';
+function notificacoesStatus(){
+  if(!('Notification' in window))return 'indisponivel';
+  return Notification.permission; // 'granted' | 'denied' | 'default'
+}
+async function ativarNotificacoes(){
+  if(!('Notification' in window)){alert('Seu navegador não suporta notificações.');return}
+  if(VAPID_KEY==='COLE_AQUI_SUA_CHAVE_VAPID'){alert('Notificações ainda não configuradas (falta a chave VAPID). Avise o suporte.');return}
+  try{
+    const perm=await Notification.requestPermission();
+    if(perm!=='granted'){alert('Permissão de notificação não concedida. Você pode ativar depois nas configurações do navegador.');atualizarBotaoNotif();return}
+    const reg=await navigator.serviceWorker.ready;
+    const messaging=firebase.messaging();
+    const token=await messaging.getToken({vapidKey:VAPID_KEY,serviceWorkerRegistration:reg});
+    if(!token){alert('Não foi possível gerar o token de notificação. Tente novamente.');return}
+    if(!ST.fcmTokens)ST.fcmTokens=[];
+    if(!ST.fcmTokens.find(t=>t.token===token)){
+      ST.fcmTokens.push({token,criadoEm:new Date().toISOString(),dispositivo:navigator.userAgent.includes('Android')?'Android':(navigator.userAgent.includes('Windows')?'PC':'Outro')});
+      await save();
+    }
+    alert('Notificações ativadas! Você vai receber um aviso dos compromissos do dia.');
+    atualizarBotaoNotif();
+  }catch(e){console.error(e);alert('Erro ao ativar notificações: '+e.message);}
+}
+function atualizarBotaoNotif(){
+  const btn=document.getElementById('btn-notif');
+  if(!btn)return;
+  const st=notificacoesStatus();
+  if(st==='granted'){btn.innerHTML='<span class="nav-icon">🔔</span>Notificações ativas';btn.classList.add('notif-ativa');}
+  else{btn.innerHTML='<span class="nav-icon">🔕</span>Ativar notificações';btn.classList.remove('notif-ativa');}
+}
 
 // ===== LOADING OVERLAY =====
 function showLoading(msg){
@@ -4124,6 +4162,18 @@ function gerarEAbrirDrive(){
   await load();
   renderDash();
   startRealtimeSync();
+  atualizarBotaoNotif();
+  // Notificação em primeiro plano (app aberto na tela) — o service worker só cuida do app em segundo plano/fechado
+  try{
+    if(typeof firebase!=='undefined'&&firebase.messaging.isSupported&&firebase.messaging.isSupported()){
+      firebase.messaging().onMessage(payload=>{
+        const t=payload.notification||{};
+        if(Notification.permission==='granted'){
+          new Notification(t.title||'Top-Agenda',{body:t.body||'',icon:'./icon-192.png'});
+        }
+      });
+    }
+  }catch(e){console.warn('FCM foreground indisponível:',e.message);}
 })();
 </script>
 <script>
