@@ -1042,7 +1042,16 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
       </div>
       <div class="form-group"><label>Valor (R$)</label><input class="form-control" type="number" id="rec-valor" placeholder="0.00" oninput="updRecPrev()"></div>
       <div class="form-group"><label>Custo (R$) <span style="font-weight:400;color:var(--gray-500)">— opcional</span></label><input class="form-control" type="number" id="rec-custo" placeholder="0.00"></div>
-      <div class="form-group" style="grid-column:1/-1"><label>Descrição (opcional)</label><input class="form-control" id="rec-desc" placeholder="Detalhe..." oninput="checkRecDescTrigger()"></div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Descrição (opcional)</label>
+        <select class="form-control" id="rec-tipo-pag" style="margin-bottom:6px" onchange="aplicarTipoPagamentoDesc(this.value)">
+          <option value="">Completar automaticamente com...</option>
+          <option value="inicial">Como pagamento inicial</option>
+          <option value="parcela">Como pagamento de parcela</option>
+          <option value="complementar">Como pagamento complementar</option>
+        </select>
+        <input class="form-control" id="rec-desc" placeholder="Detalhe...">
+      </div>
     </div>
     <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px;padding:9px 12px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius)">
       <input type="checkbox" id="rec-recibo" style="width:15px;height:15px;cursor:pointer" onchange="togRecPrev()">
@@ -2145,6 +2154,7 @@ function abrirRec(){
   document.getElementById('rec-parc').value='';
   document.getElementById('rec-forma').selectedIndex=0;
   document.getElementById('rec-desc').value='';
+  document.getElementById('rec-tipo-pag').value='';
   document.getElementById('rec-recibo').checked=false;
   document.getElementById('rec-recibo').disabled=false;
   document.getElementById('recibo-prev').style.display='none';
@@ -2165,7 +2175,7 @@ function editarRec(id){
   const custoVinculado=r.custoId?ST.custos.find(c=>c.id===r.custoId):null;
   document.getElementById('rec-custo').value=custoVinculado?custoVinculado.valor:'';
   document.getElementById('rec-desc').value=r.desc||'';
-  // Já possui recibo emitido: não reemitir automaticamente ao salvar correção
+  document.getElementById('rec-tipo-pag').value='';
   document.getElementById('rec-recibo').checked=false;
   document.getElementById('rec-recibo').disabled=!!r.temRecibo;
   document.getElementById('recibo-prev').style.display='none';
@@ -2219,20 +2229,22 @@ function _syncCustoRec(rec,orc,custoValor){
   ST.custos.push(c);
   return c.id;
 }
-// Ao digitar a frase-gatilho na Descrição do recibo, completa automaticamente com o texto do serviço
-function checkRecDescTrigger(){
-  const chk=document.getElementById('rec-recibo');
-  if(!chk||!chk.checked)return;
-  const el=document.getElementById('rec-desc');
-  if(!el)return;
-  const TRIGGER='como pagamento inicial, da parcela ou complementar do';
-  const semEspacoFinal=el.value.replace(/\s+$/,'');
-  if(semEspacoFinal.toLowerCase()!==TRIGGER)return;
+// Ao selecionar o tipo de pagamento, completa automaticamente a Descrição com o texto do serviço
+function aplicarTipoPagamentoDesc(tipo){
+  if(!tipo)return;
   const orc=ST.orcamentos.find(o=>o.id===document.getElementById('rec-orc').value);
-  const srvTxt=orc&&Array.isArray(orc.servicos)?orc.servicos.filter(s=>!s.titulo).map(s=>s.desc).filter(Boolean).join('; '):'';
-  if(!srvTxt)return;
-  el.value=semEspacoFinal+' '+srvTxt;
-  el.setSelectionRange(el.value.length,el.value.length);
+  const srvsAtivos=orc&&Array.isArray(orc.servicos)?orc.servicos.filter(s=>!s.titulo&&s.desc):[];
+  const srvTxt=srvsAtivos.map(s=>s.desc).join('; ');
+  if(!srvTxt){alert('Selecione primeiro um orçamento com serviço cadastrado.');document.getElementById('rec-tipo-pag').value='';return}
+  const termo=srvsAtivos.length>1?'pelos serviços de':'pelo serviço de';
+  const parc=(document.getElementById('rec-parc').value||'').trim();
+  let frase;
+  if(tipo==='inicial')frase=`Como pagamento inicial ${termo}`;
+  else if(tipo==='parcela')frase=parc?`Como pagamento da parcela (${parc}) ${termo}`:`Como pagamento de parcela ${termo}`;
+  else frase=`Como pagamento complementar ${termo}`;
+  const el=document.getElementById('rec-desc');
+  el.value=frase+' '+srvTxt;
+  document.getElementById('rec-tipo-pag').value='';
   updRecPrev();
 }
 function salvarRec(){
@@ -2840,6 +2852,7 @@ function abrirRec_orc(orcId){
   document.getElementById('rec-valor').value='';
   document.getElementById('rec-custo').value='';
   document.getElementById('rec-desc').value='';
+  document.getElementById('rec-tipo-pag').value='';
   document.getElementById('rec-recibo').checked=false;
   document.getElementById('rec-recibo').disabled=false;
   document.getElementById('recibo-prev').style.display='none';
