@@ -730,7 +730,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
     <!-- CONSULTA CPF/CNPJ (Direct Data) -->
     <div class="view" id="view-consulta">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:9px">
-        <div style="font-size:13px;color:var(--gray-500)">Consulta de CPF, CNPJ e OAB via Direct Data</div>
+        <div style="font-size:13px;color:var(--gray-500)">Consulta de CPF, CNPJ, OAB, telefone, nome e endereço via Direct Data</div>
       </div>
 
       <div class="card" style="margin-bottom:14px">
@@ -740,6 +740,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
             <button class="tipo-btn active" id="cons-tipo-btn-cpf" onclick="setTipoConsulta('cpf')">👤 CPF</button>
             <button class="tipo-btn" id="cons-tipo-btn-cnpj" onclick="setTipoConsulta('cnpj')">🏢 CNPJ</button>
             <button class="tipo-btn" id="cons-tipo-btn-oab" onclick="setTipoConsulta('oab')">⚖ OAB</button>
+            <button class="tipo-btn" id="cons-tipo-btn-avancada" onclick="setTipoConsulta('avancada')">🔎 Telefone / Nome</button>
           </div>
         </div>
       </div>
@@ -757,11 +758,33 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
             <div class="form-group"><label>Nº de Inscrição</label><input class="form-control" id="cons-oab-insc" placeholder="Ex: 12345" onkeydown="if(event.key==='Enter')buscarDirectData()"></div>
             <div class="form-group"><label>UF</label><input class="form-control" id="cons-oab-uf" placeholder="Ex: CE" maxlength="2" onkeydown="if(event.key==='Enter')buscarDirectData()"></div>
           </div>
+          <div id="cons-form-avancada" style="display:none">
+            <div style="font-size:11.5px;color:var(--gray-500);margin-bottom:10px">Preencha ao menos um campo. Quanto mais campos, mais precisa a busca. Essa etapa de filtro é <b>grátis</b> — o custo só entra quando você escolher "Ver detalhes" de um resultado.</div>
+            <div class="form-grid form-grid-2" style="margin-bottom:10px">
+              <div class="form-group"><label>Nome completo</label><input class="form-control" id="cons-av-nome" placeholder="Nome completo" onkeydown="if(event.key==='Enter')buscarDirectData()"></div>
+              <div class="form-group"><label>Telefone</label><input class="form-control" id="cons-av-telefone" placeholder="(00) 00000-0000" onkeydown="if(event.key==='Enter')buscarDirectData()"></div>
+            </div>
+            <div class="form-grid form-grid-3" style="margin-bottom:10px">
+              <div class="form-group"><label>Nome da mãe</label><input class="form-control" id="cons-av-mae" placeholder="Nome da mãe" onkeydown="if(event.key==='Enter')buscarDirectData()"></div>
+              <div class="form-group"><label>CEP</label><input class="form-control" id="cons-av-cep" placeholder="00000-000" onkeydown="if(event.key==='Enter')buscarDirectData()"></div>
+              <div class="form-group"><label>Cidade</label><input class="form-control" id="cons-av-cidade" placeholder="Cidade" onkeydown="if(event.key==='Enter')buscarDirectData()"></div>
+            </div>
+            <div class="form-grid form-grid-3">
+              <div class="form-group"><label>Logradouro</label><input class="form-control" id="cons-av-logradouro" placeholder="Rua, Av..." onkeydown="if(event.key==='Enter')buscarDirectData()"></div>
+              <div class="form-group"><label>Bairro</label><input class="form-control" id="cons-av-bairro" placeholder="Bairro" onkeydown="if(event.key==='Enter')buscarDirectData()"></div>
+              <div class="form-group"><label>UF</label><input class="form-control" id="cons-av-uf" placeholder="Ex: CE" maxlength="2" onkeydown="if(event.key==='Enter')buscarDirectData()"></div>
+            </div>
+          </div>
           <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <button class="btn btn-gold" id="cons-btn-buscar" onclick="buscarDirectData()">🔎 Buscar</button>
             <span id="cons-custo-info" style="font-size:11px;color:var(--gray-500)"></span>
           </div>
         </div>
+      </div>
+
+      <div class="card" id="cons-candidatos-card" style="margin-bottom:14px;display:none">
+        <div class="card-header"><span class="card-title">Resultados do filtro</span><span style="font-size:11px;color:var(--gray-400)" id="cons-candidatos-total"></span></div>
+        <div class="card-body" id="cons-candidatos"></div>
       </div>
 
       <div class="card" id="cons-resultado-card" style="margin-bottom:14px;display:none">
@@ -3596,15 +3619,18 @@ let __consTipo = 'cpf';
 
 function setTipoConsulta(tipo){
   __consTipo = tipo;
-  ['cpf','cnpj','oab'].forEach(t=>{
+  ['cpf','cnpj','oab','avancada'].forEach(t=>{
     const btn = document.getElementById('cons-tipo-btn-'+t);
     const form = document.getElementById('cons-form-'+t);
     if(btn) btn.classList.toggle('active', t===tipo);
     if(form) form.style.display = (t===tipo) ? '' : 'none';
   });
   document.getElementById('cons-resultado-card').style.display = 'none';
+  document.getElementById('cons-candidatos-card').style.display = 'none';
   const custo = DIRECTD_CUSTOS[tipo];
-  document.getElementById('cons-custo-info').textContent = custo!=null ? ('Custo: R$ '+custo.toFixed(2).replace('.',',')+' por consulta') : '';
+  document.getElementById('cons-custo-info').textContent =
+    tipo==='avancada' ? 'Filtro grátis — custo só ao ver detalhes de um resultado' :
+    (custo!=null ? ('Custo: R$ '+custo.toFixed(2).replace('.',',')+' por consulta') : '');
 }
 
 function initConsulta(){
@@ -3614,6 +3640,8 @@ function initConsulta(){
 
 async function buscarDirectData(){
   const tipo = __consTipo;
+  if(tipo==='avancada'){ await filtrarAvancada(); return; }
+
   let valor='', body={tipo};
   if(tipo==='cpf'){
     valor = document.getElementById('cons-cpf').value.trim();
@@ -3636,6 +3664,7 @@ async function buscarDirectData(){
   const textoOriginal = btn.textContent;
   btn.disabled = true; btn.textContent = 'Buscando...';
   document.getElementById('cons-resultado-card').style.display = 'none';
+  document.getElementById('cons-candidatos-card').style.display = 'none';
 
   try{
     const resp = await fetch(DIRECTD_PROXY_URL, {
@@ -3663,6 +3692,118 @@ async function buscarDirectData(){
     alert('Erro na consulta: '+e.message);
   }finally{
     btn.disabled = false; btn.textContent = textoOriginal;
+  }
+}
+
+// ---- Pesquisa Avançada: telefone / nome / endereço ----
+async function filtrarAvancada(){
+  const body = {
+    tipo: 'avancada_filtrar',
+    fullName: document.getElementById('cons-av-nome').value.trim(),
+    phoneNumber: document.getElementById('cons-av-telefone').value.trim(),
+    motherName: document.getElementById('cons-av-mae').value.trim(),
+    postalCode: document.getElementById('cons-av-cep').value.trim(),
+    city: document.getElementById('cons-av-cidade').value.trim(),
+    street: document.getElementById('cons-av-logradouro').value.trim(),
+    neighborhood: document.getElementById('cons-av-bairro').value.trim(),
+    state: document.getElementById('cons-av-uf').value.trim()
+  };
+  if(!body.fullName && !body.phoneNumber && !body.motherName && !body.postalCode && !body.city && !body.street && !body.neighborhood){
+    alert('Preencha ao menos um campo para buscar.');
+    return;
+  }
+
+  const btn = document.getElementById('cons-btn-buscar');
+  const textoOriginal = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Buscando...';
+  document.getElementById('cons-resultado-card').style.display = 'none';
+  document.getElementById('cons-candidatos-card').style.display = 'none';
+
+  try{
+    const resp = await fetch(DIRECTD_PROXY_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+    });
+    const data = await resp.json();
+    if(!resp.ok || data.erro){ throw new Error(data.erro || ('Erro '+resp.status+' no filtro')); }
+    renderCandidatosAvancada(data.listFilters||[], data.numberOfPeople||0);
+  }catch(e){
+    console.error(e);
+    alert('Erro no filtro: '+e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = textoOriginal;
+  }
+}
+
+function renderCandidatosAvancada(lista, total){
+  const card = document.getElementById('cons-candidatos-card');
+  const el = document.getElementById('cons-candidatos');
+  const totalEl = document.getElementById('cons-candidatos-total');
+  card.style.display = '';
+  totalEl.textContent = total ? `${total} encontrado(s)` : '';
+  if(!lista.length){
+    el.innerHTML = '<div style="color:var(--gray-400);font-size:13px">Nenhum resultado para os filtros informados.</div>';
+    return;
+  }
+  el.innerHTML = lista.map((p,i)=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--gray-100)">
+      <div style="font-size:13px">
+        <div style="font-weight:600">${p.fullName||'(sem nome)'}</div>
+        <div style="color:var(--gray-500);font-size:11.5px">Nasc. ${p.dateOfBirth||'—'}${p.motherName?(' · Mãe: '+p.motherName):''}</div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="processarCandidatoAvancada('${p.id}','${(p.fullName||'').replace(/'/g,"\\'")}')">Ver detalhes (R$ 0,36)</button>
+    </div>`).join('');
+}
+
+async function processarCandidatoAvancada(id, nome){
+  document.getElementById('cons-resultado-card').style.display = '';
+  const el = document.getElementById('cons-resultado');
+  el.innerHTML = '<div style="color:var(--gray-500);font-size:13px">Processando...</div>';
+
+  try{
+    const respProc = await fetch(DIRECTD_PROXY_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({tipo:'avancada_processar', listIds:[id], searchName: nome})
+    });
+    const dataProc = await respProc.json();
+    if(!respProc.ok || dataProc.erro){ throw new Error(dataProc.erro || 'Erro ao processar'); }
+    const searchUid = dataProc.searchUid;
+
+    // Polling do resultado (estados terminais: 4, 5, 6, 7 — ver manual da Pesquisa Avançada)
+    let tentativas = 0;
+    while(tentativas < 15){
+      await new Promise(r=>setTimeout(r, 2000));
+      const respStatus = await fetch(DIRECTD_PROXY_URL, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({tipo:'avancada_status', searchUid})
+      });
+      const dataStatus = await respStatus.json();
+      if(!respStatus.ok || dataStatus.erro){ throw new Error(dataStatus.erro || 'Erro ao consultar status'); }
+      const item = (dataStatus.viewSearch && dataStatus.viewSearch.searchItems && dataStatus.viewSearch.searchItems[0]) || null;
+      if(item && [4,5,6,7].includes(item.resultId)){
+        if(item.resultId===6){
+          el.innerHTML = '<div style="color:var(--gray-400);font-size:13px">Falha na pesquisa para este candidato.</div>';
+          return;
+        }
+        renderResultadoConsulta('cpf', {retorno:item.returnJson||{}});
+        const custoFinal = (dataStatus.viewSearch.consumptionTotal!=null) ? dataStatus.viewSearch.consumptionTotal : 0.36;
+        if(!ST.consultasDirectData) ST.consultasDirectData = [];
+        ST.consultasDirectData.unshift({
+          tipo:'avancada', valor: nome, custo: custoFinal,
+          data: new Date().toISOString(),
+          resumo: (item.returnJson && item.returnJson.nome) || nome
+        });
+        if(ST.consultasDirectData.length > 200) ST.consultasDirectData = ST.consultasDirectData.slice(0,200);
+        await save();
+        renderHistoricoConsulta();
+        return;
+      }
+      tentativas++;
+      el.innerHTML = '<div style="color:var(--gray-500);font-size:13px">Processando... ('+tentativas+')</div>';
+    }
+    el.innerHTML = '<div style="color:var(--gray-400);font-size:13px">A consulta está demorando mais que o esperado. Tente novamente em instantes.</div>';
+  }catch(e){
+    console.error(e);
+    el.innerHTML = '<div style="color:var(--red-600, #c0392b);font-size:13px">Erro: '+e.message+'</div>';
   }
 }
 
@@ -3748,9 +3889,10 @@ function renderHistoricoConsulta(){
   el.innerHTML = list.map(c=>{
     const d = new Date(c.data);
     const dataFmt = d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const rotulo = c.tipo==='avancada' ? 'TEL/NOME' : (c.tipo||'').toUpperCase();
     return `<div style="padding:9px 0;border-bottom:1px solid var(--gray-100);display:flex;justify-content:space-between;gap:12px;font-size:12.5px">
       <div>
-        <b>${(c.tipo||'').toUpperCase()}</b> — ${c.resumo || c.valor || ''}
+        <b>${rotulo}</b> — ${c.resumo || c.valor || ''}
         <div style="color:var(--gray-400);font-size:11px;margin-top:2px">${dataFmt}</div>
       </div>
       <div style="color:var(--gray-500);white-space:nowrap">R$ ${(c.custo||0).toFixed(2).replace('.',',')}</div>
