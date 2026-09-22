@@ -220,6 +220,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
     <button class="nav-item" onclick="nav('servicos')"><span class="nav-icon">◈</span>Serviços</button>
     <div class="nav-label">Ferramentas</div>
     <button class="nav-item" onclick="nav('vistoria')"><span class="nav-icon">🏠</span>Vistoria Cadastral</button>
+    <button class="nav-item" onclick="nav('consulta')"><span class="nav-icon">🔍</span>Consulta CPF/CNPJ</button>
     <div class="nav-label">Relatórios</div>
     <button class="nav-item" onclick="nav('relatorios')"><span class="nav-icon">◈</span>Faturamento</button>
   </nav>
@@ -724,6 +725,54 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
         </div>
       </div>
 
+    </div>
+
+    <!-- CONSULTA CPF/CNPJ (Direct Data) -->
+    <div class="view" id="view-consulta">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:9px">
+        <div style="font-size:13px;color:var(--gray-500)">Consulta de CPF, CNPJ e OAB via Direct Data</div>
+      </div>
+
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-body" style="padding:14px 20px">
+          <div style="font-size:11px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Tipo de Consulta</div>
+          <div class="tipo-toggle">
+            <button class="tipo-btn active" id="cons-tipo-btn-cpf" onclick="setTipoConsulta('cpf')">👤 CPF</button>
+            <button class="tipo-btn" id="cons-tipo-btn-cnpj" onclick="setTipoConsulta('cnpj')">🏢 CNPJ</button>
+            <button class="tipo-btn" id="cons-tipo-btn-oab" onclick="setTipoConsulta('oab')">⚖ OAB</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-body">
+          <div id="cons-form-cpf" class="form-grid form-grid-2">
+            <div class="form-group"><label>CPF</label><input class="form-control" id="cons-cpf" placeholder="000.000.000-00" onkeydown="if(event.key==='Enter')buscarDirectData()"></div>
+          </div>
+          <div id="cons-form-cnpj" class="form-grid form-grid-2" style="display:none">
+            <div class="form-group"><label>CNPJ</label><input class="form-control" id="cons-cnpj" placeholder="00.000.000/0000-00" onkeydown="if(event.key==='Enter')buscarDirectData()"></div>
+          </div>
+          <div id="cons-form-oab" class="form-grid form-grid-3" style="display:none">
+            <div class="form-group"><label>Nome</label><input class="form-control" id="cons-oab-nome" placeholder="Nome do advogado" onkeydown="if(event.key==='Enter')buscarDirectData()"></div>
+            <div class="form-group"><label>Nº de Inscrição</label><input class="form-control" id="cons-oab-insc" placeholder="Ex: 12345" onkeydown="if(event.key==='Enter')buscarDirectData()"></div>
+            <div class="form-group"><label>UF</label><input class="form-control" id="cons-oab-uf" placeholder="Ex: CE" maxlength="2" onkeydown="if(event.key==='Enter')buscarDirectData()"></div>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-gold" id="cons-btn-buscar" onclick="buscarDirectData()">🔎 Buscar</button>
+            <span id="cons-custo-info" style="font-size:11px;color:var(--gray-500)"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="cons-resultado-card" style="margin-bottom:14px;display:none">
+        <div class="card-header"><span class="card-title">Resultado</span></div>
+        <div class="card-body" id="cons-resultado"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Histórico de Consultas</span><span style="font-size:11px;color:var(--gray-400)" id="cons-hist-total"></span></div>
+        <div class="card-body" id="cons-historico" style="max-height:420px;overflow-y:auto"></div>
+      </div>
     </div>
 
   </div>
@@ -1253,6 +1302,12 @@ function showLoading(msg){
 }
 function hideLoading(){const el=document.getElementById('fb-loading');if(el)el.style.display='none';}
 
+// ===== DIRECT DATA (Consulta CPF/CNPJ/OAB) =====
+// Proxy Vercel: monolitos-agenda/directdata-proxy (deploy em produção).
+// O token da Direct Data NUNCA fica aqui — ele mora no servidor (variável de ambiente do Vercel).
+const DIRECTD_PROXY_URL = 'https://directdata-proxy.vercel.app/api/directdata';
+const DIRECTD_CUSTOS = {cpf:0.36, cnpj:0.36, oab:0.36};
+
 // ===== CONSTANTES DA EMPRESA =====
 const EMP={
   razao:'F de Oliveira Topografia e Regularização de Imóveis Ltda',
@@ -1268,7 +1323,7 @@ const EMP={
 
 // ===== STATE =====
 let ST={
-  orcamentos:[],clientes:[],recebimentos:[],custos:[],nextNum:36,
+  orcamentos:[],clientes:[],recebimentos:[],custos:[],nextNum:36,consultasDirectData:[],
   banco:{razao:'F de Oliveira Topografia e Regularização de Imóveis Ltda',fantasia:'Monólitos Topografia',
     banco:'Banco do Brasil',agencia:'3472-0',conta:'322243-8',titular:'60.694.439/0001-93',
     pix:'60.694.439/0001-93',formas:'Transferência bancária, dinheiro, cartão de crédito ou PIX'}
@@ -1384,10 +1439,10 @@ function nav(n){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-'+n).classList.add('active');
-  const T={painel:'Painel',orcamentos:'Orçamentos',clientes:'Clientes',recebimentos:'Recebimentos',custos:'Custos',configuracoes:'Dados Bancários',sincronizar:'Sincronizar',relatorios:'Faturamento',vistoria:'Vistoria Cadastral'};
+  const T={painel:'Painel',orcamentos:'Orçamentos',clientes:'Clientes',recebimentos:'Recebimentos',custos:'Custos',configuracoes:'Dados Bancários',sincronizar:'Sincronizar',relatorios:'Faturamento',vistoria:'Vistoria Cadastral',consulta:'Consulta CPF/CNPJ'};
   document.getElementById('page-title').textContent=T[n]||n;
   document.querySelectorAll('.nav-item').forEach(b=>{if(b.textContent.trim().startsWith((T[n]||'').slice(0,5)))b.classList.add('active')});
-  const R={painel:renderDash,agenda:renderAgenda,servicos:renderServicos,orcamentos:renderOrc,clientes:renderCli,recebimentos:renderRec,custos:renderCus,relatorios:renderRel,configuracoes:renderCfg,financeiro:()=>{},vistoria:initVistoria};
+  const R={painel:renderDash,agenda:renderAgenda,servicos:renderServicos,orcamentos:renderOrc,clientes:renderCli,recebimentos:renderRec,custos:renderCus,relatorios:renderRel,configuracoes:renderCfg,financeiro:()=>{},vistoria:initVistoria,consulta:initConsulta};
   if(R[n])R[n]();
 }
 function closeM(id){document.getElementById(id).style.display='none'}
@@ -3535,6 +3590,173 @@ const VIS_AMBIENTES_PADRAO = [
   {c:'Dormitório 02',         p:'Térreo'},
   {c:'Banheiro Social',       p:'Térreo'},
 ];
+
+// ===== CONSULTA CPF/CNPJ/OAB (Direct Data) =====
+let __consTipo = 'cpf';
+
+function setTipoConsulta(tipo){
+  __consTipo = tipo;
+  ['cpf','cnpj','oab'].forEach(t=>{
+    const btn = document.getElementById('cons-tipo-btn-'+t);
+    const form = document.getElementById('cons-form-'+t);
+    if(btn) btn.classList.toggle('active', t===tipo);
+    if(form) form.style.display = (t===tipo) ? '' : 'none';
+  });
+  document.getElementById('cons-resultado-card').style.display = 'none';
+  const custo = DIRECTD_CUSTOS[tipo];
+  document.getElementById('cons-custo-info').textContent = custo!=null ? ('Custo: R$ '+custo.toFixed(2).replace('.',',')+' por consulta') : '';
+}
+
+function initConsulta(){
+  setTipoConsulta(__consTipo);
+  renderHistoricoConsulta();
+}
+
+async function buscarDirectData(){
+  const tipo = __consTipo;
+  let valor='', body={tipo};
+  if(tipo==='cpf'){
+    valor = document.getElementById('cons-cpf').value.trim();
+    if(!valor){alert('Informe o CPF.');return}
+    body.cpf = valor.replace(/\D/g,'');
+  } else if(tipo==='cnpj'){
+    valor = document.getElementById('cons-cnpj').value.trim();
+    if(!valor){alert('Informe o CNPJ.');return}
+    body.cnpj = valor.replace(/\D/g,'');
+  } else if(tipo==='oab'){
+    const nome = document.getElementById('cons-oab-nome').value.trim();
+    const insc = document.getElementById('cons-oab-insc').value.trim();
+    const uf = document.getElementById('cons-oab-uf').value.trim();
+    if(!nome && !insc){alert('Informe o nome ou o número de inscrição.');return}
+    body.nome = nome; body.inscricao = insc; body.uf = uf;
+    valor = nome || insc;
+  }
+
+  const btn = document.getElementById('cons-btn-buscar');
+  const textoOriginal = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Buscando...';
+  document.getElementById('cons-resultado-card').style.display = 'none';
+
+  try{
+    const resp = await fetch(DIRECTD_PROXY_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const data = await resp.json();
+    if(!resp.ok || data.erro){ throw new Error(data.erro || ('Erro '+resp.status+' na consulta')); }
+
+    renderResultadoConsulta(tipo, data);
+
+    const custo = DIRECTD_CUSTOS[tipo] || 0;
+    if(!ST.consultasDirectData) ST.consultasDirectData = [];
+    ST.consultasDirectData.unshift({
+      tipo, valor, custo,
+      data: new Date().toISOString(),
+      resumo: _resumoConsultaDD(tipo, data)
+    });
+    if(ST.consultasDirectData.length > 200) ST.consultasDirectData = ST.consultasDirectData.slice(0,200);
+    await save();
+    renderHistoricoConsulta();
+  }catch(e){
+    console.error(e);
+    alert('Erro na consulta: '+e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = textoOriginal;
+  }
+}
+
+function _resumoConsultaDD(tipo, data){
+  try{
+    const r = data.retorno || {};
+    if(tipo==='cpf') return r.nome || '';
+    if(tipo==='cnpj') return r.razaoSocial || '';
+    if(tipo==='oab'){
+      const lista = r.advogados || [];
+      return lista.length ? lista.map(a=>a.nome).filter(Boolean).join(', ') : (r.nomePesquisado||'');
+    }
+  }catch(e){}
+  return '';
+}
+
+function renderResultadoConsulta(tipo, data){
+  const card = document.getElementById('cons-resultado-card');
+  const el = document.getElementById('cons-resultado');
+  card.style.display = '';
+  const r = (data && data.retorno) || {};
+  const linha = (label, val) => (val===undefined||val===null||val==='') ? '' :
+    `<div style="display:flex;justify-content:space-between;gap:14px;padding:6px 0;border-bottom:1px solid var(--gray-100);font-size:13px">
+       <span style="color:var(--gray-500)">${label}</span>
+       <span style="font-weight:500;text-align:right">${val}</span>
+     </div>`;
+  let html = '';
+
+  if(tipo==='cpf'){
+    html += linha('Nome', r.nome);
+    html += linha('CPF', r.cpf);
+    html += linha('Nascimento', r.dataNascimento);
+    html += linha('Nome da mãe', r.nomeMae);
+    html += linha('Situação cadastral', r.situacaoCadastral);
+    if(r.obito!==undefined) html += linha('Óbito', r.obito ? 'Sim' : 'Não');
+    if(r.telefones && r.telefones.length) html += linha('Telefone(s)', r.telefones.map(t=>t.telefoneComDDD+(t.whatsApp?' (WhatsApp)':'')).join('<br>'));
+    if(r.enderecos && r.enderecos.length){
+      const e = r.enderecos[0];
+      html += linha('Endereço', `${e.logradouro||''}, ${e.numero||''} — ${e.bairro||''}, ${e.cidade||''}/${e.uf||''} — CEP ${e.cep||''}`);
+    }
+    if(r.emails && r.emails.length) html += linha('E-mail(s)', r.emails.map(m=>m.enderecoEmail).join('<br>'));
+  } else if(tipo==='cnpj'){
+    html += linha('Razão Social', r.razaoSocial);
+    html += linha('Nome Fantasia', r.nomeFantasia);
+    html += linha('CNPJ', r.cnpj);
+    html += linha('Situação cadastral', r.situacaoCadastral);
+    html += linha('CNAE', r.cnaeDescricao);
+    html += linha('Porte', r.porte);
+    html += linha('Faturamento presumido', r.faturamentoPresumido);
+    if(r.telefones && r.telefones.length) html += linha('Telefone(s)', r.telefones.map(t=>t.telefoneComDDD).join('<br>'));
+    if(r.enderecos && r.enderecos.length){
+      const e = r.enderecos[0];
+      html += linha('Endereço', `${e.logradouro||''}, ${e.numero||''} — ${e.bairro||''}, ${e.cidade||''}/${e.uf||''} — CEP ${e.cep||''}`);
+    }
+    if(r.emails && r.emails.length) html += linha('E-mail(s)', r.emails.map(m=>m.enderecoEmail).join('<br>'));
+  } else if(tipo==='oab'){
+    const lista = r.advogados || [];
+    if(!lista.length){
+      html = '<div style="color:var(--gray-400);font-size:13px">Nenhum advogado encontrado para os dados informados.</div>';
+    } else {
+      html = lista.map(a=>`
+        <div style="padding:9px 0;border-bottom:1px solid var(--gray-100)">
+          <div style="font-weight:600;font-size:13.5px">${a.nome||''}</div>
+          <div style="font-size:12px;color:var(--gray-500);margin-top:2px">
+            ${a.tipoInscricao||''} · Insc. ${a.inscricao||''} · ${a.uf||''} · ${a.situacao||''}${a.organizacao?(' · '+a.organizacao):''}
+          </div>
+        </div>`).join('');
+    }
+  }
+  el.innerHTML = html || '<div style="color:var(--gray-400);font-size:13px">Nenhum dado retornado.</div>';
+}
+
+function renderHistoricoConsulta(){
+  const list = ST.consultasDirectData || [];
+  const el = document.getElementById('cons-historico');
+  const totalEl = document.getElementById('cons-hist-total');
+  const totalGasto = list.reduce((s,c)=>s+(c.custo||0),0);
+  totalEl.textContent = list.length ? `${list.length} consultas · R$ ${totalGasto.toFixed(2).replace('.',',')}` : '';
+  if(!list.length){
+    el.innerHTML = '<div style="color:var(--gray-400);font-size:13px">Nenhuma consulta realizada ainda.</div>';
+    return;
+  }
+  el.innerHTML = list.map(c=>{
+    const d = new Date(c.data);
+    const dataFmt = d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    return `<div style="padding:9px 0;border-bottom:1px solid var(--gray-100);display:flex;justify-content:space-between;gap:12px;font-size:12.5px">
+      <div>
+        <b>${(c.tipo||'').toUpperCase()}</b> — ${c.resumo || c.valor || ''}
+        <div style="color:var(--gray-400);font-size:11px;margin-top:2px">${dataFmt}</div>
+      </div>
+      <div style="color:var(--gray-500);white-space:nowrap">R$ ${(c.custo||0).toFixed(2).replace('.',',')}</div>
+    </div>`;
+  }).join('');
+}
 
 function initVistoria(){
   // Preencher datalist de clientes
