@@ -788,7 +788,10 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
       </div>
 
       <div class="card" id="cons-resultado-card" style="margin-bottom:14px;display:none">
-        <div class="card-header"><span class="card-title">Resultado</span></div>
+        <div class="card-header">
+          <span class="card-title">Resultado</span>
+          <button class="btn btn-outline btn-sm" onclick="imprimirResultadoConsulta()">🖨️ Abrir / Imprimir</button>
+        </div>
         <div class="card-body" id="cons-resultado"></div>
       </div>
 
@@ -3784,7 +3787,7 @@ async function processarCandidatoAvancada(id, nome){
           el.innerHTML = '<div style="color:var(--gray-400);font-size:13px">Falha na pesquisa para este candidato.</div>';
           return;
         }
-        renderResultadoConsulta('cpf', {retorno:item.returnJson||{}});
+        renderResultadoConsulta('cpf', item.returnJson || {});
         const custoFinal = (dataStatus.viewSearch.consumptionTotal!=null) ? dataStatus.viewSearch.consumptionTotal : 0.36;
         if(!ST.consultasDirectData) ST.consultasDirectData = [];
         ST.consultasDirectData.unshift({
@@ -3818,6 +3821,36 @@ function _resumoConsultaDD(tipo, data){
     }
   }catch(e){}
   return '';
+}
+
+let __ultimoResultadoConsultaHtml = null;
+let __ultimoResultadoConsultaTitulo = '';
+
+function imprimirResultadoConsulta(){
+  if(!__ultimoResultadoConsultaHtml){ alert('Nenhum resultado para abrir/imprimir.'); return; }
+  const agora = new Date().toLocaleString('pt-BR');
+  const doc = `<!DOCTYPE html><html><head><meta charset="utf-8">
+  <title>${__ultimoResultadoConsultaTitulo}</title>
+  <style>
+    body{font-family:'DM Sans',Arial,sans-serif;color:#1a1a2e;padding:28px;max-width:700px;margin:0 auto}
+    .ch{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #0f2240;padding-bottom:12px;margin-bottom:18px}
+    .ch h1{font-size:16px;margin:0 0 4px}
+    .ch .ci{font-size:10.5px;color:#666}
+    .tt{font-size:13px;color:#666;margin-bottom:14px}
+    .row{display:flex;justify-content:space-between;gap:14px;padding:7px 0;border-bottom:1px solid #eee;font-size:13px}
+    .row b{color:#666;font-weight:500}
+    .row span{font-weight:600;text-align:right}
+    .ft{margin-top:20px;padding-top:8px;border-top:1px solid #eee;font-size:9.5px;color:#999;text-align:center}
+    @media print{body{padding:12mm}}
+  </style></head><body>
+  <div class="ch">
+    <div><h1>${EMP.razao||'Monólitos Topografia'}</h1><div class="ci">CNPJ: ${EMP.cnpj||''} &nbsp;|&nbsp; ${EMP.end||''}<br>${EMP.email||''} · ${EMP.cel||''}</div></div>
+  </div>
+  <div class="tt">${__ultimoResultadoConsultaTitulo} — gerado em ${agora}</div>
+  ${__ultimoResultadoConsultaHtml}
+  <div class="ft">Documento gerado pelo Top-Agenda a partir de consulta Direct Data. Uso interno.</div>
+  </body></html>`;
+  abrirDocParaImpressao(doc, __ultimoResultadoConsultaTitulo);
 }
 
 function renderResultadoConsulta(tipo, data){
@@ -3874,6 +3907,12 @@ function renderResultadoConsulta(tipo, data){
     }
   }
   el.innerHTML = html || '<div style="color:var(--gray-400);font-size:13px">Nenhum dado retornado.</div>';
+
+  __ultimoResultadoConsultaHtml = el.innerHTML;
+  const nomeResultado = (tipo==='cpf' && r.nome) || (tipo==='cnpj' && r.razaoSocial) ||
+    (tipo==='oab' && r.advogados && r.advogados[0] && r.advogados[0].nome) || '';
+  const rotuloTipo = {cpf:'Consulta CPF', cnpj:'Consulta CNPJ', oab:'Consulta OAB'}[tipo] || 'Consulta';
+  __ultimoResultadoConsultaTitulo = nomeResultado ? `${rotuloTipo} — ${nomeResultado}` : rotuloTipo;
 }
 
 function renderHistoricoConsulta(){
