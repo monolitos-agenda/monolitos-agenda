@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Top-Agenda</title>
-<meta name="description" content="Sistema de gestão de orçamentos — Monólitos Topografia">
+<meta name="description" content="Top-Agenda — gestão de orçamentos, ordens de serviço e prazos">
 <meta name="theme-color" content="#0f2240">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Monólitos">
+<meta name="apple-mobile-web-app-title" content="Top-Agenda">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -193,12 +193,13 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
 
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
+    <img id="sb-emp-logo" alt="" style="display:none;max-height:42px;max-width:170px;object-fit:contain;margin-bottom:8px;background:white;border-radius:6px;padding:3px">
     <div class="logo-brand">Top-Agenda</div>
-    <div class="logo-tagline" style="color:var(--gold-light);opacity:.8;font-size:10px">Monólitos Topografia</div>
-    <div class="logo-tagline" style="margin-top:2px;font-size:8.5px">CNPJ 60.694.439/0001-93</div>
+    <div class="logo-tagline" id="sb-emp-nome" style="color:var(--gold-light);opacity:.8;font-size:10px">Monólitos Topografia</div>
+    <div class="logo-tagline" id="sb-emp-cnpj" style="margin-top:2px;font-size:8.5px">CNPJ 60.694.439/0001-93</div>
     <div class="logo-person">
-      <div class="logo-person-name">José Airton Santiago Pereira</div>
-      <div class="logo-person-role">Gestor Ambiental e Técnico Agrimensor<br>CFT/RNP nº 22020241315</div>
+      <div class="logo-person-name" id="sb-emp-resp">José Airton Santiago Pereira</div>
+      <div class="logo-person-role" id="sb-emp-cargo">Gestor Ambiental e Técnico Agrimensor<br>CFT/RNP nº 22020241315</div>
     </div>
   </div>
   <nav class="sidebar-nav">
@@ -213,9 +214,11 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
     <button class="nav-item" onclick="openM('modal-recibo-avulso');initRav()"><span class="nav-icon">🧾</span>Recibo Avulso</button>
     <div class="nav-label">Agenda</div>
     <button class="nav-item" onclick="nav('agenda')"><span class="nav-icon">📅</span>Agenda de Serviços<span id="nav-prazo-badge" style="display:none;margin-left:auto;background:#c0392b;color:white;border-radius:10px;font-size:10px;padding:1px 7px;font-weight:600"></span></button>
+    <button class="nav-item" onclick="nav('protocolos')"><span class="nav-icon">🏛</span>Protocolos<span id="nav-prot-badge" style="display:none;margin-left:auto;background:#c0392b;color:white;border-radius:10px;font-size:10px;padding:1px 7px;font-weight:600"></span></button>
+    <button class="nav-item" onclick="nav('sigef')"><span class="nav-icon">📐</span>Vértices SIGEF</button>
     <button class="nav-item" id="btn-notif" onclick="ativarNotificacoes()"><span class="nav-icon">🔕</span>Ativar notificações</button>
     <div class="nav-label">Configurações</div>
-    <button class="nav-item" onclick="nav('configuracoes')"><span class="nav-icon">◉</span>Dados Bancários</button>
+    <button class="nav-item" onclick="nav('configuracoes')"><span class="nav-icon">🏢</span>Empresa e Banco</button>
     <button class="nav-item" onclick="nav('sincronizar')"><span class="nav-icon">↕</span>Sincronizar</button>
     <button class="nav-item" onclick="nav('servicos')"><span class="nav-icon">◈</span>Serviços</button>
     <div class="nav-label">Ferramentas</div>
@@ -353,6 +356,24 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
           <button class="btn btn-gold" onclick="abrirNovoCompromisso()">+ Novo Compromisso</button>
         </div>
       </div>
+      <!-- PAUTA DO DIA -->
+      <div class="card" style="margin-bottom:16px;border:2px solid var(--gold)">
+        <div class="card-header" style="background:var(--gold-pale,#fbf6e9);flex-wrap:wrap;gap:8px">
+          <span class="card-title">📝 Pauta do dia <span id="pauta-cont" style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--gray-500);font-weight:500;margin-left:6px"></span></span>
+          <div style="display:flex;gap:4px;align-items:center">
+            <button class="btn btn-ghost btn-sm" onclick="pautaNavDia(-1)">◀</button>
+            <button class="btn btn-outline btn-sm" onclick="pautaHoje()" id="pauta-dia-lbl" style="min-width:150px;justify-content:center">Hoje</button>
+            <button class="btn btn-ghost btn-sm" onclick="pautaNavDia(1)">▶</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid var(--gray-100);flex-wrap:wrap">
+          <input class="form-control" id="pauta-novo" placeholder="O que fazer? (Enter para adicionar)" style="flex:2;min-width:180px" onkeydown="if(event.key==='Enter')addPauta()">
+          <select class="form-control" id="pauta-os" style="flex:1;min-width:150px"></select>
+          <button class="btn btn-gold" onclick="addPauta()">+ Adicionar</button>
+        </div>
+        <div id="pauta-lista"></div>
+        <div style="padding:6px 14px;font-size:10.5px;color:var(--gray-400)">Arraste (no PC) ou use ▲▼ para ordenar a sequência. O que não for feito passa sozinho para o dia seguinte.</div>
+      </div>
       <!-- AGENDA DE SERVIÇOS (prazos de entrega das OS) -->
       <div class="card" style="margin-bottom:16px">
         <div class="card-header" style="flex-wrap:wrap;gap:8px">
@@ -373,11 +394,91 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
       </div>
     </div>
 
+    <!-- PROTOCOLOS -->
+    <div class="view" id="view-protocolos">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:9px">
+        <div id="prot-resumo" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+        <button class="btn btn-gold" onclick="abrirProtocolo()">+ Novo Protocolo</button>
+      </div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+        <div class="search-bar"><span class="search-icon">⌕</span><input class="form-control search-input" placeholder="Nº, cartório, cliente..." oninput="setProtFiltro('q',this.value)" style="width:210px"></div>
+        <button class="btn btn-sm btn-primary" id="protf-todos" onclick="setProtFiltro('forma','')">Todos</button>
+        <button class="btn btn-sm btn-outline" id="protf-onr" onclick="setProtFiltro('forma','onr')">🌐 ONR</button>
+        <button class="btn btn-sm btn-outline" id="protf-balcao" onclick="setProtFiltro('forma','balcao')">☎ Balcão</button>
+        <select class="form-control" id="protf-sit" onchange="setProtFiltro('sit',this.value)" style="width:190px">
+          <option value="ativos">Em andamento</option>
+          <option value="exigencia">⚠ Nota devolutiva</option>
+          <option value="reingresso">🔁 Reingresso</option>
+          <option value="protocolado">📥 Protocolado</option>
+          <option value="analise">🔎 Em análise</option>
+          <option value="concluido">✅ Concluídos</option>
+          <option value="todos">Todos</option>
+        </select>
+      </div>
+      <div class="card"><div id="prot-lista"></div></div>
+    </div>
+
+    <!-- VÉRTICES SIGEF -->
+    <div class="view" id="view-sigef">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;max-width:900px">
+        <div class="card">
+          <div class="card-header"><span class="card-title">📐 Sequência de vértices</span><button class="btn btn-ghost btn-sm" onclick="sigefAjustar()">✏ Ajustar</button></div>
+          <div class="card-body" style="text-align:center">
+            <div style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:.06em">Próxima certificação parte do vértice</div>
+            <div id="sigef-proximo" style="font-size:54px;font-weight:700;color:var(--navy);line-height:1.1;margin:6px 0">1</div>
+            <div style="font-size:12px;color:var(--gray-400)">Último usado: <strong id="sigef-ultimo">0</strong> · numeração única para M, P e V</div>
+          </div>
+          <div style="padding:14px 18px;border-top:1px solid var(--gray-100)">
+            <div class="form-grid" style="gap:9px">
+              <div class="form-group"><label>OS (opcional)</label><select class="form-control" id="sigef-os"></select></div>
+              <div class="form-group"><label>Imóvel / certificação</label><input class="form-control" id="sigef-imovel" placeholder="Ex: Fazenda Bom Jesus — Gleba A"></div>
+              <div class="form-group"><label>Quantidade de vértices usados</label><input class="form-control" type="number" min="1" id="sigef-qtd" oninput="sigefPrev()"></div>
+            </div>
+            <div id="sigef-faixa" style="font-size:12px;color:var(--blue);margin:8px 0;min-height:16px"></div>
+            <button class="btn btn-gold" style="width:100%;justify-content:center" onclick="sigefLancar()">Lançar certificação</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Histórico</span></div>
+          <div id="sigef-hist"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- DADOS BANCÁRIOS -->
     <div class="view" id="view-configuracoes">
+      <div class="card" style="max-width:840px;margin-bottom:16px">
+        <div class="card-header"><span class="card-title">🏢 Dados da Empresa</span><span style="font-size:11px;color:var(--gray-400)">Aparecem no menu, orçamentos, recibos, mensagens e memoriais</span></div>
+        <div class="card-body">
+          <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding:12px;background:var(--gray-50);border-radius:var(--radius)">
+            <div id="emp-logo-prev" data-src="" style="min-width:120px;min-height:60px;display:flex;align-items:center;justify-content:center;background:white;border:1px dashed var(--gray-300);border-radius:8px;padding:6px"></div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <label class="btn btn-outline btn-sm" style="cursor:pointer">🖼 Escolher logomarca<input type="file" accept="image/*" onchange="empLogoArquivo(event)" style="display:none"></label>
+              <button class="btn btn-danger btn-sm" id="emp-logo-rem" onclick="empLogoRemover()" style="display:none">Remover logo</button>
+              <span style="font-size:10.5px;color:var(--gray-400)">PNG ou JPG — a imagem é reduzida automaticamente</span>
+            </div>
+          </div>
+          <div class="form-grid form-grid-2">
+            <div class="form-group"><label>Nome curto (menu e mensagens)</label><input class="form-control" id="emp-nomeCurto" placeholder="Ex: Silva Topografia"></div>
+            <div class="form-group"><label>Nome no cabeçalho dos documentos</label><input class="form-control" id="emp-nomeDoc" placeholder="Ex: Silva Topografia e Regularização de Imóveis"></div>
+            <div class="form-group"><label>Nome fantasia</label><input class="form-control" id="emp-fantasia"></div>
+            <div class="form-group"><label>Razão social</label><input class="form-control" id="emp-razao"></div>
+            <div class="form-group"><label>CNPJ ou CPF</label><input class="form-control" id="emp-cnpj"></div>
+            <div class="form-group"><label>Ramo de atividade (slogan)</label><input class="form-control" id="emp-segmento" placeholder="Ex: Topografia, Georreferenciamento e Regularização"></div>
+            <div class="form-group"><label>Endereço completo</label><input class="form-control" id="emp-end"></div>
+            <div class="form-group"><label>Cidade (data dos documentos)</label><input class="form-control" id="emp-cidade" placeholder="Ex: Fortaleza"></div>
+            <div class="form-group"><label>E-mail</label><input class="form-control" id="emp-email"></div>
+            <div class="form-group"><label>Celular / WhatsApp</label><input class="form-control" id="emp-cel"></div>
+            <div class="form-group"><label>Responsável técnico</label><input class="form-control" id="emp-resp"></div>
+            <div class="form-group"><label>Cargo / formação</label><input class="form-control" id="emp-cargo" placeholder="Ex: Técnico Agrimensor"></div>
+            <div class="form-group" style="grid-column:1/-1"><label>Registro profissional</label><input class="form-control" id="emp-cft" placeholder="Ex: CFT/RNP nº 00000000000 ou CREA nº ..."></div>
+          </div>
+          <div style="margin-top:13px"><button class="btn btn-gold" onclick="salvarEmpresa()">Salvar dados da empresa</button></div>
+        </div>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:840px">
         <div class="card">
-          <div class="card-header"><span class="card-title">Dados da Empresa e Bancários</span></div>
+          <div class="card-header"><span class="card-title">Dados Bancários</span></div>
           <div class="card-body">
             <div class="form-grid">
               <div class="form-group"><label>Razão Social</label><input class="form-control" id="cfg-razao" placeholder="Razão social completa"></div>
@@ -1161,6 +1262,42 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
   </div>
 </div></div>
 
+<!-- MODAL PROTOCOLO -->
+<div class="modal-overlay" id="modal-protocolo" style="display:none">
+<div class="modal" style="max-width:560px">
+  <div class="modal-header">
+    <div class="modal-title" id="mprot-title">🏛 Protocolo</div>
+    <button class="btn btn-ghost" onclick="closeM('modal-protocolo')">✕</button>
+  </div>
+  <div class="modal-body">
+    <input type="hidden" id="prot-id">
+    <div class="form-grid form-grid-2" style="margin-bottom:10px">
+      <div class="form-group" style="grid-column:1/-1"><label>Ordem de Serviço</label><select class="form-control" id="prot-orc" onchange="_togProtCampos()"></select></div>
+      <div class="form-group" style="grid-column:1/-1;display:none" id="prot-cliente-box"><label>Cliente / descrição do processo</label><input class="form-control" id="prot-cliente" placeholder="Ex: Usucapião da Dra. Rosângela"></div>
+      <div class="form-group"><label>Cartório / órgão</label><input class="form-control" id="prot-orgao" list="dl-prot-orgao" placeholder="Ex: 2ª Zona de Fortaleza"><datalist id="dl-prot-orgao"></datalist></div>
+      <div class="form-group"><label>Nº do protocolo</label><input class="form-control" id="prot-numero" placeholder="Ex: AC016467371"></div>
+      <div class="form-group"><label>Forma de entrada</label>
+        <select class="form-control" id="prot-forma"><option value="onr">🌐 ONR (acompanha online)</option><option value="balcao">☎ Balcão (acompanha por ligação)</option><option value="outro">📄 Outro</option></select></div>
+      <div class="form-group"><label>Data de entrada</label><input class="form-control" type="date" id="prot-data"></div>
+      <div class="form-group" style="grid-column:1/-1"><label>Situação</label>
+        <select class="form-control" id="prot-sit" onchange="protSitMudou()">
+          <option value="protocolado">📥 Protocolado</option><option value="analise">🔎 Em análise</option>
+          <option value="exigencia">⚠ Nota devolutiva (exigência)</option><option value="reingresso">🔁 Reingresso feito</option>
+          <option value="concluido">✅ Registrado / Concluído</option><option value="cancelado">✕ Cancelado</option>
+        </select></div>
+      <div class="form-group" style="grid-column:1/-1;display:none" id="prot-exig-box"><label>Prazo para cumprir a exigência</label><input class="form-control" type="date" id="prot-exig-data"><div style="font-size:10.5px;color:var(--gray-400);margin-top:3px">Gera aviso 2 dias úteis antes e no dia (notificação).</div></div>
+      <div class="form-group" style="grid-column:1/-1"><label>Anotar andamento (opcional)</label><input class="form-control" id="prot-obs" placeholder="Ex: 3ª nota devolutiva — falta CND do município"></div>
+    </div>
+    <div style="font-size:10.5px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Histórico</div>
+    <div id="prot-hist" style="max-height:170px;overflow-y:auto"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-danger btn-sm" id="prot-del-btn" onclick="excluirProtocolo()" style="margin-right:auto">Excluir</button>
+    <button class="btn btn-outline" onclick="closeM('modal-protocolo')">Cancelar</button>
+    <button class="btn btn-gold" onclick="salvarProtocolo()">Salvar</button>
+  </div>
+</div></div>
+
 <!-- MODAL PRAZOS PADRÃO -->
 <div class="modal-overlay" id="modal-cfg-prazos" style="display:none">
 <div class="modal" style="max-width:420px">
@@ -1174,6 +1311,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
       <div class="form-group"><label>🧩 Serviço complexo</label><input class="form-control" type="number" min="1" id="cfgp-complexo"></div>
       <div class="form-group"><label>🏛 Depende de cartório/órgão</label><input class="form-control" type="number" min="1" id="cfgp-cartorio"></div>
       <div class="form-group"><label>Avisar antes (dias úteis)</label><input class="form-control" type="number" min="0" max="10" id="cfgp-aviso"></div>
+      <div class="form-group"><label>⚠ Prazo p/ cumprir nota devolutiva</label><input class="form-control" type="number" min="1" id="cfgp-exigencia"></div>
     </div>
     <div style="font-size:11px;color:var(--gray-400);margin-top:10px">Vale para as próximas Ordens de Serviço. Prazos já definidos não são alterados.</div>
   </div>
@@ -1457,6 +1595,13 @@ function hideLoading(){const el=document.getElementById('fb-loading');if(el)el.s
 const DIRECTD_PROXY_URL = 'https://directdata-proxy.vercel.app/api/directdata';
 const DIRECTD_CUSTOS = {cpf:0.36, cnpj:0.36, oab:0.36};
 
+// ===== INSTÂNCIA E LICENÇA =====
+// Instância do Airton: cliente:false, licenca {plano:'proprietario'}.
+// Cópia para cliente (Fase 1): cliente:true (começa sem os dados da Monólitos) e uma das licenças:
+//   teste:      {plano:'teste', inicio:'AAAA-MM-DD', dias:7, contato:'(85) 99976-5111'}
+//   assinatura: {plano:'assinatura', validade:'AAAA-MM-DD', carencia:3, contato:'(85) 99976-5111'}
+const INSTANCIA={cliente:false, licenca:{plano:'proprietario'}};
+
 // ===== CONSTANTES DA EMPRESA =====
 const EMP={
   razao:'F de Oliveira Topografia e Regularização de Imóveis Ltda',
@@ -1467,7 +1612,11 @@ const EMP={
   cel:'(85) 99976-5111',
   resp:'José Airton Santiago Pereira',
   cargo:'Gestor Ambiental e Técnico Agrimensor',
-  cft:'CFT/RNP nº 22020241315'
+  cft:'CFT/RNP nº 22020241315',
+  nomeCurto:'Monólitos Topografia',
+  nomeDoc:'Monólitos Topografia e Regularização de Imóveis',
+  segmento:'Topografia, Georreferenciamento e Regularização de Imóveis',
+  cidade:'Fortaleza'
 };
 
 // ===== STATE =====
@@ -1477,6 +1626,111 @@ let ST={
     banco:'Banco do Brasil',agencia:'3472-0',conta:'322243-8',titular:'60.694.439/0001-93',
     pix:'60.694.439/0001-93',formas:'Transferência bancária, dinheiro, cartão de crédito ou PIX'}
 };
+
+// ===== CONFIGURAÇÃO DA EMPRESA (identidade visual por instância) =====
+// Os valores de EMP acima são o padrão desta instância. O que for salvo na tela "Empresa e Banco"
+// (ST.empresa) sobrepõe esses valores e vale para sidebar, orçamentos, recibos, mensagens e memoriais.
+const EMP_CAMPOS=['nomeCurto','nomeDoc','segmento','razao','fantasia','cnpj','end','cidade','email','cel','resp','cargo','cft'];
+const EMP_PADRAO=INSTANCIA.cliente?Object.fromEntries(EMP_CAMPOS.map(k=>[k,''])):{...EMP};
+if(INSTANCIA.cliente){
+  EMP_CAMPOS.forEach(k=>EMP[k]='');
+  ST.banco={razao:'',fantasia:'',banco:'',agencia:'',conta:'',titular:'',pix:'',formas:'Transferência bancária, dinheiro, cartão de crédito ou PIX'};
+}
+function aplicarEmpresa(){
+  Object.assign(EMP,EMP_PADRAO,ST.empresa||{});
+  EMP.logo=(ST.empresa&&ST.empresa.logo)||'';
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v||''};
+  set('sb-emp-nome',EMP.nomeCurto||EMP.fantasia||'Configure sua empresa');
+  set('sb-emp-cnpj',EMP.cnpj?(EMP.cnpj.replace(/\D/g,'').length>11?'CNPJ ':'CPF ')+EMP.cnpj:'');
+  set('sb-emp-resp',EMP.resp);
+  const role=document.getElementById('sb-emp-cargo');
+  if(role)role.innerHTML=[escH(EMP.cargo),escH(EMP.cft)].filter(Boolean).join('<br>');
+  const lg=document.getElementById('sb-emp-logo');
+  if(lg){lg.style.display=EMP.logo?'block':'none';if(EMP.logo)lg.src=EMP.logo;}
+}
+function _empLogoHTML(maxH){return EMP.logo?`<img src="${EMP.logo}" alt="" style="max-height:${maxH||48}px;max-width:180px;object-fit:contain;display:block;margin:0 auto 4px">`:''}
+function renderCfgEmpresa(){
+  EMP_CAMPOS.forEach(k=>{const el=document.getElementById('emp-'+k);if(el)el.value=EMP[k]||''});
+  _empLogoPrev(EMP.logo||'');
+}
+function _empLogoPrev(src){
+  const box=document.getElementById('emp-logo-prev');if(!box)return;
+  box.dataset.src=src||'';
+  box.innerHTML=src?`<img src="${src}" style="max-height:70px;max-width:200px;object-fit:contain">`:'<span style="font-size:11.5px;color:var(--gray-400)">Sem logomarca</span>';
+  document.getElementById('emp-logo-rem').style.display=src?'inline-flex':'none';
+}
+// Reduz a imagem (máx. 360px) para não pesar no banco de dados
+function empLogoArquivo(ev){
+  const f=ev.target.files&&ev.target.files[0];if(!f)return;
+  if(!/^image\//.test(f.type)){alert('Escolha um arquivo de imagem (PNG ou JPG).');return}
+  const rd=new FileReader();
+  rd.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      const max=360,esc=Math.min(1,max/Math.max(img.width,img.height));
+      const c=document.createElement('canvas');c.width=Math.round(img.width*esc);c.height=Math.round(img.height*esc);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      let url=c.toDataURL('image/png');
+      if(url.length>160000){const c2=document.createElement('canvas');c2.width=c.width;c2.height=c.height;const x=c2.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c2.width,c2.height);x.drawImage(c,0,0);url=c2.toDataURL('image/jpeg',0.85);}
+      _empLogoPrev(url);
+    };
+    img.src=rd.result;
+  };
+  rd.readAsDataURL(f);ev.target.value='';
+}
+function empLogoRemover(){_empLogoPrev('')}
+function salvarEmpresa(){
+  const e={};EMP_CAMPOS.forEach(k=>{const el=document.getElementById('emp-'+k);e[k]=el?el.value.trim():''});
+  if(!e.nomeCurto&&!e.fantasia){alert('Informe pelo menos o nome da empresa.');return}
+  e.logo=document.getElementById('emp-logo-prev').dataset.src||'';
+  ST.empresa=e;
+  aplicarEmpresa();save();
+  _toastPrazo('🏢 Dados da empresa salvos');
+}
+
+// ===== LICENÇA / PERÍODO DE TESTE =====
+// Controle simples para a Fase 1 (uma cópia do app por cliente, hospedada na conta do Airton).
+function _licencaStatus(){
+  const L=INSTANCIA.licenca||{plano:'proprietario'};
+  const hoje=today();
+  if(L.plano==='teste'&&L.inicio){
+    const fim=_ymd(new Date(_dt(L.inicio).getTime()+(parseInt(L.dias)||7)*86400000));
+    const rest=_diasCorridos(hoje,fim);
+    return{plano:'teste',fim,rest,bloq:rest<=0};
+  }
+  if(L.plano==='assinatura'&&L.validade){
+    const rest=_diasCorridos(hoje,L.validade);
+    const car=parseInt(L.carencia)||3;
+    return{plano:'assinatura',fim:L.validade,rest,bloq:rest<-car,carencia:rest<0};
+  }
+  return{plano:'proprietario',bloq:false};
+}
+function verificarLicenca(){
+  const s=_licencaStatus(),L=INSTANCIA.licenca||{};
+  const contato=(L.contato||'').replace(/\D/g,'');
+  const wa=contato?`https://wa.me/55${contato.replace(/^55/,'')}?text=${encodeURIComponent('Olá! Quero continuar usando o Top-Agenda ('+(EMP.nomeCurto||EMP.fantasia||'minha empresa')+').')}`:'';
+  let bar=document.getElementById('lic-bar');
+  if(s.plano==='proprietario'){if(bar)bar.remove();return}
+  const aviso=s.plano==='teste'?(s.rest>0?`🧪 Período de teste — ${s.rest===1?'último dia':'faltam '+s.rest+' dias'}`:''):
+    (s.carencia?`⚠ Assinatura vencida em ${fmtD(s.fim)} — regularize para não perder o acesso`:(s.rest<=5?`Sua assinatura vence em ${s.rest} dia(s) (${fmtD(s.fim)})`:''));
+  if(aviso&&!s.bloq){
+    if(!bar){bar=document.createElement('div');bar.id='lic-bar';document.querySelector('.main').prepend(bar);}
+    bar.style.cssText=`background:${s.carencia?'var(--red-light)':'var(--gold-pale,#fbf6e9)'};color:${s.carencia?'var(--red)':'var(--navy)'};padding:8px 16px;font-size:12.5px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--gray-200)`;
+    bar.innerHTML=`<span>${aviso}</span>${wa?`<a class="btn btn-gold btn-sm" style="text-decoration:none" href="${wa}" target="_blank">${s.plano==='teste'?'Quero assinar':'Falar no WhatsApp'}</a>`:''}`;
+  }else if(bar)bar.remove();
+  if(s.bloq){
+    let ov=document.getElementById('lic-bloqueio');
+    if(!ov){ov=document.createElement('div');ov.id='lic-bloqueio';document.body.appendChild(ov);}
+    ov.style.cssText='position:fixed;inset:0;background:rgba(15,34,64,.92);z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.innerHTML=`<div style="background:white;border-radius:16px;max-width:420px;width:100%;padding:26px;text-align:center;font-family:'DM Sans',sans-serif">
+      <div style="font-size:40px">${s.plano==='teste'?'🧪':'🔒'}</div>
+      <div style="font-family:'Playfair Display',serif;font-size:19px;color:var(--navy);font-weight:700;margin:8px 0">${s.plano==='teste'?'Seu período de teste terminou':'Assinatura suspensa'}</div>
+      <p style="font-size:13px;color:var(--gray-500);line-height:1.6;margin-bottom:16px">${s.plano==='teste'?'Gostou do Top-Agenda? Fale conosco para assinar — tudo o que você cadastrou no teste continua salvo.':'O acesso foi suspenso por falta de pagamento. Seus dados estão preservados e o acesso volta assim que a assinatura for regularizada.'}</p>
+      ${wa?`<a class="btn btn-gold" style="width:100%;justify-content:center;margin-bottom:8px;text-decoration:none" href="${wa}" target="_blank">💬 Falar no WhatsApp</a>`:''}
+      <button class="btn btn-outline" style="width:100%;justify-content:center" onclick="exportar()">⬇ Baixar uma cópia dos meus dados</button>
+    </div>`;
+  }
+}
 
 // ===== FIREBASE SYNC =====
 const DOC_ID = 'dados-monolitos'; // single document stores all data
@@ -1560,12 +1814,13 @@ function startRealtimeSync(){
          remote.recebimentos?.length > ST.recebimentos?.length){
         ST = remote;
         try{ localStorage.setItem('monolitos_v3', JSON.stringify(ST)); }catch(e){}
+        aplicarEmpresa();
         // Refresh current view silently
         const active = document.querySelector('.view.active');
         if(active){
           const id = active.id.replace('view-','');
           const refreshMap = {painel:renderDash,orcamentos:renderOrc,clientes:renderCli,
-            recebimentos:renderRec,custos:renderCus,relatorios:renderRel,agenda:renderAgenda};
+            recebimentos:renderRec,custos:renderCus,relatorios:renderRel,agenda:renderAgenda,protocolos:renderProtocolos,sigef:renderSigef};
           if(refreshMap[id]) refreshMap[id]();
         }
         showSyncBadge();
@@ -1588,10 +1843,10 @@ function nav(n){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-'+n).classList.add('active');
-  const T={painel:'Painel',orcamentos:'Orçamentos',clientes:'Clientes',recebimentos:'Recebimentos',custos:'Custos',configuracoes:'Dados Bancários',sincronizar:'Sincronizar',relatorios:'Faturamento',agenda:'Agenda de Serviços',vistoria:'Vistoria Cadastral',consulta:'Consulta CPF/CNPJ'};
+  const T={painel:'Painel',orcamentos:'Orçamentos',clientes:'Clientes',recebimentos:'Recebimentos',custos:'Custos',configuracoes:'Empresa e Banco',sincronizar:'Sincronizar',relatorios:'Faturamento',agenda:'Agenda de Serviços',protocolos:'Protocolos',sigef:'Vértices SIGEF',vistoria:'Vistoria Cadastral',consulta:'Consulta CPF/CNPJ'};
   document.getElementById('page-title').textContent=T[n]||n;
   document.querySelectorAll('.nav-item').forEach(b=>{if(b.textContent.trim().startsWith((T[n]||'').slice(0,5)))b.classList.add('active')});
-  const R={painel:renderDash,agenda:renderAgenda,servicos:renderServicos,orcamentos:renderOrc,clientes:renderCli,recebimentos:renderRec,custos:renderCus,relatorios:renderRel,configuracoes:renderCfg,financeiro:()=>{},vistoria:initVistoria,consulta:initConsulta};
+  const R={painel:renderDash,agenda:renderAgenda,servicos:renderServicos,orcamentos:renderOrc,clientes:renderCli,recebimentos:renderRec,custos:renderCus,relatorios:renderRel,configuracoes:renderCfg,financeiro:()=>{},protocolos:renderProtocolos,sigef:renderSigef,vistoria:initVistoria,consulta:initConsulta};
   if(R[n])R[n]();
 }
 function closeM(id){document.getElementById(id).style.display='none'}
@@ -2115,9 +2370,9 @@ function imprimir(){
   <div class="doc">
     <div class="hdr">
       <div class="hdr-center">
-        <div class="cn">MONÓLITOS TOPOGRAFIA E REGULARIZAÇÃO DE IMÓVEIS</div>
-        <div class="ci">CNPJ: ${EMP.cnpj} &nbsp;|&nbsp; ${EMP.end}<br>${EMP.email} · Cel/WhatsApp: ${EMP.cel}</div>
-        <div class="cp">${EMP.resp} — ${EMP.cargo} · ${EMP.cft}</div>
+        ${_empLogoHTML(46)}<div class="cn">${escH(EMP.nomeDoc||EMP.fantasia||EMP.nomeCurto)}</div>
+        <div class="ci">${[EMP.cnpj?'CNPJ: '+EMP.cnpj:'',EMP.end].filter(Boolean).join(' &nbsp;|&nbsp; ')}<br>${[EMP.email,EMP.cel?'Cel/WhatsApp: '+EMP.cel:''].filter(Boolean).join(' · ')}</div>
+        <div class="cp">${[EMP.resp,EMP.cargo].filter(Boolean).join(' — ')}${EMP.cft?' · '+EMP.cft:''}</div>
         <div class="doc-num-block">
           <h2>${document.getElementById('orc-tipo')?.value==='os'?'Ordem de Serviço':'Or\u00e7amento'} ${num}</h2>
           <p>Data: ${data}</p>
@@ -2142,7 +2397,7 @@ function imprimir(){
     ${obs?`<div class="sec"><div class="ib"><h4>Informações Adicionais</h4><p style="font-size:11.5px;line-height:1.7">${obs}</p></div></div>`:''}
     <div class="obs-av">⚠ <strong>Atenção:</strong> O serviço somente entrará em pauta após o recebimento do pagamento inicial (sinal/entrada). Sem a confirmação do pagamento, o prazo de execução não será iniciado.</div>
     <div class="gar"><strong>⚠ Prazo de Arquivamento:</strong> A documentação técnica (plantas, memoriais, ART/RRT) ficará disponível por no máximo <strong>2 (dois) anos</strong> a partir da entrega. Após esse prazo, não será possível reemissão ou cópias. <strong>Este orçamento não inclui taxas cartoriais ou de registro.</strong></div>
-    <div class="fsig"><div style="font-size:10px;color:#9e9890">Fortaleza, ${data}</div>
+    <div class="fsig"><div style="font-size:10px;color:#9e9890">${EMP.cidade?EMP.cidade+', ':''}${data}</div>
     <div style="text-align:center"><div class="sl">${EMP.fantasia}<br>${EMP.resp}<br>${EMP.cft}</div></div></div>
     <div style="margin-top:9px;padding-top:6px;border-top:1px solid #e2ddd6;text-align:center;font-size:9px;color:#9e9890">${b.razao||EMP.razao} &nbsp;·&nbsp; CNPJ ${EMP.cnpj}</div>
     <div class="no-print" style="margin-top:18px;background:#e6f0fb;border:1px solid #b5d4f4;border-radius:6px;padding:10px 14px;font-size:11.5px;color:#1a4a7a;line-height:1.6">
@@ -2212,6 +2467,9 @@ function renderDash(){
     const hojeAgenda=(ST.compromissos||[]).filter(c=>c.data===today()&&!c.concluido).length;
     mAgenda.textContent=hojeAgenda;
     mAgenda.style.color=hojeAgenda>0?'var(--blue)':'var(--navy)';
+    const pp=(ST.pauta||[]).filter(x=>x.data<=today()&&!x.feito).length;
+    const bdg=mAgenda.parentElement.querySelector('.metric-badge');
+    if(bdg)bdg.textContent=pp?`📝 ${pp} na pauta`:'📅 Ver agenda';
   }
   document.getElementById('m-co').textContent=co;
   renderPainelPrazos();
@@ -2550,7 +2808,7 @@ function printRecibo(r){
   _abrirRecibo({
     cliente:r.cliente,orcNum:r.orcNum||'Avulso',parcela:r.parcela||'',reciboSeq,
     forma:r.forma,valor:r.valor,dataFmt,servicos:srvs,
-    emp:b.fantasia||'Monólitos Topografia',
+    emp:b.fantasia||EMP.nomeCurto||EMP.fantasia,
     razao:b.razao||EMP.razao,cnpj:EMP.cnpj,end:EMP.end,
     email:b.email||'',whats:b.whats||'',tel:b.tel||'',
     pix:b.pix||'',resp:b.titular||EMP.resp,cft:EMP.cft
@@ -2575,9 +2833,9 @@ function _abrirRecibo(d){
       <div style="font-size:9px;font-weight:bold;color:#555;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Serviços</div>
       <div style="font-size:11px;color:#333;line-height:1.7;white-space:pre-line">${d.servicos}</div>
     </div>`:'';
-  const waMsg=encodeURIComponent(`🧾 *Recibo de Pagamento*\n\n*${d.orcNum!=='Avulso'?'OS/Orçamento nº '+d.orcNum:'Recibo Avulso'}*\nCliente: ${d.cliente}\nData: ${d.dataFmt}\n${d.parcela?'Parcela: '+d.parcela+'\n':''}Forma: ${d.forma}\n💰 *Valor: R$ ${d.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}*\n\n_Monólitos Topografia e Regularização de Imóveis_`);
+  const waMsg=encodeURIComponent(`🧾 *Recibo de Pagamento*\n\n*${d.orcNum!=='Avulso'?'OS/Orçamento nº '+d.orcNum:'Recibo Avulso'}*\nCliente: ${d.cliente}\nData: ${d.dataFmt}\n${d.parcela?'Parcela: '+d.parcela+'\n':''}Forma: ${d.forma}\n💰 *Valor: R$ ${d.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}*\n\n_${EMP.nomeDoc||EMP.nomeCurto}_`);
   const emailAssunto=encodeURIComponent('Recibo — '+(d.orcNum!=='Avulso'?'OS '+d.orcNum:'Avulso')+' — '+d.cliente);
-  const emailCorpo=encodeURIComponent('Prezado(a) '+d.cliente+',\n\nSegue o recibo de pagamento.\n\nValor: R$ '+d.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})+'\nData: '+d.dataFmt+'\n\nAtenciosamente,\nMonólitos Topografia');
+  const emailCorpo=encodeURIComponent('Prezado(a) '+d.cliente+',\n\nSegue o recibo de pagamento.\n\nValor: R$ '+d.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})+'\nData: '+d.dataFmt+'\n\nAtenciosamente,\n'+(EMP.nomeCurto||EMP.fantasia));
   const nomeReciboArquivo=`Recibo - ${d.orcNum} - ${d.cliente}`.replace(/[^a-zA-ZÀ-ÿ0-9 -]/g,"").trim();
   const htmlDoc=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${nomeReciboArquivo}</title>
 <style>
@@ -2612,7 +2870,7 @@ td.vl{font-weight:500}
 <div class="page">
   <div class="hdr">
     <div>
-      <div class="emp-n">${d.emp}</div>
+      ${EMP.logo?`<img src="${EMP.logo}" alt="" style="max-height:44px;max-width:160px;object-fit:contain;display:block;margin-bottom:4px">`:''}<div class="emp-n">${d.emp}</div>
       <div class="emp-s">${d.razao}${d.cnpj?'<br>CNPJ '+d.cnpj:''}${d.cft?'<br>'+d.cft:''}${d.end?'<br>'+d.end:''}</div>
     </div>
     <div class="emp-c">
@@ -2636,7 +2894,7 @@ td.vl{font-weight:500}
   <p class="decl">Declaramos ter recebido a importância acima, ficando quite e satisfeita a presente obrigação.</p>
   ${d.pix?'<div class="pix">💳 <strong>PIX:</strong> '+d.pix+'</div>':''}
   <div class="ftr">
-    <div style="font-size:10pt;color:#555">Fortaleza, ${d.dataFmt}</div>
+    <div style="font-size:10pt;color:#555">${EMP.cidade?EMP.cidade+', ':''}${d.dataFmt}</div>
     <div class="ass">
       <div class="ass-l"></div>
       <div class="ass-n">${d.resp||d.emp}</div>
@@ -2831,7 +3089,7 @@ function emitirReciboAvulso(){
   _abrirRecibo({
     cliente:dados.cliente,orcNum:dados.orcNum,parcela:dados.parcela,
     forma:dados.forma,valor:dados.valor,dataFmt,servicos:dados.servicos,
-    emp:b.fantasia||'Monólitos Topografia',
+    emp:b.fantasia||EMP.nomeCurto||EMP.fantasia,
     razao:b.razao||EMP.razao,cnpj:EMP.cnpj,end:EMP.end,
     email:b.email||'',whats:b.whats||'',tel:b.tel||'',
     pix:b.pix||'',resp:b.titular||EMP.resp,cft:EMP.cft
@@ -2867,6 +3125,7 @@ function renderCus(){
 
 // ===== CONFIGURAÇÕES =====
 function renderCfg(){
+  renderCfgEmpresa();
   const b=ST.banco;
   ['razao','fantasia','banco','agencia','conta','titular','pix','formas'].forEach(k=>{const el=document.getElementById('cfg-'+k);if(el)el.value=b[k]||''});
   renderBancoPrev();
@@ -3284,7 +3543,7 @@ let _agSrvTab='pend';
 function escH(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 function _cfgPrazos(){
   const c=ST.cfgPrazos||{};
-  return{padrao:parseInt(c.padrao)||7,complexo:parseInt(c.complexo)||15,cartorio:parseInt(c.cartorio)||30,aviso:c.aviso!=null&&c.aviso!==''?parseInt(c.aviso):2};
+  return{padrao:parseInt(c.padrao)||7,complexo:parseInt(c.complexo)||15,cartorio:parseInt(c.cartorio)||30,exigencia:parseInt(c.exigencia)||10,aviso:c.aviso!=null&&c.aviso!==''?parseInt(c.aviso):2};
 }
 
 // --- Dias úteis (sáb/dom + feriados nacionais, Ceará e Fortaleza) ---
@@ -3365,6 +3624,7 @@ function prazoBlocoHTML(o,pre){
         <div style="font-weight:600;color:${i.cor}">📦 ${i.txt}${i.sub?' — '+i.sub:''}</div>
         <div style="margin-top:2px">Início ${fmtD(p.inicio)} → Entrega prevista <strong>${fmtD(p.prevista)}</strong> (${_diaSemana(p.prevista)}) · ${p.dias} d.u. · ${PRAZO_TIPOS[p.tipo]||''}</div>
         ${!p.entregueEm?`<div style="margin-top:2px;color:var(--gray-500)">${PRAZO_ETAPAS[p.etapa]||''}${p.protocolo?' · '+escH(p.protocolo):''}</div>`:''}
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">${protChipsOS(o.id)}<span class="chip" onclick="${pre}abrirProtocolo(null,'${o.id}')" style="cursor:pointer;font-size:10px;background:white;color:var(--navy);border:1px dashed var(--gray-300)">+ protocolo</span></div>
       </div>
       <button class="btn btn-outline btn-sm" onclick="${pre}abrirPrazo('${o.id}')">✏ Prazo</button>
     </div>`;
@@ -3519,12 +3779,13 @@ function abrirCfgPrazos(){
   document.getElementById('cfgp-complexo').value=c.complexo;
   document.getElementById('cfgp-cartorio').value=c.cartorio;
   document.getElementById('cfgp-aviso').value=c.aviso;
+  document.getElementById('cfgp-exigencia').value=c.exigencia;
   openM('modal-cfg-prazos');
 }
 function salvarCfgPrazos(){
   const v=k=>parseInt(document.getElementById('cfgp-'+k).value);
   if(!(v('padrao')>0&&v('complexo')>0&&v('cartorio')>0)){alert('Os prazos devem ser maiores que zero.');return}
-  ST.cfgPrazos={padrao:v('padrao'),complexo:v('complexo'),cartorio:v('cartorio'),aviso:Math.max(0,v('aviso')||0)};
+  ST.cfgPrazos={padrao:v('padrao'),complexo:v('complexo'),cartorio:v('cartorio'),exigencia:v('exigencia')>0?v('exigencia'):10,aviso:Math.max(0,v('aviso')||0)};
   save();closeM('modal-cfg-prazos');_toastPrazo('⚙ Prazos padrão salvos');
 }
 
@@ -3558,6 +3819,7 @@ function _srvRow(o){
         ${p&&!p.entregueEm?`<span class="chip" style="font-size:10px;background:var(--gray-100);color:var(--gray-700)">${PRAZO_ETAPAS[p.etapa]||''}</span>`:''}
         ${p&&p.protocolo?`<span class="chip badge-blue" style="font-size:10px">🏛 ${escH(p.protocolo.slice(0,50))}</span>`:''}
         <span class="chip" style="font-size:10px;background:var(--gray-50);color:${pct>=100?'var(--green)':'var(--gray-500)'}">💰 ${pct}% pago</span>
+        ${protChipsOS(o.id)}
       </div>
       ${p?`<div style="font-size:11px;color:var(--gray-400);margin-top:4px">Início ${fmtD(p.inicio)} → Entrega <strong style="color:var(--gray-700)">${fmtD(p.prevista)}</strong> (${_diaSemana(p.prevista)}) · ${p.dias} d.u.${p.obs?' · '+escH(p.obs.slice(0,60)):''}</div>`:''}
       ${o.andamento?`<div style="font-size:11px;color:var(--blue);margin-top:3px">📌 ${escH(o.andamento.slice(0,80))}</div>`:''}
@@ -3567,6 +3829,8 @@ function _srvRow(o){
       <div style="display:flex;gap:2px">
         <button class="btn btn-ghost btn-sm" onclick="abrirAndamento('${o.id}')" title="Anotar andamento">📋</button>
         <button class="btn btn-ghost btn-sm" onclick="abrirFinanceiro('${o.id}')" title="Financeiro">💰</button>
+        <button class="btn btn-ghost btn-sm" onclick="abrirProtocolo(null,'${o.id}')" title="Novo protocolo desta OS">🏛</button>
+        <button class="btn btn-ghost btn-sm" onclick="addPautaDe('os','${o.id}')" title="Pôr na pauta de hoje">📝</button>
         ${!p?`<button class="btn btn-gold btn-sm" onclick="abrirPrazo('${o.id}')">Definir prazo</button>`:`<button class="btn btn-ghost btn-sm" onclick="abrirPrazo('${o.id}')" title="Editar prazo">✏</button>`}
         ${p&&!p.entregueEm?`<button class="btn btn-green btn-sm" onclick="marcarEntregue('${o.id}')" title="Marcar como entregue">✅</button>`:''}
       </div>
@@ -3603,6 +3867,9 @@ function renderAgendaServicos(){
 function renderPainelPrazos(){
   const L=_listasPrazos();
   const crit=[...L.g.atrasado,...L.g.hoje,...L.g.urgente];
+  const exig=(ST.protocolos||[]).filter(p=>{const i=protInfoExig(p);return i&&i.nivel!=='ok'});
+  const nbp=document.getElementById('nav-prot-badge');
+  if(nbp){const n=(ST.protocolos||[]).filter(p=>p.situacao==='exigencia').length;nbp.style.display=n?'inline-block':'none';nbp.textContent=n;}
   const m=document.getElementById('m-prazos'),sub=document.getElementById('m-prazos-sub');
   if(m){m.textContent=L.ativos.length;m.style.color=L.g.atrasado.length?'var(--red)':'var(--navy)';}
   if(sub){
@@ -3613,17 +3880,20 @@ function renderPainelPrazos(){
   const nb=document.getElementById('nav-prazo-badge');
   if(nb){nb.style.display=crit.length?'inline-block':'none';nb.textContent=crit.length;}
   const al=document.getElementById('painel-prazos-alerta');if(!al)return;
-  if(!crit.length){al.innerHTML='';return}
-  const temAtraso=L.g.atrasado.length>0;
+  if(!crit.length&&!exig.length){al.innerHTML='';return}
+  const temAtraso=L.g.atrasado.length>0||exig.some(p=>protInfoExig(p).nivel!=='urgente');
   al.innerHTML=`<div style="background:${temAtraso?'var(--red-light)':'var(--amber-light)'};border:1px solid ${temAtraso?'#e8b4b4':'#e8d6a8'};border-radius:var(--radius-lg);padding:12px 16px;margin-bottom:16px">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
-      <strong style="font-size:13px;color:${temAtraso?'var(--red)':'var(--amber)'}">${temAtraso?'⚠ Atenção aos prazos de entrega':'⏰ Entregas se aproximando'}</strong>
+      <strong style="font-size:13px;color:${temAtraso?'var(--red)':'var(--amber)'}">${temAtraso?'⚠ Atenção aos prazos':'⏰ Prazos se aproximando'}</strong>
       <button class="btn btn-sm btn-outline" onclick="nav('agenda')">Abrir Agenda de Serviços →</button>
     </div>
     ${crit.slice(0,5).map(o=>{const i=prazoInfo(o);return`<div onclick="abrirPrazo('${o.id}')" style="cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:4px 0;border-top:1px dashed rgba(0,0,0,.08)">
       <span style="color:var(--gray-700)"><strong>OS ${escH(o.num)}</strong> — ${escH(o.cliente)}</span>
       <span style="color:${i.cor};font-weight:600;white-space:nowrap">${i.txt} · ${fmtD(o.prazo.prevista).slice(0,5)}</span></div>`}).join('')}
     ${crit.length>5?`<div style="font-size:11px;color:var(--gray-500);margin-top:4px">+ ${crit.length-5} outro(s)</div>`:''}
+    ${exig.map(p=>{const i=protInfoExig(p);return`<div onclick="abrirProtocolo('${p.id}')" style="cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:4px 0;border-top:1px dashed rgba(0,0,0,.08)">
+      <span style="color:var(--gray-700)">🏛 <strong>Prot. ${escH(p.numero||'')}</strong> — ${escH(_protRef(p))}</span>
+      <span style="color:${i.cor};font-weight:600;white-space:nowrap">${i.txt}</span></div>`}).join('')}
   </div>`;
 }
 
@@ -3643,6 +3913,334 @@ function avisoDiarioPrazos(){
       navigator.serviceWorker.ready.then(r=>r.showNotification('Top-Agenda — Prazos de entrega',opts)).catch(()=>new Notification('Top-Agenda — Prazos de entrega',opts));
     }else new Notification('Top-Agenda — Prazos de entrega',opts);
   }catch(e){console.warn('Aviso de prazos:',e);}
+}
+
+// ===== CONTROLE PROCESSUAL (substitui o Trello) =====
+// (1) Protocolos: nº, órgão, forma de entrada (ONR online / balcão por telefone), situação e histórico
+// (2) Pauta do dia: sequência de execução, itens não concluídos passam para o dia seguinte
+// (3) Vértices SIGEF: sequência única do último vértice usado
+const PROT_SIT={
+  protocolado:{t:'📥 Protocolado',c:'var(--blue)',bg:'var(--blue-light)'},
+  analise:{t:'🔎 Em análise',c:'var(--navy)',bg:'var(--gray-100)'},
+  exigencia:{t:'⚠ Nota devolutiva',c:'var(--red)',bg:'var(--red-light)'},
+  reingresso:{t:'🔁 Reingresso',c:'var(--amber)',bg:'var(--amber-light)'},
+  concluido:{t:'✅ Registrado/Concluído',c:'var(--green)',bg:'var(--green-light)'},
+  cancelado:{t:'✕ Cancelado',c:'var(--gray-500)',bg:'var(--gray-100)'}
+};
+const PROT_FORMA={onr:'🌐 ONR (online)',balcao:'☎ Balcão (ligar)',outro:'📄 Outro'};
+const PROT_DIAS_SEM_CONSULTA=7;
+let _protFiltro={forma:'',sit:'ativos',q:''};
+function _prots(){if(!ST.protocolos)ST.protocolos=[];return ST.protocolos}
+function _protAtivo(p){return p.situacao!=='concluido'&&p.situacao!=='cancelado'}
+function _protRef(p){
+  const o=p.orcId?ST.orcamentos.find(x=>x.id===p.orcId):null;
+  return o?`OS ${o.num} — ${o.cliente}`:(p.cliente||'Processo avulso');
+}
+function _ultimaConsulta(p){const h=(p.hist||[]).map(x=>x.data).filter(Boolean).sort();return h[h.length-1]||p.dataEntrada||''}
+function _diasCorridos(a,b){return Math.round((_dt(b)-_dt(a))/86400000)}
+function protInfoExig(p){
+  if(p.situacao!=='exigencia'||!p.prazoExig)return null;
+  const hoje=today();
+  if(p.prazoExig<hoje)return{nivel:'atrasado',cor:'var(--red)',txt:`Exigência vencida há ${Math.max(1,diasUteisEntre(p.prazoExig,hoje))} d.u.`};
+  if(p.prazoExig===hoje)return{nivel:'hoje',cor:'var(--red)',txt:'Exigência vence HOJE'};
+  const r=diasUteisEntre(hoje,p.prazoExig);
+  return{nivel:r<=3?'urgente':'ok',cor:r<=3?'var(--amber)':'var(--blue)',txt:`Cumprir exigência: faltam ${r} d.u.`};
+}
+function _protsDaOS(orcId){return _prots().filter(p=>p.orcId===orcId)}
+function protChipsOS(orcId){
+  return _protsDaOS(orcId).filter(_protAtivo).map(p=>{const s=PROT_SIT[p.situacao]||PROT_SIT.protocolado;
+    return`<span class="chip" onclick="event.stopPropagation();abrirProtocolo('${p.id}')" style="cursor:pointer;font-size:10px;background:${s.bg};color:${s.c}">${p.forma==='balcao'?'☎':'🌐'} ${escH((p.orgao||'').slice(0,22))} ${escH(p.numero||'')}</span>`}).join('');
+}
+
+// Compromissos automáticos (push) para o prazo de cumprimento de exigência
+function _syncCompProt(p){
+  if(!ST.compromissos)ST.compromissos=[];
+  ST.compromissos=ST.compromissos.filter(c=>!(c.auto&&c.protId===p.id));
+  if(p.situacao!=='exigencia'||!p.prazoExig)return;
+  const ref=_protRef(p);
+  ST.compromissos.push({id:'exg-'+p.id+'-'+p.prazoExig,titulo:`⚠ Prazo da nota devolutiva — Prot. ${p.numero||''}`,data:p.prazoExig,hora:'08:00',
+    cliente:ref,obs:p.orgao||'',lembrete:'60',tipo:'cartorio',concluido:false,auto:true,protId:p.id});
+  const dA=subDiasUteis(p.prazoExig,2);
+  if(dA>=today())ST.compromissos.push({id:'exga-'+p.id+'-'+dA,titulo:`⏰ Exigência do Prot. ${p.numero||''} vence em 2 dias úteis`,data:dA,hora:'08:00',
+    cliente:ref,obs:p.orgao||'',lembrete:'60',tipo:'cartorio',concluido:false,auto:true,protId:p.id});
+}
+
+// --- Modal protocolo ---
+function _fillProtSelects(orcSel){
+  const os=ST.orcamentos.filter(o=>_orcValido(o)&&(o.tipo==='os'||o.id===orcSel)&&o.status!=='Cancelado')
+    .sort((a,b)=>String(b.num).localeCompare(String(a.num)));
+  document.getElementById('prot-orc').innerHTML='<option value="">— Processo avulso (sem OS no app) —</option>'+
+    os.map(o=>`<option value="${o.id}" ${o.id===orcSel?'selected':''}>OS ${escH(o.num)} — ${escH(o.cliente)}</option>`).join('');
+  const orgaos=[...new Set(_prots().map(p=>p.orgao).filter(Boolean))];
+  document.getElementById('dl-prot-orgao').innerHTML=orgaos.map(x=>`<option value="${escH(x)}">`).join('');
+}
+function _togProtCampos(){
+  const avulso=!document.getElementById('prot-orc').value;
+  document.getElementById('prot-cliente-box').style.display=avulso?'block':'none';
+  document.getElementById('prot-exig-box').style.display=document.getElementById('prot-sit').value==='exigencia'?'block':'none';
+}
+function protSitMudou(){
+  _togProtCampos();
+  if(document.getElementById('prot-sit').value==='exigencia'&&!document.getElementById('prot-exig-data').value){
+    const n=_cfgPrazos().exigencia;document.getElementById('prot-exig-data').value=addDiasUteis(today(),n);
+  }
+}
+function abrirProtocolo(id,orcId){
+  const p=id?_prots().find(x=>x.id===id):null;
+  document.getElementById('prot-id').value=p?p.id:'';
+  document.getElementById('mprot-title').textContent=p?`🏛 Protocolo ${p.numero||''}`:'🏛 Novo Protocolo';
+  _fillProtSelects(p?p.orcId:(orcId||''));
+  document.getElementById('prot-cliente').value=p?.cliente||'';
+  document.getElementById('prot-orgao').value=p?.orgao||'';
+  document.getElementById('prot-numero').value=p?.numero||'';
+  document.getElementById('prot-forma').value=p?.forma||'onr';
+  document.getElementById('prot-data').value=p?.dataEntrada||today();
+  document.getElementById('prot-sit').value=p?.situacao||'protocolado';
+  document.getElementById('prot-exig-data').value=p?.prazoExig||'';
+  document.getElementById('prot-obs').value='';
+  document.getElementById('prot-del-btn').style.display=p?'inline-flex':'none';
+  const h=(p?.hist||[]).slice().reverse();
+  document.getElementById('prot-hist').innerHTML=h.length?h.map(x=>`<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px dashed var(--gray-100);font-size:11.5px">
+      <span style="color:var(--gray-400);white-space:nowrap">${fmtD(x.data)}</span>
+      <span>${x.situacao?`<strong style="color:${(PROT_SIT[x.situacao]||{}).c||'var(--navy)'}">${(PROT_SIT[x.situacao]||{}).t||x.situacao}</strong> `:''}${escH(x.obs||'')}</span></div>`).join('')
+    :'<div style="font-size:11.5px;color:var(--gray-400)">Sem andamentos registrados ainda.</div>';
+  _togProtCampos();
+  openM('modal-protocolo');
+}
+function salvarProtocolo(){
+  const id=document.getElementById('prot-id').value;
+  const orcId=document.getElementById('prot-orc').value;
+  const numero=document.getElementById('prot-numero').value.trim();
+  const orgao=document.getElementById('prot-orgao').value.trim();
+  const cliente=document.getElementById('prot-cliente').value.trim();
+  if(!numero&&!orgao){alert('Informe ao menos o órgão/cartório ou o nº do protocolo.');return}
+  if(!orcId&&!cliente){alert('Informe o cliente/descrição do processo avulso.');return}
+  const sit=document.getElementById('prot-sit').value;
+  const prazoExig=sit==='exigencia'?document.getElementById('prot-exig-data').value:'';
+  if(sit==='exigencia'&&!prazoExig){alert('Informe a data limite para cumprir a exigência.');return}
+  const obs=document.getElementById('prot-obs').value.trim();
+  const ant=id?_prots().find(x=>x.id===id):null;
+  const p=ant||{id:'p'+Date.now().toString(36),hist:[],criadoEm:today()};
+  const mudouSit=!ant||ant.situacao!==sit;
+  Object.assign(p,{orcId,cliente:orcId?'':cliente,orgao,numero,forma:document.getElementById('prot-forma').value,
+    dataEntrada:document.getElementById('prot-data').value||today(),situacao:sit,prazoExig});
+  if(mudouSit||obs)p.hist.push({data:today(),situacao:mudouSit?sit:'',obs});
+  if(!ant)_prots().push(p);
+  _syncCompProt(p);
+  save();closeM('modal-protocolo');_refreshControle();
+  _toastPrazo(ant?'🏛 Protocolo atualizado':'🏛 Protocolo cadastrado');
+}
+function excluirProtocolo(){
+  const id=document.getElementById('prot-id').value;if(!id)return;
+  if(!confirm('Excluir este protocolo e todo o histórico?'))return;
+  ST.protocolos=_prots().filter(x=>x.id!==id);
+  ST.compromissos=(ST.compromissos||[]).filter(c=>!(c.auto&&c.protId===id));
+  save();closeM('modal-protocolo');_refreshControle();
+}
+function protConsultei(id){
+  const p=_prots().find(x=>x.id===id);if(!p)return;
+  const obs=prompt(`Andamento da consulta (${p.forma==='balcao'?'ligação':'ONR'}) — Prot. ${p.numero||''}:`,'Sem alteração');
+  if(obs===null)return;
+  if(!p.hist)p.hist=[];
+  p.hist.push({data:today(),situacao:'',obs:(p.forma==='balcao'?'☎ ':'🌐 ')+(obs||'Consultado')});
+  save();_refreshControle();_toastPrazo('✓ Consulta registrada');
+}
+function _refreshControle(){
+  renderDash();
+  if(document.getElementById('view-protocolos').classList.contains('active'))renderProtocolos();
+  if(document.getElementById('view-agenda').classList.contains('active'))renderAgenda();
+  if(_finOrcAberto&&document.getElementById('view-financeiro').classList.contains('active')){const o=ST.orcamentos.find(x=>x.id===_finOrcAberto);if(o)renderFinanceiro(o);}
+}
+
+// --- Tela Protocolos ---
+function setProtFiltro(k,v){_protFiltro[k]=v;renderProtocolos()}
+function renderProtocolos(){
+  const el=document.getElementById('prot-lista');if(!el)return;
+  ['','onr','balcao'].forEach(f=>{const b=document.getElementById('protf-'+(f||'todos'));if(b)b.className='btn btn-sm '+(_protFiltro.forma===f?'btn-primary':'btn-outline')});
+  const sel=document.getElementById('protf-sit');if(sel)sel.value=_protFiltro.sit;
+  const q=norm(_protFiltro.q);
+  let lista=_prots().filter(p=>{
+    if(_protFiltro.forma&&p.forma!==_protFiltro.forma)return false;
+    if(_protFiltro.sit==='ativos'&&!_protAtivo(p))return false;
+    if(_protFiltro.sit&&_protFiltro.sit!=='ativos'&&_protFiltro.sit!=='todos'&&p.situacao!==_protFiltro.sit)return false;
+    if(q&&!(norm(p.numero).includes(q)||norm(p.orgao).includes(q)||norm(_protRef(p)).includes(q)))return false;
+    return true;
+  });
+  const ordemSit={exigencia:0,reingresso:1,protocolado:2,analise:3,concluido:4,cancelado:5};
+  lista.sort((a,b)=>(ordemSit[a.situacao]-ordemSit[b.situacao])||String(_ultimaConsulta(a)).localeCompare(String(_ultimaConsulta(b))));
+  const ativos=_prots().filter(_protAtivo);
+  document.getElementById('prot-resumo').innerHTML=[
+    `<span class="chip badge-navy">${ativos.length} em andamento</span>`,
+    `<span class="chip badge-blue">🌐 ${ativos.filter(p=>p.forma==='onr').length} ONR</span>`,
+    `<span class="chip badge-amber">☎ ${ativos.filter(p=>p.forma==='balcao').length} balcão</span>`,
+    ativos.filter(p=>p.situacao==='exigencia').length?`<span class="chip badge-red">⚠ ${ativos.filter(p=>p.situacao==='exigencia').length} com nota devolutiva</span>`:''
+  ].join(' ');
+  if(!lista.length){el.innerHTML='<div class="empty-state" style="padding:24px"><div class="empty-icon">🏛</div><div class="empty-title">Nenhum protocolo encontrado</div><div class="empty-text">Clique em "+ Novo Protocolo" para cadastrar.</div></div>';return}
+  el.innerHTML=lista.map(p=>{
+    const s=PROT_SIT[p.situacao]||PROT_SIT.protocolado,ex=protInfoExig(p),ult=_ultimaConsulta(p);
+    const dias=ult?_diasCorridos(ult,today()):0;
+    const velho=_protAtivo(p)&&dias>=PROT_DIAS_SEM_CONSULTA;
+    const lastObs=(p.hist||[]).filter(h=>h.obs).slice(-1)[0];
+    return`<div style="display:flex;gap:12px;padding:12px 18px;border-bottom:1px solid var(--gray-100);border-left:4px solid ${s.c};flex-wrap:wrap;align-items:center">
+      <div style="flex:1;min-width:210px;cursor:pointer" onclick="abrirProtocolo('${p.id}')">
+        <div style="font-size:13px;font-weight:600;color:var(--navy)">${escH(_protRef(p))}</div>
+        <div style="font-size:12px;color:var(--gray-700);margin-top:2px">🏛 ${escH(p.orgao||'—')} · <strong>Prot. ${escH(p.numero||'—')}</strong> · entrada ${fmtD(p.dataEntrada)}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px">
+          <span class="chip" style="font-size:10px;background:${s.bg};color:${s.c}">${s.t}</span>
+          <span class="chip" style="font-size:10px;background:var(--gray-50);color:var(--gray-700)">${PROT_FORMA[p.forma]||''}</span>
+          ${ex?`<span class="chip" style="font-size:10px;background:var(--red-light);color:${ex.cor}">${ex.txt} · ${fmtD(p.prazoExig).slice(0,5)}</span>`:''}
+          ${_protAtivo(p)?`<span class="chip" style="font-size:10px;background:${velho?'var(--amber-light)':'var(--gray-50)'};color:${velho?'var(--amber)':'var(--gray-500)'}">${velho?'⏳ ':''}Última consulta: ${dias===0?'hoje':dias+' dia(s)'}</span>`:''}
+        </div>
+        ${lastObs?`<div style="font-size:11px;color:var(--blue);margin-top:4px">📌 ${fmtD(lastObs.data).slice(0,5)} — ${escH(lastObs.obs.slice(0,90))}</div>`:''}
+      </div>
+      <div style="display:flex;gap:2px;flex-wrap:wrap">
+        ${_protAtivo(p)?`<button class="btn btn-ghost btn-sm" onclick="protConsultei('${p.id}')" title="Registrar consulta/ligação">${p.forma==='balcao'?'☎':'🌐'} Consultei</button>`:''}
+        ${_protAtivo(p)?`<button class="btn btn-ghost btn-sm" onclick="addPautaDe('prot','${p.id}')" title="Adicionar à pauta de hoje">📝</button>`:''}
+        <button class="btn btn-ghost btn-sm" onclick="abrirProtocolo('${p.id}')" title="Editar">✏</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// --- Pauta do dia ---
+let _pautaDia=null;
+function _pauta(){if(!ST.pauta)ST.pauta=[];return ST.pauta}
+// Itens não concluídos de dias anteriores passam para hoje (no fim da fila)
+function _rolarPauta(){
+  const hoje=today();let mudou=false;
+  const maxOrd=Math.max(0,..._pauta().filter(x=>x.data===hoje).map(x=>x.ordem||0));
+  let k=1;
+  _pauta().filter(x=>!x.feito&&x.data<hoje).sort((a,b)=>(a.data+String(a.ordem).padStart(5,'0')).localeCompare(b.data+String(b.ordem).padStart(5,'0')))
+    .forEach(x=>{x.adiadoDe=x.adiadoDe||x.data;x.data=hoje;x.ordem=maxOrd+k++;mudou=true});
+  // limpa itens concluídos com mais de 60 dias
+  const lim=_ymd(new Date(Date.now()-60*86400000));
+  const antes=_pauta().length;ST.pauta=_pauta().filter(x=>!(x.feito&&x.data<lim));
+  return mudou||antes!==ST.pauta.length;
+}
+function pautaNavDia(delta){
+  const d=_dt(_pautaDia||today());d.setDate(d.getDate()+delta);_pautaDia=_ymd(d);renderPauta();
+}
+function pautaHoje(){_pautaDia=today();renderPauta()}
+function _itensDia(dia){return _pauta().filter(x=>x.data===dia).sort((a,b)=>(a.feito-b.feito)||((a.ordem||0)-(b.ordem||0)))}
+function addPauta(){
+  const inp=document.getElementById('pauta-novo');const t=inp.value.trim();
+  const sel=document.getElementById('pauta-os');const orcId=sel?sel.value:'';
+  if(!t&&!orcId){inp.focus();return}
+  const dia=_pautaDia||today();
+  const o=orcId?ST.orcamentos.find(x=>x.id===orcId):null;
+  const texto=t||(o?`Dar andamento — OS ${o.num} — ${o.cliente}`:'');
+  const ordem=Math.max(0,..._pauta().filter(x=>x.data===dia).map(x=>x.ordem||0))+1;
+  _pauta().push({id:'t'+Date.now().toString(36),data:dia,texto,orcId,feito:false,ordem});
+  inp.value='';if(sel)sel.value='';
+  save();renderPauta();renderDash();
+}
+function addPautaDe(tipo,id){
+  const dia=today();let texto='',orcId='',protId='';
+  if(tipo==='prot'){const p=_prots().find(x=>x.id===id);if(!p)return;texto=`${p.forma==='balcao'?'☎ Ligar':'🌐 Consultar ONR'} — Prot. ${p.numero||''} (${p.orgao||''}) — ${_protRef(p)}`;protId=id;orcId=p.orcId||'';}
+  else{const o=ST.orcamentos.find(x=>x.id===id);if(!o)return;texto=`Dar andamento — OS ${o.num} — ${o.cliente}`;orcId=id;}
+  if(_pauta().some(x=>x.data===dia&&!x.feito&&x.texto===texto)){_toastPrazo('Já está na pauta de hoje');return}
+  const ordem=Math.max(0,..._pauta().filter(x=>x.data===dia).map(x=>x.ordem||0))+1;
+  _pauta().push({id:'t'+Date.now().toString(36),data:dia,texto,orcId,protId,feito:false,ordem});
+  save();renderDash();if(document.getElementById('view-agenda').classList.contains('active'))renderPauta();
+  _toastPrazo('📝 Adicionado à pauta de hoje');
+}
+function togPauta(id){const x=_pauta().find(i=>i.id===id);if(!x)return;x.feito=!x.feito;x.feitoEm=x.feito?today():'';save();renderPauta();renderDash()}
+function delPauta(id){ST.pauta=_pauta().filter(i=>i.id!==id);save();renderPauta();renderDash()}
+function editPauta(id){const x=_pauta().find(i=>i.id===id);if(!x)return;const t=prompt('Editar item da pauta:',x.texto);if(t===null||!t.trim())return;x.texto=t.trim();save();renderPauta()}
+function movPauta(id,dir){
+  const dia=_pautaDia||today();
+  const lst=_itensDia(dia).filter(x=>!x.feito);
+  const i=lst.findIndex(x=>x.id===id),j=i+dir;if(i<0||j<0||j>=lst.length)return;
+  [lst[i],lst[j]]=[lst[j],lst[i]];lst.forEach((x,k)=>x.ordem=k+1);
+  save();renderPauta();
+}
+function adiarPauta(id){const x=_pauta().find(i=>i.id===id);if(!x)return;x.data=addDiasUteis(x.data,1);x.ordem=999;save();renderPauta();renderDash();_toastPrazo('Adiado para '+fmtD(x.data))}
+// Arrastar e soltar (PC)
+let _dragPauta=null;
+function pautaDragStart(e,id){_dragPauta=id;e.dataTransfer.effectAllowed='move'}
+function pautaDrop(e,alvo){
+  e.preventDefault();if(!_dragPauta||_dragPauta===alvo)return;
+  const dia=_pautaDia||today();
+  const lst=_itensDia(dia).filter(x=>!x.feito);
+  const de=lst.findIndex(x=>x.id===_dragPauta),para=lst.findIndex(x=>x.id===alvo);
+  if(de<0||para<0)return;
+  const [it]=lst.splice(de,1);lst.splice(para,0,it);lst.forEach((x,k)=>x.ordem=k+1);
+  _dragPauta=null;save();renderPauta();
+}
+function renderPauta(){
+  const el=document.getElementById('pauta-lista');if(!el)return;
+  if(_rolarPauta())save();
+  const dia=_pautaDia||today();
+  const ehHoje=dia===today();
+  document.getElementById('pauta-dia-lbl').textContent=(ehHoje?'Hoje, ':'')+_dt(dia).toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+  const os=ST.orcamentos.filter(o=>_orcValido(o)&&o.tipo==='os'&&(_prazoAtivo(o)||_semPrazoPendente(o)));
+  const sel=document.getElementById('pauta-os');
+  if(sel){const v=sel.value;sel.innerHTML='<option value="">+ de uma OS…</option>'+os.map(o=>`<option value="${o.id}">OS ${escH(o.num)} — ${escH(o.cliente)}</option>`).join('');sel.value=v;}
+  const itens=_itensDia(dia);
+  const pend=itens.filter(x=>!x.feito).length;
+  document.getElementById('pauta-cont').textContent=itens.length?`${itens.length-pend}/${itens.length} feitos`:'';
+  if(!itens.length){el.innerHTML=`<div style="padding:16px 18px;font-size:12.5px;color:var(--gray-400)">Nenhum item na pauta ${ehHoje?'de hoje':'deste dia'}. Escreva acima a sequência de execução dos serviços.</div>`;return}
+  let n=0;
+  el.innerHTML=itens.map(x=>{
+    if(!x.feito)n++;
+    return`<div ${!x.feito?`draggable="true" ondragstart="pautaDragStart(event,'${x.id}')" ondragover="event.preventDefault()" ondrop="pautaDrop(event,'${x.id}')"`:''} style="display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--gray-100);${x.feito?'opacity:.5':''}">
+      <span style="width:22px;text-align:center;font-size:11px;font-weight:700;color:var(--gold);flex-shrink:0">${x.feito?'':n+'º'}</span>
+      <input type="checkbox" ${x.feito?'checked':''} onchange="togPauta('${x.id}')" style="width:18px;height:18px;flex-shrink:0;cursor:pointer">
+      <div style="flex:1;min-width:0;font-size:13px;color:var(--gray-900);${x.feito?'text-decoration:line-through':''};cursor:pointer" ondblclick="editPauta('${x.id}')">${escH(x.texto)}
+        ${x.adiadoDe&&!x.feito?`<span style="font-size:10px;color:var(--amber);margin-left:4px">↪ desde ${fmtD(x.adiadoDe).slice(0,5)}</span>`:''}</div>
+      <div style="display:flex;gap:0;flex-shrink:0">
+        ${!x.feito?`<button class="btn btn-ghost btn-sm" style="padding:3px 5px" onclick="movPauta('${x.id}',-1)" title="Subir">▲</button><button class="btn btn-ghost btn-sm" style="padding:3px 5px" onclick="movPauta('${x.id}',1)" title="Descer">▼</button><button class="btn btn-ghost btn-sm" style="padding:3px 5px" onclick="adiarPauta('${x.id}')" title="Adiar para o próximo dia útil">⏭</button>`:''}
+        ${x.orcId?`<button class="btn btn-ghost btn-sm" style="padding:3px 5px" onclick="verOrc('${x.orcId}')" title="Ver OS">🔧</button>`:''}
+        <button class="btn btn-ghost btn-sm" style="padding:3px 5px" onclick="editPauta('${x.id}')" title="Editar">✏</button>
+        <button class="btn btn-ghost btn-sm" style="padding:3px 5px" onclick="delPauta('${x.id}')" title="Remover">✕</button>
+      </div>
+    </div>`}).join('');
+}
+
+// --- Vértices SIGEF ---
+function _sigef(){if(!ST.sigef)ST.sigef={ultimo:0,hist:[]};return ST.sigef}
+function renderSigef(){
+  const s=_sigef();
+  document.getElementById('sigef-proximo').textContent=s.ultimo+1;
+  document.getElementById('sigef-ultimo').textContent=s.ultimo;
+  const os=ST.orcamentos.filter(o=>_orcValido(o)&&o.tipo==='os').sort((a,b)=>String(b.num).localeCompare(String(a.num)));
+  const sel=document.getElementById('sigef-os');const v=sel.value;
+  sel.innerHTML='<option value="">— sem OS vinculada —</option>'+os.map(o=>`<option value="${o.id}">OS ${escH(o.num)} — ${escH(o.cliente)}</option>`).join('');sel.value=v;
+  sigefPrev();
+  const h=s.hist.slice().reverse();
+  document.getElementById('sigef-hist').innerHTML=h.length?h.map((x,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 16px;border-bottom:1px solid var(--gray-100);font-size:12.5px">
+      <div>${x.ajuste?`<strong style="color:var(--amber)">Último ajustado para ${x.ate}</strong>`:`<strong style="color:var(--navy)">${x.de} → ${x.ate}</strong> <span style="color:var(--gray-400)">(${x.qtd} vért.)</span>`}<div style="font-size:11.5px;color:var(--gray-500)">${fmtD(x.data)} · ${escH(x.imovel||'')}</div></div>
+      ${i===0?`<button class="btn btn-ghost btn-sm" onclick="sigefDesfazer()" title="Desfazer o último lançamento">↩ Desfazer</button>`:''}
+    </div>`).join(''):'<div style="padding:16px;font-size:12.5px;color:var(--gray-400)">Nenhuma certificação lançada ainda.</div>';
+}
+function sigefPrev(){
+  const s=_sigef(),q=parseInt(document.getElementById('sigef-qtd').value)||0;
+  document.getElementById('sigef-faixa').textContent=q>0?`Vai usar do ${s.ultimo+1} ao ${s.ultimo+q}`:'';
+}
+function sigefLancar(){
+  const s=_sigef(),q=parseInt(document.getElementById('sigef-qtd').value)||0;
+  const orcId=document.getElementById('sigef-os').value;
+  const o=orcId?ST.orcamentos.find(x=>x.id===orcId):null;
+  const im=document.getElementById('sigef-imovel').value.trim()||(o?`OS ${o.num} — ${o.cliente}`:'');
+  if(q<=0){alert('Informe a quantidade de vértices usados.');return}
+  if(!im){alert('Informe o imóvel/certificação.');return}
+  const de=s.ultimo+1,ate=s.ultimo+q;
+  if(!confirm(`Lançar vértices ${de} a ${ate} para "${im}"?`))return;
+  s.hist.push({id:'v'+Date.now().toString(36),data:today(),imovel:im,orcId,qtd:q,de,ate,antes:s.ultimo});
+  s.ultimo=ate;
+  document.getElementById('sigef-qtd').value='';document.getElementById('sigef-imovel').value='';document.getElementById('sigef-os').value='';
+  save();renderSigef();_toastPrazo(`📐 Próximo vértice: ${ate+1}`);
+}
+function sigefDesfazer(){
+  const s=_sigef();const x=s.hist[s.hist.length-1];if(!x)return;
+  if(!confirm(`Desfazer o lançamento ${x.de} → ${x.ate} (${x.imovel})?`))return;
+  s.hist.pop();s.ultimo=x.antes!=null?x.antes:x.de-1;save();renderSigef();
+}
+function sigefAjustar(){
+  const s=_sigef();const v=prompt('Número do ÚLTIMO vértice já usado:',s.ultimo);
+  if(v===null)return;const n=parseInt(v);if(isNaN(n)||n<0){alert('Número inválido.');return}
+  s.hist.push({id:'v'+Date.now().toString(36),data:today(),imovel:'Ajuste manual do último vértice',qtd:0,de:n,ate:n,ajuste:true,antes:s.ultimo});s.ultimo=n;
+  save();renderSigef();
 }
 
 // ===== AGENDA / COMPROMISSOS =====
@@ -3736,6 +4334,7 @@ function agendarLembrete(comp){
 
 function renderAgenda(){
   if(!ST.compromissos)ST.compromissos=[];
+  renderPauta();
   renderAgendaServicos();
   const hoje=today();
   const todos=[...ST.compromissos].sort((a,b)=>(a.data+a.hora).localeCompare(b.data+b.hora));
@@ -3800,7 +4399,7 @@ function compCard(comp,destaque){
     </div>
     <div style="display:flex;gap:4px;flex-shrink:0">
       <button class="btn btn-ghost btn-sm" onclick="toggleCompromisso('${comp.id}')" title="${comp.concluido?'Reabrir':'Concluir'}" style="font-size:16px">${comp.concluido?'↩':'✓'}</button>
-      ${comp.orcId&&comp.auto?`<button class="btn btn-ghost btn-sm" onclick="abrirPrazo('${comp.orcId}')" title="Prazo da OS">📦</button>`:`<button class="btn btn-ghost btn-sm" onclick="editarCompromisso('${comp.id}')" title="Editar">✏</button>`}
+      ${comp.protId&&comp.auto?`<button class="btn btn-ghost btn-sm" onclick="abrirProtocolo('${comp.protId}')" title="Protocolo">🏛</button>`:comp.orcId&&comp.auto?`<button class="btn btn-ghost btn-sm" onclick="abrirPrazo('${comp.orcId}')" title="Prazo da OS">📦</button>`:`<button class="btn btn-ghost btn-sm" onclick="editarCompromisso('${comp.id}')" title="Editar">✏</button>`}
     </div>
   </div>`;
 }
@@ -3917,7 +4516,8 @@ function globalSearch(q){
     c.cpf?.toLowerCase().includes(q)
   ).slice(0,5);
 
-  if(!orcResults.length&&!cliResults.length){
+  const protResults=(ST.protocolos||[]).filter(p=>(p.numero||'').toLowerCase().includes(q)||(p.orgao||'').toLowerCase().includes(q)).slice(0,5);
+  if(!orcResults.length&&!cliResults.length&&!protResults.length){
     res.innerHTML='<div style="padding:16px;text-align:center;font-size:12.5px;color:var(--gray-400)">Nenhum resultado encontrado</div>';
     return;
   }
@@ -3946,6 +4546,12 @@ function globalSearch(q){
         <span class="chip badge-navy" style="font-size:10px">${qtd} orç.</span>
       </div>`;
     }).join('');
+  }
+  if(protResults.length){
+    html+=`<div style="padding:8px 14px 4px;font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.06em;border-top:1px solid var(--gray-100)">Protocolos</div>`;
+    html+=protResults.map(p=>`<div onmousedown="abrirProtocolo('${p.id}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--gray-100)" onmouseover="this.style.background='var(--gray-50)'" onmouseout="this.style.background=''">
+        <div style="font-size:12.5px;font-weight:500;color:var(--navy)">Prot. ${escH(p.numero||'—')} · ${escH(p.orgao||'')}</div>
+        <div style="font-size:11px;color:var(--gray-400)">${escH(_protRef(p))} · ${(PROT_SIT[p.situacao]||{}).t||''}</div></div>`).join('');
   }
   res.innerHTML=html;
 }
@@ -3998,7 +4604,7 @@ function enviarWhatsApp(){
   const msg =
 `Olá, *${cli}*! 👋
 
-Segue o orçamento *nº ${num}* da *Monólitos Topografia*:
+Segue o orçamento *nº ${num}* da *${EMP.nomeCurto||EMP.fantasia}*:
 
 📋 *SERVIÇOS:*
 ${srvTxt || '• Conforme combinado'}
@@ -4011,7 +4617,7 @@ ${obs ? '📝 *Obs.:* ' + obs + '\n\n' : ''}⚠️ _O serviço inicia após conf
 🔒 _Documentação disponível por 2 anos após entrega. Taxas cartoriais não inclusas._
 
 Qualquer dúvida, estamos à disposição! 😊
-*Monólitos Topografia — CFT/RNP nº 22020241315*`;
+*${EMP.nomeCurto||EMP.fantasia}${EMP.cft?' — '+EMP.cft:''}*`;
 
   // Pegar telefone do cliente cadastrado
   const cliObj = ST.clientes.find(c => c.nome === cli);
@@ -4386,7 +4992,7 @@ function imprimirResultadoConsulta(){
     @media print{body{padding:12mm}}
   </style></head><body>
   <div class="ch">
-    <div><h1>${EMP.razao||'Monólitos Topografia'}</h1><div class="ci">CNPJ: ${EMP.cnpj||''} &nbsp;|&nbsp; ${EMP.end||''}<br>${EMP.email||''} · ${EMP.cel||''}</div></div>
+    <div><h1>${EMP.razao||EMP.nomeCurto||''}</h1><div class="ci">CNPJ: ${EMP.cnpj||''} &nbsp;|&nbsp; ${EMP.end||''}<br>${EMP.email||''} · ${EMP.cel||''}</div></div>
   </div>
   <div class="tt">${__ultimoResultadoConsultaTitulo} — gerado em ${agora}</div>
   ${__ultimoResultadoConsultaHtml}
@@ -4906,9 +5512,9 @@ async function gerarMemorialWord(){
           margins: { top: 200, bottom: 200, left: 400, right: 400 },
           borders: noBorders,
           children: [
-            para([txtRun('MONÓLITOS TOPOGRAFIA', { size: 32, bold: true, color: GOLD })], { align: AlignmentType.CENTER, after: 40 }),
-            para([txtRun('Topografia, Georreferenciamento e Regularização de Imóveis', { size: 18, color: WHITE })], { align: AlignmentType.CENTER, after: 40 }),
-            para([txtRun('Resp. Técnico: José Airton Santiago Pereira | CFT/RNP nº 22020241315', { size: 17, bold: true, color: GOLD })], { align: AlignmentType.CENTER, after: 0 }),
+            para([txtRun((EMP.nomeCurto||EMP.fantasia||'').toUpperCase(), { size: 32, bold: true, color: GOLD })], { align: AlignmentType.CENTER, after: 40 }),
+            para([txtRun(EMP.segmento||'', { size: 18, color: WHITE })], { align: AlignmentType.CENTER, after: 40 }),
+            para([txtRun('Resp. Técnico: '+(EMP.resp||'')+(EMP.cft?' | '+EMP.cft:''), { size: 17, bold: true, color: GOLD })], { align: AlignmentType.CENTER, after: 0 }),
           ],
         })
       ]}),
@@ -5082,7 +5688,7 @@ async function gerarMemorialWord(){
 
   // ── CARIMBO DIGITAL + DATA ──────────────────────────────────────────
   const dataLinha = para(
-    [txtRun('Fortaleza, ' + dataFmt + '.', { size: 22 })],
+    [txtRun((EMP.cidade?EMP.cidade+', ':'') + dataFmt + '.', { size: 22 })],
     { align: AlignmentType.RIGHT, before: 360, after: 360 }
   );
 
@@ -5102,11 +5708,11 @@ async function gerarMemorialWord(){
         children: [
           para([txtRun('🔐 Assinado digitalmente por', { size: 18, italic: true, color: 'c8d8f0' })],
             { align: AlignmentType.CENTER, after: 60 }),
-          para([txtRun('José Airton Santiago Pereira', { size: 22, bold: true, color: GOLD })],
+          para([txtRun(EMP.resp||'', { size: 22, bold: true, color: GOLD })],
             { align: AlignmentType.CENTER, after: 60 }),
-          para([txtRun('Gestor Ambiental e Técnico Agrimensor', { size: 19, italic: true, color: WHITE })],
+          para([txtRun(EMP.cargo||'', { size: 19, italic: true, color: WHITE })],
             { align: AlignmentType.CENTER, after: 60 }),
-          para([txtRun('CFT/RNP nº 22020241315', { size: 19, bold: true, color: GOLD })],
+          para([txtRun(EMP.cft||'', { size: 19, bold: true, color: GOLD })],
             { align: AlignmentType.CENTER, after: 0 }),
         ],
       }),
@@ -5186,6 +5792,9 @@ function gerarEAbrirDrive(){
 // ===== INIT =====
 (async () => {
   await load();
+  aplicarEmpresa();
+  verificarLicenca();
+  if(INSTANCIA.cliente&&!ST.empresa){nav('configuracoes');setTimeout(()=>alert('Bem-vindo ao Top-Agenda! Comece preenchendo os dados da sua empresa.'),300);}
   renderDash();
   startRealtimeSync();
   atualizarBotaoNotif();
