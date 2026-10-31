@@ -1286,7 +1286,10 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
           <option value="concluido">✅ Registrado / Concluído</option><option value="cancelado">✕ Cancelado</option>
         </select></div>
       <div class="form-group" style="grid-column:1/-1;display:none" id="prot-exig-box"><label>Prazo para cumprir a exigência</label><input class="form-control" type="date" id="prot-exig-data"><div style="font-size:10.5px;color:var(--gray-400);margin-top:3px">Gera aviso 2 dias úteis antes e no dia (notificação).</div></div>
-      <div class="form-group" style="grid-column:1/-1"><label>Anotar andamento (opcional)</label><input class="form-control" id="prot-obs" placeholder="Ex: 3ª nota devolutiva — falta CND do município"></div>
+      <div class="form-group" style="grid-column:1/-1"><label>📍 Fase atual do processo</label><input class="form-control" id="prot-fase" list="dl-prot-fase" placeholder="Ex: Aguardando decurso de prazo das notificações"><datalist id="dl-prot-fase"></datalist></div>
+      <div class="form-group"><label>➡ Próxima etapa</label><input class="form-control" id="prot-prox" list="dl-prot-fase" placeholder="Ex: Publicação dos editais"></div>
+      <div class="form-group"><label>Data prevista / verificar em</label><input class="form-control" type="date" id="prot-prox-data"><div style="font-size:10.5px;color:var(--gray-400);margin-top:3px">Gera lembrete (notificação) nesse dia.</div></div>
+      <div class="form-group" style="grid-column:1/-1"><label>Anotar andamento (opcional)</label><input class="form-control" id="prot-obs" placeholder="Ex: Informado por telefone pela atendente"></div>
     </div>
     <div style="font-size:10.5px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Histórico</div>
     <div id="prot-hist" style="max-height:170px;overflow-y:auto"></div>
@@ -1295,6 +1298,31 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
     <button class="btn btn-danger btn-sm" id="prot-del-btn" onclick="excluirProtocolo()" style="margin-right:auto">Excluir</button>
     <button class="btn btn-outline" onclick="closeM('modal-protocolo')">Cancelar</button>
     <button class="btn btn-gold" onclick="salvarProtocolo()">Salvar</button>
+  </div>
+</div></div>
+
+<!-- MODAL REGISTRAR ANDAMENTO DO PROTOCOLO -->
+<div class="modal-overlay" id="modal-prot-and" style="display:none">
+<div class="modal" style="max-width:500px">
+  <div class="modal-header">
+    <div><div class="modal-title" id="mpa-title">Registrar andamento</div><div style="font-size:12px;color:var(--gray-500);margin-top:2px" id="mpa-sub"></div></div>
+    <button class="btn btn-ghost" onclick="closeM('modal-prot-and')">✕</button>
+  </div>
+  <div class="modal-body">
+    <input type="hidden" id="mpa-id">
+    <div id="mpa-atual" style="background:var(--gray-50);border-radius:var(--radius);padding:9px 12px;font-size:12px;color:var(--gray-700);margin-bottom:12px"></div>
+    <div class="form-grid" style="gap:10px">
+      <div class="form-group"><label>📍 Fase atual (o que foi informado)</label><input class="form-control" id="mpa-fase" list="dl-prot-fase"></div>
+      <div class="form-grid form-grid-2" style="gap:10px">
+        <div class="form-group"><label>➡ Próxima etapa</label><input class="form-control" id="mpa-prox" list="dl-prot-fase"></div>
+        <div class="form-group"><label>Data prevista / verificar em</label><input class="form-control" type="date" id="mpa-prox-data"></div>
+      </div>
+      <div class="form-group"><label>Observação</label><input class="form-control" id="mpa-obs" placeholder="Ex: Falei com a atendente Maria"></div>
+    </div>
+  </div>
+  <div class="modal-footer" style="flex-wrap:wrap">
+    <button class="btn btn-outline" onclick="salvarAndamentoProt(true)">Sem alteração</button>
+    <button class="btn btn-gold" onclick="salvarAndamentoProt(false)">Salvar andamento</button>
   </div>
 </div></div>
 
@@ -3868,8 +3896,9 @@ function renderPainelPrazos(){
   const L=_listasPrazos();
   const crit=[...L.g.atrasado,...L.g.hoje,...L.g.urgente];
   const exig=(ST.protocolos||[]).filter(p=>{const i=protInfoExig(p);return i&&i.nivel!=='ok'});
+  const verif=(ST.protocolos||[]).filter(p=>{const i=protProxInfo(p);return i&&(i.nivel==='vencido'||i.nivel==='hoje')});
   const nbp=document.getElementById('nav-prot-badge');
-  if(nbp){const n=(ST.protocolos||[]).filter(p=>p.situacao==='exigencia').length;nbp.style.display=n?'inline-block':'none';nbp.textContent=n;}
+  if(nbp){const n=new Set([...(ST.protocolos||[]).filter(p=>p.situacao==='exigencia'),...verif].map(p=>p.id)).size;nbp.style.display=n?'inline-block':'none';nbp.textContent=n;}
   const m=document.getElementById('m-prazos'),sub=document.getElementById('m-prazos-sub');
   if(m){m.textContent=L.ativos.length;m.style.color=L.g.atrasado.length?'var(--red)':'var(--navy)';}
   if(sub){
@@ -3880,7 +3909,7 @@ function renderPainelPrazos(){
   const nb=document.getElementById('nav-prazo-badge');
   if(nb){nb.style.display=crit.length?'inline-block':'none';nb.textContent=crit.length;}
   const al=document.getElementById('painel-prazos-alerta');if(!al)return;
-  if(!crit.length&&!exig.length){al.innerHTML='';return}
+  if(!crit.length&&!exig.length&&!verif.length){al.innerHTML='';return}
   const temAtraso=L.g.atrasado.length>0||exig.some(p=>protInfoExig(p).nivel!=='urgente');
   al.innerHTML=`<div style="background:${temAtraso?'var(--red-light)':'var(--amber-light)'};border:1px solid ${temAtraso?'#e8b4b4':'#e8d6a8'};border-radius:var(--radius-lg);padding:12px 16px;margin-bottom:16px">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
@@ -3893,6 +3922,9 @@ function renderPainelPrazos(){
     ${crit.length>5?`<div style="font-size:11px;color:var(--gray-500);margin-top:4px">+ ${crit.length-5} outro(s)</div>`:''}
     ${exig.map(p=>{const i=protInfoExig(p);return`<div onclick="abrirProtocolo('${p.id}')" style="cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:4px 0;border-top:1px dashed rgba(0,0,0,.08)">
       <span style="color:var(--gray-700)">🏛 <strong>Prot. ${escH(p.numero||'')}</strong> — ${escH(_protRef(p))}</span>
+      <span style="color:${i.cor};font-weight:600;white-space:nowrap">${i.txt}</span></div>`}).join('')}
+    ${verif.map(p=>{const i=protProxInfo(p);return`<div onclick="protConsultei('${p.id}')" style="cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:4px 0;border-top:1px dashed rgba(0,0,0,.08)">
+      <span style="color:var(--gray-700)">📍 <strong>Prot. ${escH(p.numero||'')}</strong> — ${escH(p.proxEtapa||p.fase||_protRef(p))}</span>
       <span style="color:${i.cor};font-weight:600;white-space:nowrap">${i.txt}</span></div>`}).join('')}
   </div>`;
 }
@@ -3929,6 +3961,24 @@ const PROT_SIT={
 };
 const PROT_FORMA={onr:'🌐 ONR (online)',balcao:'☎ Balcão (ligar)',outro:'📄 Outro'};
 const PROT_DIAS_SEM_CONSULTA=7;
+const PROT_FASES=['Prenotado / aguardando análise','Em análise pelo registrador','Nota devolutiva emitida','Aguardando cumprimento de exigências','Reingresso — em reanálise',
+  'Notificação dos confrontantes / titulares','Aguardando decurso de prazo das notificações','Notificação dos entes públicos (União, Estado, Município)',
+  'Publicação dos editais','Aguardando decurso de prazo do edital','Diligência / vistoria','Aguardando pagamento de emolumentos',
+  'Registro em andamento','Registrado — aguardando retirada','Concluído / matrícula aberta'];
+// Próximo evento previsto (ex.: decurso de prazo das notificações) — gera lembrete e alerta
+function protProxInfo(p){
+  if(!_protAtivo(p)||!p.proxData)return null;
+  const hoje=today();
+  if(p.proxData<hoje)return{nivel:'vencido',cor:'var(--red)',bg:'var(--red-light)',txt:`Verificar — previsto p/ ${fmtD(p.proxData).slice(0,5)}`};
+  if(p.proxData===hoje)return{nivel:'hoje',cor:'var(--red)',bg:'var(--red-light)',txt:'Previsto para HOJE'};
+  const n=_diasCorridos(hoje,p.proxData);
+  return{nivel:n<=3?'breve':'ok',cor:n<=3?'var(--amber)':'var(--blue)',bg:n<=3?'var(--amber-light)':'var(--blue-light)',txt:`Previsto em ${fmtD(p.proxData).slice(0,5)} (${n} dia${n>1?'s':''})`};
+}
+function _fillFases(){
+  const usadas=_prots().flatMap(p=>[p.fase,p.proxEtapa]).filter(Boolean);
+  const html=[...new Set([...PROT_FASES,...usadas])].map(x=>`<option value="${escH(x)}">`).join('');
+  document.getElementById('dl-prot-fase').innerHTML=html;
+}
 let _protFiltro={forma:'',sit:'ativos',q:''};
 function _prots(){if(!ST.protocolos)ST.protocolos=[];return ST.protocolos}
 function _protAtivo(p){return p.situacao!=='concluido'&&p.situacao!=='cancelado'}
@@ -3956,8 +4006,12 @@ function protChipsOS(orcId){
 function _syncCompProt(p){
   if(!ST.compromissos)ST.compromissos=[];
   ST.compromissos=ST.compromissos.filter(c=>!(c.auto&&c.protId===p.id));
-  if(p.situacao!=='exigencia'||!p.prazoExig)return;
   const ref=_protRef(p);
+  if(_protAtivo(p)&&p.proxData&&p.proxData>=today()){
+    ST.compromissos.push({id:'prx-'+p.id+'-'+p.proxData,titulo:`📍 Verificar Prot. ${p.numero||''} — ${p.proxEtapa||p.fase||'andamento'}`,data:p.proxData,hora:'08:00',
+      cliente:ref,obs:[p.orgao,p.fase?'Fase: '+p.fase:''].filter(Boolean).join(' · '),lembrete:'60',tipo:'cartorio',concluido:false,auto:true,protId:p.id});
+  }
+  if(p.situacao!=='exigencia'||!p.prazoExig)return;
   ST.compromissos.push({id:'exg-'+p.id+'-'+p.prazoExig,titulo:`⚠ Prazo da nota devolutiva — Prot. ${p.numero||''}`,data:p.prazoExig,hora:'08:00',
     cliente:ref,obs:p.orgao||'',lembrete:'60',tipo:'cartorio',concluido:false,auto:true,protId:p.id});
   const dA=subDiasUteis(p.prazoExig,2);
@@ -3998,11 +4052,15 @@ function abrirProtocolo(id,orcId){
   document.getElementById('prot-sit').value=p?.situacao||'protocolado';
   document.getElementById('prot-exig-data').value=p?.prazoExig||'';
   document.getElementById('prot-obs').value='';
+  document.getElementById('prot-fase').value=p?.fase||'';
+  document.getElementById('prot-prox').value=p?.proxEtapa||'';
+  document.getElementById('prot-prox-data').value=p?.proxData||'';
+  _fillFases();
   document.getElementById('prot-del-btn').style.display=p?'inline-flex':'none';
   const h=(p?.hist||[]).slice().reverse();
   document.getElementById('prot-hist').innerHTML=h.length?h.map(x=>`<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px dashed var(--gray-100);font-size:11.5px">
       <span style="color:var(--gray-400);white-space:nowrap">${fmtD(x.data)}</span>
-      <span>${x.situacao?`<strong style="color:${(PROT_SIT[x.situacao]||{}).c||'var(--navy)'}">${(PROT_SIT[x.situacao]||{}).t||x.situacao}</strong> `:''}${escH(x.obs||'')}</span></div>`).join('')
+      <span>${x.situacao?`<strong style="color:${(PROT_SIT[x.situacao]||{}).c||'var(--navy)'}">${(PROT_SIT[x.situacao]||{}).t||x.situacao}</strong> `:''}${x.fase?`<strong style="color:var(--navy)">📍 ${escH(x.fase)}</strong> `:''}${x.prox?`<span style="color:var(--gray-500)">➡ ${escH(x.prox)}${x.proxData?' ('+fmtD(x.proxData)+')':''}</span> `:''}${escH(x.obs||'')}</span></div>`).join('')
     :'<div style="font-size:11.5px;color:var(--gray-400)">Sem andamentos registrados ainda.</div>';
   _togProtCampos();
   openM('modal-protocolo');
@@ -4022,9 +4080,12 @@ function salvarProtocolo(){
   const ant=id?_prots().find(x=>x.id===id):null;
   const p=ant||{id:'p'+Date.now().toString(36),hist:[],criadoEm:today()};
   const mudouSit=!ant||ant.situacao!==sit;
+  const fase=document.getElementById('prot-fase').value.trim(),proxEtapa=document.getElementById('prot-prox').value.trim(),proxData=document.getElementById('prot-prox-data').value;
+  const mudouFase=fase&&(!ant||ant.fase!==fase);
+  const mudouProx=(proxEtapa||proxData)&&(!ant||ant.proxEtapa!==proxEtapa||ant.proxData!==proxData);
   Object.assign(p,{orcId,cliente:orcId?'':cliente,orgao,numero,forma:document.getElementById('prot-forma').value,
-    dataEntrada:document.getElementById('prot-data').value||today(),situacao:sit,prazoExig});
-  if(mudouSit||obs)p.hist.push({data:today(),situacao:mudouSit?sit:'',obs});
+    dataEntrada:document.getElementById('prot-data').value||today(),situacao:sit,prazoExig,fase,proxEtapa,proxData});
+  if(mudouSit||obs||mudouFase||mudouProx)p.hist.push({data:today(),situacao:mudouSit?sit:'',fase:mudouFase?fase:'',prox:mudouProx?proxEtapa:'',proxData:mudouProx?proxData:'',obs});
   if(!ant)_prots().push(p);
   _syncCompProt(p);
   save();closeM('modal-protocolo');_refreshControle();
@@ -4039,11 +4100,33 @@ function excluirProtocolo(){
 }
 function protConsultei(id){
   const p=_prots().find(x=>x.id===id);if(!p)return;
-  const obs=prompt(`Andamento da consulta (${p.forma==='balcao'?'ligação':'ONR'}) — Prot. ${p.numero||''}:`,'Sem alteração');
-  if(obs===null)return;
+  document.getElementById('mpa-id').value=id;
+  document.getElementById('mpa-title').textContent=(p.forma==='balcao'?'☎ Ligação':'🌐 Consulta ONR')+' — Prot. '+(p.numero||'');
+  document.getElementById('mpa-sub').textContent=_protRef(p)+(p.orgao?' · '+p.orgao:'');
+  document.getElementById('mpa-atual').innerHTML=p.fase?`Fase registrada: <strong>📍 ${escH(p.fase)}</strong>${p.proxEtapa||p.proxData?`<br>Próxima: ➡ ${escH(p.proxEtapa||'—')}${p.proxData?' · '+fmtD(p.proxData):''}`:''}`:'Nenhuma fase registrada ainda.';
+  document.getElementById('mpa-fase').value=p.fase||'';
+  document.getElementById('mpa-prox').value=p.proxEtapa||'';
+  document.getElementById('mpa-prox-data').value=p.proxData||'';
+  document.getElementById('mpa-obs').value='';
+  _fillFases();
+  openM('modal-prot-and');
+}
+function salvarAndamentoProt(semAlteracao){
+  const id=document.getElementById('mpa-id').value;
+  const p=_prots().find(x=>x.id===id);if(!p)return;
   if(!p.hist)p.hist=[];
-  p.hist.push({data:today(),situacao:'',obs:(p.forma==='balcao'?'☎ ':'🌐 ')+(obs||'Consultado')});
-  save();_refreshControle();_toastPrazo('✓ Consulta registrada');
+  const pre=p.forma==='balcao'?'☎ ':'🌐 ';
+  if(semAlteracao){
+    p.hist.push({data:today(),situacao:'',obs:pre+'Consultado — sem alteração'});
+  }else{
+    const fase=document.getElementById('mpa-fase').value.trim(),prox=document.getElementById('mpa-prox').value.trim(),pd=document.getElementById('mpa-prox-data').value;
+    const obs=document.getElementById('mpa-obs').value.trim();
+    const mf=fase&&fase!==p.fase,mp=(prox!==(p.proxEtapa||''))||(pd!==(p.proxData||''));
+    p.fase=fase||p.fase||'';p.proxEtapa=prox;p.proxData=pd;
+    p.hist.push({data:today(),situacao:'',fase:mf?fase:'',prox:mp?prox:'',proxData:mp?pd:'',obs:pre+(obs||(mf||mp?'Andamento atualizado':'Consultado'))});
+  }
+  _syncCompProt(p);
+  save();closeM('modal-prot-and');_refreshControle();_toastPrazo('✓ Andamento registrado');
 }
 function _refreshControle(){
   renderDash();
@@ -4067,7 +4150,7 @@ function renderProtocolos(){
     return true;
   });
   const ordemSit={exigencia:0,reingresso:1,protocolado:2,analise:3,concluido:4,cancelado:5};
-  lista.sort((a,b)=>(ordemSit[a.situacao]-ordemSit[b.situacao])||String(_ultimaConsulta(a)).localeCompare(String(_ultimaConsulta(b))));
+  lista.sort((a,b)=>(ordemSit[a.situacao]-ordemSit[b.situacao])||String(a.proxData||'9999').localeCompare(String(b.proxData||'9999'))||String(_ultimaConsulta(a)).localeCompare(String(_ultimaConsulta(b))));
   const ativos=_prots().filter(_protAtivo);
   document.getElementById('prot-resumo').innerHTML=[
     `<span class="chip badge-navy">${ativos.length} em andamento</span>`,
@@ -4081,10 +4164,15 @@ function renderProtocolos(){
     const dias=ult?_diasCorridos(ult,today()):0;
     const velho=_protAtivo(p)&&dias>=PROT_DIAS_SEM_CONSULTA;
     const lastObs=(p.hist||[]).filter(h=>h.obs).slice(-1)[0];
+    const px=protProxInfo(p);
     return`<div style="display:flex;gap:12px;padding:12px 18px;border-bottom:1px solid var(--gray-100);border-left:4px solid ${s.c};flex-wrap:wrap;align-items:center">
       <div style="flex:1;min-width:210px;cursor:pointer" onclick="abrirProtocolo('${p.id}')">
         <div style="font-size:13px;font-weight:600;color:var(--navy)">${escH(_protRef(p))}</div>
         <div style="font-size:12px;color:var(--gray-700);margin-top:2px">🏛 ${escH(p.orgao||'—')} · <strong>Prot. ${escH(p.numero||'—')}</strong> · entrada ${fmtD(p.dataEntrada)}</div>
+        ${p.fase||p.proxEtapa||p.proxData?`<div style="margin-top:7px;padding:8px 10px;background:var(--gray-50);border-radius:8px;border-left:3px solid var(--navy)">
+          ${p.fase?`<div style="font-size:12.5px;color:var(--navy)">📍 <strong>${escH(p.fase)}</strong></div>`:''}
+          ${p.proxEtapa||p.proxData?`<div style="font-size:11.5px;color:var(--gray-700);margin-top:3px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">➡ ${escH(p.proxEtapa||'Próxima verificação')}${px?`<span class="chip" style="font-size:10px;background:${px.bg};color:${px.cor}">${px.txt}</span>`:''}</div>`:''}
+        </div>`:''}
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px">
           <span class="chip" style="font-size:10px;background:${s.bg};color:${s.c}">${s.t}</span>
           <span class="chip" style="font-size:10px;background:var(--gray-50);color:var(--gray-700)">${PROT_FORMA[p.forma]||''}</span>
