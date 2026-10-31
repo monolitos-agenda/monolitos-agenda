@@ -212,7 +212,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
     <button class="nav-item" onclick="nav('custos')"><span class="nav-icon">◷</span>Custos</button>
     <button class="nav-item" onclick="openM('modal-recibo-avulso');initRav()"><span class="nav-icon">🧾</span>Recibo Avulso</button>
     <div class="nav-label">Agenda</div>
-    <button class="nav-item" onclick="nav('agenda')"><span class="nav-icon">📅</span>Compromissos</button>
+    <button class="nav-item" onclick="nav('agenda')"><span class="nav-icon">📅</span>Agenda de Serviços<span id="nav-prazo-badge" style="display:none;margin-left:auto;background:#c0392b;color:white;border-radius:10px;font-size:10px;padding:1px 7px;font-weight:600"></span></button>
     <button class="nav-item" id="btn-notif" onclick="ativarNotificacoes()"><span class="nav-icon">🔕</span>Ativar notificações</button>
     <div class="nav-label">Configurações</div>
     <button class="nav-item" onclick="nav('configuracoes')"><span class="nav-icon">◉</span>Dados Bancários</button>
@@ -255,12 +255,18 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
 
     <!-- DASHBOARD -->
     <div class="view active" id="view-painel">
+      <div id="painel-prazos-alerta"></div>
       <div class="metrics-grid">
         <div class="metric-card"><div class="metric-label">Faturamento do Mês</div><div class="metric-value" id="m-fat" style="letter-spacing:0">R$ 0</div><span class="metric-badge badge-green">▲</span></div>
         <div class="metric-card" onclick="nav('agenda')" style="cursor:pointer">
           <div class="metric-label">Compromissos Hoje</div>
           <div class="metric-value" id="m-agenda">0</div>
           <span class="metric-badge badge-blue">📅 Ver agenda</span>
+        </div>
+        <div class="metric-card" onclick="nav('agenda')" style="cursor:pointer">
+          <div class="metric-label">Entregas Previstas</div>
+          <div class="metric-value" id="m-prazos">0</div>
+          <span class="metric-badge badge-navy" id="m-prazos-sub">🔧 Ver prazos</span>
         </div>
         <div class="metric-card"><div class="metric-label">Aguardando Aprovação</div><div class="metric-value" id="m-ab">0</div><span class="metric-badge badge-amber">Abertos</span></div>
         <div class="metric-card"><div class="metric-label">Em Andamento</div><div class="metric-value" id="m-emand">0</div><span class="metric-badge badge-navy">Ativos</span></div>
@@ -341,8 +347,22 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
     <!-- AGENDA / COMPROMISSOS -->
     <div class="view" id="view-agenda">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:9px">
-        <div style="font-size:13px;color:var(--gray-500)">Seus compromissos e lembretes</div>
-        <button class="btn btn-gold" onclick="abrirNovoCompromisso()">+ Novo Compromisso</button>
+        <div style="font-size:13px;color:var(--gray-500)">Prazos de entrega das Ordens de Serviço, compromissos e lembretes</div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick="abrirCfgPrazos()">⚙ Prazos padrão</button>
+          <button class="btn btn-gold" onclick="abrirNovoCompromisso()">+ Novo Compromisso</button>
+        </div>
+      </div>
+      <!-- AGENDA DE SERVIÇOS (prazos de entrega das OS) -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header" style="flex-wrap:wrap;gap:8px">
+          <span class="card-title">🔧 Agenda de Serviços — Prazos de Entrega</span>
+          <div style="display:flex;gap:4px" id="agsrv-tabs">
+            <button class="btn btn-sm btn-primary" id="agsrv-tab-pend" onclick="setAgSrvTab('pend')">Pendentes</button>
+            <button class="btn btn-sm btn-outline" id="agsrv-tab-ent" onclick="setAgSrvTab('ent')">Entregues</button>
+          </div>
+        </div>
+        <div id="agenda-servicos" style="padding:0"></div>
       </div>
       <!-- Hoje -->
       <div id="agenda-hoje" style="margin-bottom:16px"></div>
@@ -1064,6 +1084,105 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
   </div>
 </div></div>
 
+<!-- MODAL PRAZO DE ENTREGA (Agenda de Serviços) -->
+<div class="modal-overlay" id="modal-prazo" style="display:none">
+<div class="modal" style="max-width:540px">
+  <div class="modal-header">
+    <div>
+      <div class="modal-title" id="mprazo-title">📦 Prazo de Entrega</div>
+      <div style="font-size:12px;color:var(--gray-500);margin-top:2px" id="mprazo-sub"></div>
+    </div>
+    <button class="btn btn-ghost" onclick="closeM('modal-prazo')">✕</button>
+  </div>
+  <div class="modal-body">
+    <input type="hidden" id="prazo-orc-id">
+    <div id="prazo-aviso-novo" style="display:none;background:var(--green-light);color:var(--green);border-radius:var(--radius);padding:10px 12px;font-size:12px;margin-bottom:12px">
+      ✅ Pagamento inicial registrado — o orçamento virou <strong>Ordem de Serviço</strong> e entrou na Agenda de Serviços. Confira o prazo abaixo.
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Tipo de serviço (define o prazo padrão)</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap" id="prazo-tipos">
+        <button type="button" class="btn btn-sm btn-outline" data-tp="padrao" onclick="setPrazoTipo('padrao')">⚡ Padrão</button>
+        <button type="button" class="btn btn-sm btn-outline" data-tp="complexo" onclick="setPrazoTipo('complexo')">🧩 Complexo</button>
+        <button type="button" class="btn btn-sm btn-outline" data-tp="cartorio" onclick="setPrazoTipo('cartorio')">🏛 Depende de cartório/órgão</button>
+      </div>
+      <input type="hidden" id="prazo-tipo" value="padrao">
+    </div>
+    <div class="form-grid form-grid-2" style="margin-bottom:12px">
+      <div class="form-group">
+        <label>Início da contagem</label>
+        <input class="form-control" type="date" id="prazo-inicio" onchange="recalcPrazo()">
+      </div>
+      <div class="form-group">
+        <label>Prazo (dias úteis)</label>
+        <input class="form-control" type="number" min="1" max="365" id="prazo-dias" oninput="recalcPrazo()">
+      </div>
+      <div class="form-group">
+        <label>Entrega prevista</label>
+        <input class="form-control" type="date" id="prazo-prevista" onchange="prazoDataManual()">
+        <div style="font-size:10.5px;color:var(--gray-400);margin-top:3px" id="prazo-prevista-info"></div>
+      </div>
+      <div class="form-group">
+        <label>Avisar antes</label>
+        <select class="form-control" id="prazo-aviso">
+          <option value="0">Sem aviso antecipado</option>
+          <option value="1">1 dia útil antes</option>
+          <option value="2">2 dias úteis antes</option>
+          <option value="3">3 dias úteis antes</option>
+          <option value="5">5 dias úteis antes</option>
+        </select>
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Etapa atual</label>
+        <select class="form-control" id="prazo-etapa">
+          <option value="execucao">⚙ Em execução</option>
+          <option value="campo">📍 Aguardando trabalho de campo</option>
+          <option value="cliente">⏳ Aguardando documentos do cliente</option>
+          <option value="cartorio">🏛 Em tramitação (cartório/órgão)</option>
+          <option value="pronto">📦 Pronto para entrega</option>
+        </select>
+      </div>
+      <div class="form-group" id="prazo-protocolo-box" style="grid-column:1/-1;display:none">
+        <label>Cartório / órgão e nº do protocolo</label>
+        <input class="form-control" id="prazo-protocolo" placeholder="Ex: 1º Ofício de Registro de Imóveis — Prot. 123.456">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Observação</label>
+        <input class="form-control" id="prazo-obs" placeholder="Ex: prazo combinado por telefone com a cliente">
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--gray-400)">Dias úteis desconsideram sábados, domingos e feriados nacionais, do Ceará e de Fortaleza. A data prevista também entra nos Compromissos (com aviso antecipado) para gerar notificação.</div>
+  </div>
+  <div class="modal-footer" style="flex-wrap:wrap">
+    <button class="btn btn-danger btn-sm" id="prazo-del-btn" onclick="removerPrazo()" style="margin-right:auto">Tirar da agenda</button>
+    <button class="btn btn-outline" onclick="closeM('modal-prazo')">Fechar</button>
+    <button class="btn btn-green" id="prazo-entregar-btn">✅ Entregue</button>
+    <button class="btn btn-gold" onclick="salvarPrazo(false)">Salvar prazo</button>
+  </div>
+</div></div>
+
+<!-- MODAL PRAZOS PADRÃO -->
+<div class="modal-overlay" id="modal-cfg-prazos" style="display:none">
+<div class="modal" style="max-width:420px">
+  <div class="modal-header">
+    <div class="modal-title">⚙ Prazos padrão (dias úteis)</div>
+    <button class="btn btn-ghost" onclick="closeM('modal-cfg-prazos')">✕</button>
+  </div>
+  <div class="modal-body">
+    <div class="form-grid" style="gap:10px">
+      <div class="form-group"><label>⚡ Serviço padrão</label><input class="form-control" type="number" min="1" id="cfgp-padrao"></div>
+      <div class="form-group"><label>🧩 Serviço complexo</label><input class="form-control" type="number" min="1" id="cfgp-complexo"></div>
+      <div class="form-group"><label>🏛 Depende de cartório/órgão</label><input class="form-control" type="number" min="1" id="cfgp-cartorio"></div>
+      <div class="form-group"><label>Avisar antes (dias úteis)</label><input class="form-control" type="number" min="0" max="10" id="cfgp-aviso"></div>
+    </div>
+    <div style="font-size:11px;color:var(--gray-400);margin-top:10px">Vale para as próximas Ordens de Serviço. Prazos já definidos não são alterados.</div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-outline" onclick="closeM('modal-cfg-prazos')">Cancelar</button>
+    <button class="btn btn-gold" onclick="salvarCfgPrazos()">Salvar</button>
+  </div>
+</div></div>
+
 <!-- MODAL CLONAR -->
 <div class="modal-overlay" id="modal-clonar" style="display:none">
 <div class="modal" style="max-width:490px">
@@ -1446,7 +1565,7 @@ function startRealtimeSync(){
         if(active){
           const id = active.id.replace('view-','');
           const refreshMap = {painel:renderDash,orcamentos:renderOrc,clientes:renderCli,
-            recebimentos:renderRec,custos:renderCus,relatorios:renderRel};
+            recebimentos:renderRec,custos:renderCus,relatorios:renderRel,agenda:renderAgenda};
           if(refreshMap[id]) refreshMap[id]();
         }
         showSyncBadge();
@@ -1460,7 +1579,7 @@ function fmtM(v){return'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFra
 function fmtD(d){if(!d)return'';const p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0]}
 function stB(s){const m={'Aberto':['badge-amber','●'],'Aprovado':['badge-blue','✔'],'Em andamento':['badge-navy','⚙'],'Concluído':['badge-green','✓'],'Cancelado':['badge-red','✕']};const[c,i]=m[s]||['badge-navy','?'];return`<span class="status-badge ${c}">${i} ${s}</span>`}
 function recPorOrc(id){return ST.recebimentos.filter(r=>r.orcId===id).reduce((a,r)=>a+parseFloat(r.valor||0),0)}
-function today(){return new Date().toISOString().split('T')[0]}
+function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 
 // ===== NAV =====
 function toggleSB(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sb-overlay').classList.toggle('open')}
@@ -1469,7 +1588,7 @@ function nav(n){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-'+n).classList.add('active');
-  const T={painel:'Painel',orcamentos:'Orçamentos',clientes:'Clientes',recebimentos:'Recebimentos',custos:'Custos',configuracoes:'Dados Bancários',sincronizar:'Sincronizar',relatorios:'Faturamento',vistoria:'Vistoria Cadastral',consulta:'Consulta CPF/CNPJ'};
+  const T={painel:'Painel',orcamentos:'Orçamentos',clientes:'Clientes',recebimentos:'Recebimentos',custos:'Custos',configuracoes:'Dados Bancários',sincronizar:'Sincronizar',relatorios:'Faturamento',agenda:'Agenda de Serviços',vistoria:'Vistoria Cadastral',consulta:'Consulta CPF/CNPJ'};
   document.getElementById('page-title').textContent=T[n]||n;
   document.querySelectorAll('.nav-item').forEach(b=>{if(b.textContent.trim().startsWith((T[n]||'').slice(0,5)))b.classList.add('active')});
   const R={painel:renderDash,agenda:renderAgenda,servicos:renderServicos,orcamentos:renderOrc,clientes:renderCli,recebimentos:renderRec,custos:renderCus,relatorios:renderRel,configuracoes:renderCfg,financeiro:()=>{},vistoria:initVistoria,consulta:initConsulta};
@@ -1708,7 +1827,7 @@ function salvarOrc(){
   const anterior=ST.orcamentos.find(x=>x.id===id);
   const dataInicio=anterior?.dataInicio||document.getElementById('orc-data').value;
   const dataConclusao=(novoStatus==='Concluído'&&anterior?.status!=='Concluído')?today():(anterior?.dataConclusao||'');
-  const o={id,num:document.getElementById('orc-num').value,data:document.getElementById('orc-data').value,
+  const o={...(anterior||{}),id,num:document.getElementById('orc-num').value,data:document.getElementById('orc-data').value,
     dataInicio,dataConclusao,
     cliente:document.getElementById('orc-cli').value,matricula:document.getElementById('orc-mat').value,
     inter:document.getElementById('orc-inter').value.trim(),
@@ -1719,6 +1838,7 @@ function salvarOrc(){
   salvarSrvsMarcados(); // Melhoria 7: salva serviços marcados no cadastro
   const idx=ST.orcamentos.findIndex(x=>x.id===id);
   if(idx>=0)ST.orcamentos[idx]=o;else ST.orcamentos.unshift(o);
+  if(o.prazo)_syncCompPrazo(o);
   if(!ST.clientes.find(c=>c.nome.toLowerCase()===o.cliente.toLowerCase()))
     ST.clientes.push({id:Date.now().toString(),nome:o.cliente,cpf:'',tel:'',email:'',end:'',inter:'',interTel:'',obs:''});
   save();closeM('modal-orc');renderOrc();renderDash();
@@ -1776,6 +1896,7 @@ function verOrc(id){
     <div style="display:flex;gap:8px;margin-bottom:14px;padding:10px 12px;background:var(--blue-light);border-radius:var(--radius)">
       <span style="font-size:12px;color:var(--blue)">📅 <strong>Início:</strong> ${fmtD(o.dataInicio||o.data)}</span>
     </div>`:''}
+    ${prazoBlocoHTML(o,"closeM('modal-ver-orc');")}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
       <div style="background:var(--gray-50);border-radius:var(--radius);padding:12px">
         <div style="font-size:10px;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Valor Total</div>
@@ -1810,7 +1931,7 @@ function verOrc(id){
   document.getElementById('ver-orc-imp').onclick=()=>{closeM('modal-ver-orc');editarOrc(id);setTimeout(()=>imprimir(),300)};
   openM('modal-ver-orc');
 }
-function excluirOrc(id){if(!confirm('Excluir orçamento?'))return;ST.orcamentos=ST.orcamentos.filter(x=>x.id!==id);save();renderOrc();renderDash()}
+function excluirOrc(id){if(!confirm('Excluir orçamento?'))return;ST.orcamentos=ST.orcamentos.filter(x=>x.id!==id);ST.compromissos=(ST.compromissos||[]).filter(c=>c.id!=='prz-'+id&&c.id!=='prza-'+id);save();renderOrc();renderDash()}
 
 // ===== CLONAR =====
 function openClonar(){
@@ -2093,6 +2214,7 @@ function renderDash(){
     mAgenda.style.color=hojeAgenda>0?'var(--blue)':'var(--navy)';
   }
   document.getElementById('m-co').textContent=co;
+  renderPainelPrazos();
   // Show only Em andamento in painel (already computed above)
   const tbody_dash = document.getElementById('tbody-dash');
   if(tbody_dash){
@@ -2111,6 +2233,7 @@ function renderDash(){
             <div>${o.cliente}</div>
             ${o.inter?`<div style="font-size:10.5px;color:var(--gray-400);margin-top:1px;display:flex;align-items:center;gap:3px"><span>🤝</span><span>${o.inter}</span></div>`:''}
             ${o.andamento?`<div style="font-size:11px;color:var(--blue);margin-top:2px">📌 ${o.andamento.slice(0,60)}${o.andamento.length>60?'...':''}</div>`:''}
+            ${prazoChip(o)?`<div style="margin-top:3px">${prazoChip(o)}</div>`:''}
           </td>
           <td>
             <div style="font-size:12px;color:var(--green)">${fmtM(rec)}</div>
@@ -2121,6 +2244,7 @@ function renderDash(){
             <div style="display:flex;gap:3px">
               <button class="btn btn-ghost btn-sm" onclick="abrirFinanceiro('${o.id}')" title="Ver financeiro" style="font-size:15px;padding:4px 6px">💰</button>
               <button class="btn btn-ghost btn-sm" onclick="abrirAndamento('${o.id}')" title="Anotações de andamento" style="font-size:15px;padding:4px 6px">📋</button>
+              ${o.tipo==='os'&&!(o.prazo&&o.prazo.entregueEm)?`<button class="btn btn-ghost btn-sm" onclick="abrirPrazo('${o.id}')" title="Prazo de entrega" style="font-size:15px;padding:4px 6px">📦</button>`:''}
             </div>
           </td>
         </tr>`;}).join('');
@@ -2175,8 +2299,8 @@ function renderOrc(){
     <td style="font-size:11px;color:var(--gray-500)">${fmtD(o.data)}${o.status==='Concluído'&&o.dataConclusao?`<br><span style="color:var(--green)">✓ ${fmtD(o.dataConclusao)}</span>`:''}</td><td>${o.cliente}</td>
     <td><strong>${fmtM(o.valor)}</strong></td>
     <td><div style="min-width:78px"><div style="font-size:11px;color:var(--green);margin-bottom:3px">${fmtM(r)} (${p}%)</div><div class="progress-bar"><div class="progress-fill" style="width:${p}%"></div></div></div></td>
-    <td>${stB(o.status)}</td>
-    <td onclick="event.stopPropagation()"><div style="display:flex;gap:2px"><button class="btn btn-ghost btn-sm" onclick="abrirFinanceiro('${o.id}')" title="Financeiro">💰</button><button class="btn btn-ghost btn-sm" onclick="abrirNovoCompromisso('${o.num}')" title="Agendar">📅</button><button class="btn btn-ghost btn-sm" onclick="editarOrc('${o.id}')">✏</button><button class="btn btn-ghost btn-sm" onclick="printById('${o.id}')">🖨</button><button class="btn btn-danger btn-sm" onclick="excluirOrc('${o.id}')">✕</button></div></td></tr>`;
+    <td>${stB(o.status)}${prazoChip(o)?'<br><span style="display:inline-block;margin-top:3px">'+prazoChip(o)+'</span>':''}</td>
+    <td onclick="event.stopPropagation()"><div style="display:flex;gap:2px"><button class="btn btn-ghost btn-sm" onclick="abrirFinanceiro('${o.id}')" title="Financeiro">💰</button>${o.tipo==='os'&&o.status!=='Cancelado'?`<button class="btn btn-ghost btn-sm" onclick="abrirPrazo('${o.id}')" title="Prazo de entrega">📦</button>`:''}<button class="btn btn-ghost btn-sm" onclick="abrirNovoCompromisso('${o.num}')" title="Agendar">📅</button><button class="btn btn-ghost btn-sm" onclick="editarOrc('${o.id}')">✏</button><button class="btn btn-ghost btn-sm" onclick="printById('${o.id}')">🖨</button><button class="btn btn-danger btn-sm" onclick="excluirOrc('${o.id}')">✕</button></div></td></tr>`;
   }).join('');
 }
 
@@ -2287,15 +2411,26 @@ function atualizarStatusAutoOrc(orcId){
   const recebido=recPorOrc(orc.id);
   const totalOrc=parseFloat(orc.valor||0);
   // (1) Primeiro pagamento: Orçamento -> Ordem de Serviço + status Em andamento
+  let prazoCriado=false;
   if(recebido>0){
     if(orc.tipo!=='os')orc.tipo='os';
     if(orc.status==='Aberto'||orc.status==='Aprovado')orc.status='Em andamento';
+    // (3) Agenda de Serviços: entra com a data de entrega prevista (prazo padrão em dias úteis)
+    const jaEntregueAntes=orc.status==='Concluído'&&orc.entregue!==false;
+    if(!orc.prazo&&!jaEntregueAntes&&orc.status!=='Cancelado'){
+      orc.prazo=_novoPrazo(orc);
+      prazoCriado=true;
+    }
   }
   // (2) Último recebimento (valor total atingido): status Concluído
   if(totalOrc>0&&recebido>=totalOrc&&orc.status!=='Concluído'){
     orc.status='Concluído';
     orc.dataConclusao=orc.dataConclusao||today();
+    // Pago não significa entregue: se ainda está na Agenda de Serviços, fica "Aguardando entrega"
+    if(orc.prazo&&!orc.prazo.entregueEm)orc.entregue=false;
   }
+  if(orc.prazo)_syncCompPrazo(orc);
+  return prazoCriado;
 }
 // Sincroniza o custo (opcional) informado no recebimento com o lançamento em Custos
 function _syncCustoRec(rec,orc,custoValor){
@@ -2387,9 +2522,10 @@ function salvarRec(){
   const custoIdNovo=_syncCustoRec(r,orc,custoValorNovo);
   if(custoIdNovo)r.custoId=custoIdNovo;
   ST.recebimentos.push(r);
-  atualizarStatusAutoOrc(orcId);
+  const _prazoNovo=atualizarStatusAutoOrc(orcId);
   save();closeM('modal-rec');renderRec();renderDash();
   if(gr)printRecibo(r);
+  if(_prazoNovo)setTimeout(()=>abrirPrazo(orcId,true),gr?900:250);
   // Return to financeiro panel if opened from there
   if(window._recAfterSave){
     const oid=window._recAfterSave;window._recAfterSave=null;
@@ -2878,6 +3014,7 @@ function renderFinanceiro(o){
       </div>
     </div>
     <div class="fin-progress"><div class="fin-progress-fill" style="width:${pct}%"></div></div>
+    ${o.prazo||_semPrazoPendente(o)?`<div style="padding:10px 18px 0">${prazoBlocoHTML(o,'')}</div>`:''}
     <div style="padding:8px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--gray-100)">
       <span style="font-size:11.5px;color:var(--gray-500)">${pct}% recebido</span>
       ${o.parcelas&&o.parcelas.length?`<span style="font-size:11px;color:var(--gray-400)">${o.parcelas.length} parcela(s) prevista(s)</span>`:''}
@@ -3137,6 +3274,375 @@ function importarCSVPedidos(event){
   reader.readAsText(file,'utf-8');
 }
 
+// ===== AGENDA DE SERVIÇOS (prazos de entrega das Ordens de Serviço) =====
+// Fluxo: 1º pagamento -> vira OS -> entra na agenda com entrega prevista em N dias úteis (padrão 7).
+// O prazo é editável (serviço complexo / dependente de cartório) e gera compromissos automáticos
+// (data de entrega + aviso antecipado), que aparecem na aba Compromissos e nas notificações.
+const PRAZO_TIPOS={padrao:'⚡ Padrão',complexo:'🧩 Complexo',cartorio:'🏛 Cartório/órgão'};
+const PRAZO_ETAPAS={execucao:'⚙ Em execução',campo:'📍 Aguardando campo',cliente:'⏳ Aguardando cliente',cartorio:'🏛 Em tramitação',pronto:'📦 Pronto p/ entrega'};
+let _agSrvTab='pend';
+function escH(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function _cfgPrazos(){
+  const c=ST.cfgPrazos||{};
+  return{padrao:parseInt(c.padrao)||7,complexo:parseInt(c.complexo)||15,cartorio:parseInt(c.cartorio)||30,aviso:c.aviso!=null&&c.aviso!==''?parseInt(c.aviso):2};
+}
+
+// --- Dias úteis (sáb/dom + feriados nacionais, Ceará e Fortaleza) ---
+const _ferCache={};
+function _ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function _dt(s){return new Date(s+'T12:00:00')}
+function _pascoa(y){
+  const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),
+    h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),
+    mes=Math.floor((h+l-7*m+114)/31),dia=((h+l-7*m+114)%31)+1;
+  return new Date(y,mes-1,dia,12);
+}
+function feriadosAno(y){
+  if(_ferCache[y])return _ferCache[y];
+  const fixos=['01-01','03-19','03-25','04-13','04-21','05-01','08-15','09-07','10-12','11-02','11-15','11-20','12-25'];
+  const set=new Set(fixos.map(f=>y+'-'+f));
+  const p=_pascoa(y);
+  [-48,-47,-2,60].forEach(off=>{const d=new Date(p);d.setDate(d.getDate()+off);set.add(_ymd(d))}); // Carnaval (seg/ter), Sexta Santa, Corpus Christi
+  _ferCache[y]=set;return set;
+}
+function ehDiaUtil(s){const d=_dt(s);const w=d.getDay();if(w===0||w===6)return false;return!feriadosAno(d.getFullYear()).has(s)}
+function addDiasUteis(s,n){const d=_dt(s);let c=0;while(c<n){d.setDate(d.getDate()+1);if(ehDiaUtil(_ymd(d)))c++}return _ymd(d)}
+function subDiasUteis(s,n){const d=_dt(s);let c=0;while(c<n){d.setDate(d.getDate()-1);if(ehDiaUtil(_ymd(d)))c++}return _ymd(d)}
+// Dias úteis no intervalo (a, b]  — a < b
+function diasUteisEntre(a,b){if(!a||!b||b<=a)return 0;const d=_dt(a);let c=0;let guard=0;while(_ymd(d)<b&&guard<4000){d.setDate(d.getDate()+1);if(ehDiaUtil(_ymd(d)))c++;guard++}return c}
+function _diaSemana(s){return _dt(s).toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','')}
+
+// --- Modelo ---
+function _primeiroPagamento(orcId){
+  const ds=ST.recebimentos.filter(r=>r.orcId===orcId&&r.data).map(r=>r.data).sort();
+  return ds[0]||'';
+}
+function _novoPrazo(orc){
+  const cfg=_cfgPrazos();
+  const inicio=_primeiroPagamento(orc.id)||orc.dataInicio||today();
+  return{inicio,dias:cfg.padrao,prevista:addDiasUteis(inicio,cfg.padrao),tipo:'padrao',etapa:'execucao',
+    aviso:cfg.aviso,protocolo:'',obs:'',criadoEm:today(),entregueEm:''};
+}
+function _prazoAtivo(o){return!!(o&&o.prazo&&!o.prazo.entregueEm&&o.status!=='Cancelado')}
+function _semPrazoPendente(o){
+  return o&&!o.prazo&&o.tipo==='os'&&o.status!=='Cancelado'&&(o.status==='Em andamento'||(o.status==='Concluído'&&o.entregue===false));
+}
+function _orcValido(o){return o&&o.num&&String(o.num).length<30}
+function _srvResumo(o){return(o.servicos||[]).filter(s=>!s.titulo&&s.desc).map(s=>s.desc).join('; ')||o.descricao||''}
+
+// Situação do prazo: nivel = atrasado | hoje | urgente | semana | ok | entregue
+function prazoInfo(o){
+  if(!o||!o.prazo)return null;
+  const p=o.prazo,hoje=today();
+  if(p.entregueEm){
+    const atraso=p.entregueEm>p.prevista?diasUteisEntre(p.prevista,p.entregueEm):0;
+    return{nivel:'entregue',cor:'var(--green)',bg:'var(--green-light)',
+      txt:'✅ Entregue '+fmtD(p.entregueEm).slice(0,5),sub:atraso>0?`${atraso} d.u. após o prazo`:'dentro do prazo',atraso};
+  }
+  if(p.prevista<hoje){
+    const n=Math.max(1,diasUteisEntre(p.prevista,hoje));
+    return{nivel:'atrasado',cor:'var(--red)',bg:'var(--red-light)',txt:`⚠ Atrasado ${n} d.u.`,n};
+  }
+  if(p.prevista===hoje)return{nivel:'hoje',cor:'var(--red)',bg:'var(--red-light)',txt:'⏰ Entrega HOJE',n:0};
+  const r=diasUteisEntre(hoje,p.prevista);
+  const lim=Math.max(parseInt(p.aviso)||0,1);
+  if(r<=lim)return{nivel:'urgente',cor:'var(--amber)',bg:'var(--amber-light)',txt:`⏰ Faltam ${r} d.u.`,n:r};
+  if(r<=5)return{nivel:'semana',cor:'var(--blue)',bg:'var(--blue-light)',txt:`Faltam ${r} d.u.`,n:r};
+  return{nivel:'ok',cor:'var(--green)',bg:'var(--green-light)',txt:`Faltam ${r} d.u.`,n:r};
+}
+function prazoChip(o){
+  const i=prazoInfo(o);if(!i)return'';
+  if(i.nivel==='entregue'&&o.status==='Concluído')return'';
+  const prev=i.nivel==='entregue'?'':' · '+fmtD(o.prazo.prevista).slice(0,5);
+  return`<span class="chip" style="background:${i.bg};color:${i.cor};font-size:9.5px;white-space:nowrap">📦 ${i.txt}${prev}</span>`;
+}
+function prazoBlocoHTML(o,pre){
+  pre=pre||'';
+  if(o.prazo){
+    const p=o.prazo,i=prazoInfo(o);
+    return`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:${i.bg};border-radius:var(--radius);border-left:4px solid ${i.cor}">
+      <div style="font-size:12px;color:var(--gray-700)">
+        <div style="font-weight:600;color:${i.cor}">📦 ${i.txt}${i.sub?' — '+i.sub:''}</div>
+        <div style="margin-top:2px">Início ${fmtD(p.inicio)} → Entrega prevista <strong>${fmtD(p.prevista)}</strong> (${_diaSemana(p.prevista)}) · ${p.dias} d.u. · ${PRAZO_TIPOS[p.tipo]||''}</div>
+        ${!p.entregueEm?`<div style="margin-top:2px;color:var(--gray-500)">${PRAZO_ETAPAS[p.etapa]||''}${p.protocolo?' · '+escH(p.protocolo):''}</div>`:''}
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="${pre}abrirPrazo('${o.id}')">✏ Prazo</button>
+    </div>`;
+  }
+  if(_semPrazoPendente(o)){
+    return`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:var(--gray-50);border-radius:var(--radius);border-left:4px solid var(--gray-300)">
+      <span style="font-size:12px;color:var(--gray-500)">📦 Ordem de Serviço sem prazo de entrega definido</span>
+      <button class="btn btn-gold btn-sm" onclick="${pre}abrirPrazo('${o.id}')">Definir prazo</button>
+    </div>`;
+  }
+  return'';
+}
+
+// Compromissos automáticos vinculados ao prazo (entrega + aviso antecipado)
+function _syncCompPrazo(o){
+  if(!ST.compromissos)ST.compromissos=[];
+  const idE='prz-'+o.id,idA='prza-'+o.id;
+  ST.compromissos=ST.compromissos.filter(c=>c.id!==idE&&c.id!==idA);
+  if(!_prazoAtivo(o))return;
+  const p=o.prazo,ref=`${o.num} — ${o.cliente}`,srv=_srvResumo(o).slice(0,140);
+  ST.compromissos.push({id:idE,titulo:`📦 Entrega prevista — OS ${o.num}`,data:p.prevista,hora:'08:00',cliente:ref,
+    obs:srv,lembrete:'0',tipo:'entrega',concluido:false,auto:true,orcId:o.id});
+  const av=parseInt(p.aviso)||0;
+  if(av>0){
+    const dA=subDiasUteis(p.prevista,av);
+    if(dA>=today()&&dA<p.prevista)ST.compromissos.push({id:idA,titulo:`⏰ Prazo da OS ${o.num} vence em ${av} dia(s) útil(eis)`,data:dA,hora:'08:00',
+      cliente:ref,obs:srv,lembrete:'0',tipo:'entrega',concluido:false,auto:true,orcId:o.id});
+  }
+}
+
+// --- Modal de prazo ---
+function _marcarTipoPrazo(t){
+  document.getElementById('prazo-tipo').value=t;
+  document.querySelectorAll('#prazo-tipos [data-tp]').forEach(b=>{
+    const on=b.dataset.tp===t;b.classList.toggle('btn-primary',on);b.classList.toggle('btn-outline',!on);
+  });
+  _togProtocolo();
+}
+function _togProtocolo(){
+  const t=document.getElementById('prazo-tipo').value,e=document.getElementById('prazo-etapa').value;
+  document.getElementById('prazo-protocolo-box').style.display=(t==='cartorio'||e==='cartorio')?'block':'none';
+}
+function setPrazoTipo(t){
+  _marcarTipoPrazo(t);
+  document.getElementById('prazo-dias').value=_cfgPrazos()[t];
+  recalcPrazo();
+}
+function _infoPrevista(){
+  const ini=document.getElementById('prazo-inicio').value,prev=document.getElementById('prazo-prevista').value,el=document.getElementById('prazo-prevista-info');
+  if(!prev){el.textContent='';return}
+  const corr=ini?Math.round((_dt(prev)-_dt(ini))/86400000):0;
+  el.textContent=`${_diaSemana(prev)}${ini?' · '+corr+' dias corridos':''}${ehDiaUtil(prev)?'':' · ⚠ não é dia útil'}`;
+}
+function recalcPrazo(){
+  const ini=document.getElementById('prazo-inicio').value,n=parseInt(document.getElementById('prazo-dias').value)||0;
+  if(ini&&n>0)document.getElementById('prazo-prevista').value=addDiasUteis(ini,n);
+  _infoPrevista();
+}
+function prazoDataManual(){
+  const ini=document.getElementById('prazo-inicio').value,prev=document.getElementById('prazo-prevista').value;
+  if(ini&&prev&&prev>ini)document.getElementById('prazo-dias').value=diasUteisEntre(ini,prev);
+  _infoPrevista();
+}
+function abrirPrazo(id,novo){
+  const o=ST.orcamentos.find(x=>x.id===id);if(!o)return;
+  const p=o.prazo||_novoPrazo(o);
+  document.getElementById('prazo-orc-id').value=id;
+  document.getElementById('mprazo-title').textContent=`📦 Prazo de Entrega — OS ${o.num}`;
+  document.getElementById('mprazo-sub').textContent=o.cliente+(_srvResumo(o)?' · '+_srvResumo(o).slice(0,90):'');
+  document.getElementById('prazo-aviso-novo').style.display=novo?'block':'none';
+  document.getElementById('prazo-inicio').value=p.inicio;
+  document.getElementById('prazo-dias').value=p.dias;
+  document.getElementById('prazo-prevista').value=p.prevista;
+  const av=document.getElementById('prazo-aviso');av.value=String(p.aviso);if(av.value!==String(p.aviso))av.value='2';
+  document.getElementById('prazo-etapa').value=p.etapa||'execucao';
+  document.getElementById('prazo-etapa').onchange=_togProtocolo;
+  document.getElementById('prazo-protocolo').value=p.protocolo||'';
+  document.getElementById('prazo-obs').value=p.obs||'';
+  _marcarTipoPrazo(p.tipo||'padrao');
+  _infoPrevista();
+  document.getElementById('prazo-del-btn').style.display=o.prazo?'inline-flex':'none';
+  const be=document.getElementById('prazo-entregar-btn');
+  if(p.entregueEm){be.textContent='↩ Reabrir';be.onclick=()=>salvarPrazo('reabrir');}
+  else{be.textContent='✅ Entregue';be.onclick=()=>salvarPrazo(true);}
+  openM('modal-prazo');
+}
+function _entregarOrc(o){
+  o.prazo.entregueEm=today();
+  o.prazo.etapa='pronto';
+  o.entregue=true;o.motivoNaoEntrega='';
+  const tot=parseFloat(o.valor||0);
+  if(o.status!=='Concluído'&&tot>0&&recPorOrc(o.id)>=tot){o.status='Concluído';o.dataConclusao=o.dataConclusao||today();}
+}
+function _aposAlterarPrazo(o){
+  _syncCompPrazo(o);
+  save();renderDash();
+  if(document.getElementById('view-agenda').classList.contains('active'))renderAgenda();
+  if(document.getElementById('view-orcamentos').classList.contains('active'))renderOrc();
+  if(_finOrcAberto===o.id&&document.getElementById('view-financeiro').classList.contains('active'))renderFinanceiro(o);
+}
+function salvarPrazo(acao){
+  const id=document.getElementById('prazo-orc-id').value;
+  const o=ST.orcamentos.find(x=>x.id===id);if(!o)return;
+  const inicio=document.getElementById('prazo-inicio').value,prevista=document.getElementById('prazo-prevista').value;
+  const dias=parseInt(document.getElementById('prazo-dias').value)||0;
+  if(!inicio||!prevista){alert('Informe a data de início e a data de entrega prevista.');return}
+  if(prevista<inicio){alert('A entrega prevista não pode ser antes do início.');return}
+  const ant=o.prazo||{};
+  o.prazo={...ant,inicio,dias:dias||diasUteisEntre(inicio,prevista),prevista,
+    tipo:document.getElementById('prazo-tipo').value,etapa:document.getElementById('prazo-etapa').value,
+    aviso:parseInt(document.getElementById('prazo-aviso').value)||0,
+    protocolo:document.getElementById('prazo-protocolo').value.trim(),obs:document.getElementById('prazo-obs').value.trim(),
+    criadoEm:ant.criadoEm||today(),entregueEm:ant.entregueEm||''};
+  if(o.tipo!=='os')o.tipo='os';
+  if(acao===true){
+    _entregarOrc(o);
+  }else if(acao==='reabrir'){
+    o.prazo.entregueEm='';o.prazo.etapa='pronto';
+    if(o.status==='Concluído')o.entregue=false;
+  }else if(o.status==='Concluído'&&!o.prazo.entregueEm){o.entregue=false;}
+  closeM('modal-prazo');
+  _aposAlterarPrazo(o);
+  _toastPrazo(acao===true?'✅ Serviço marcado como entregue':acao==='reabrir'?'↩ Serviço voltou para a agenda':'📦 Prazo salvo — entrega em '+fmtD(prevista));
+}
+function removerPrazo(){
+  const id=document.getElementById('prazo-orc-id').value;
+  const o=ST.orcamentos.find(x=>x.id===id);if(!o||!o.prazo)return;
+  if(!confirm('Tirar esta OS da Agenda de Serviços? (o prazo e os lembretes automáticos serão apagados)'))return;
+  delete o.prazo;
+  closeM('modal-prazo');
+  _aposAlterarPrazo(o);
+}
+function marcarEntregue(id){
+  const o=ST.orcamentos.find(x=>x.id===id);if(!o)return;
+  if(!o.prazo){abrirPrazo(id);return}
+  if(!confirm(`Confirmar entrega da OS ${o.num} — ${o.cliente}?`))return;
+  _entregarOrc(o);_aposAlterarPrazo(o);
+  _toastPrazo('✅ Serviço marcado como entregue');
+}
+function _toastPrazo(t){
+  const b=document.createElement('div');
+  b.style.cssText='position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--navy);color:white;padding:9px 16px;border-radius:20px;font-size:12.5px;font-weight:500;z-index:10000;box-shadow:0 2px 8px rgba(0,0,0,.25)';
+  b.textContent=t;document.body.appendChild(b);setTimeout(()=>b.remove(),3000);
+}
+
+// --- Prazos padrão ---
+function abrirCfgPrazos(){
+  const c=_cfgPrazos();
+  document.getElementById('cfgp-padrao').value=c.padrao;
+  document.getElementById('cfgp-complexo').value=c.complexo;
+  document.getElementById('cfgp-cartorio').value=c.cartorio;
+  document.getElementById('cfgp-aviso').value=c.aviso;
+  openM('modal-cfg-prazos');
+}
+function salvarCfgPrazos(){
+  const v=k=>parseInt(document.getElementById('cfgp-'+k).value);
+  if(!(v('padrao')>0&&v('complexo')>0&&v('cartorio')>0)){alert('Os prazos devem ser maiores que zero.');return}
+  ST.cfgPrazos={padrao:v('padrao'),complexo:v('complexo'),cartorio:v('cartorio'),aviso:Math.max(0,v('aviso')||0)};
+  save();closeM('modal-cfg-prazos');_toastPrazo('⚙ Prazos padrão salvos');
+}
+
+// --- Listas ---
+function _listasPrazos(){
+  const os=ST.orcamentos.filter(_orcValido);
+  const ativos=os.filter(_prazoAtivo).sort((a,b)=>a.prazo.prevista.localeCompare(b.prazo.prevista));
+  const g={atrasado:[],hoje:[],urgente:[],semana:[],ok:[]};
+  ativos.forEach(o=>{const i=prazoInfo(o);(g[i.nivel]||g.ok).push(o)});
+  const semPrazo=os.filter(_semPrazoPendente);
+  const entregues=os.filter(o=>o.prazo&&o.prazo.entregueEm).sort((a,b)=>b.prazo.entregueEm.localeCompare(a.prazo.entregueEm));
+  return{ativos,g,semPrazo,entregues};
+}
+function setAgSrvTab(t){
+  _agSrvTab=t;
+  document.getElementById('agsrv-tab-pend').className='btn btn-sm '+(t==='pend'?'btn-primary':'btn-outline');
+  document.getElementById('agsrv-tab-ent').className='btn btn-sm '+(t==='ent'?'btn-primary':'btn-outline');
+  renderAgendaServicos();
+}
+function _srvRow(o){
+  const p=o.prazo,i=p?prazoInfo(o):null,rec=recPorOrc(o.id),tot=parseFloat(o.valor||0);
+  const pct=tot>0?Math.min(Math.round(rec/tot*100),100):0;
+  const cor=i?i.cor:'var(--gray-300)';
+  const srv=_srvResumo(o);
+  return`<div style="display:flex;gap:12px;padding:12px 18px;border-bottom:1px solid var(--gray-100);border-left:4px solid ${cor};flex-wrap:wrap;align-items:center">
+    <div style="flex:1;min-width:200px;cursor:pointer" onclick="verOrc('${o.id}')">
+      <div style="font-size:13px;font-weight:600;color:var(--navy)">OS ${escH(o.num)} — ${escH(o.cliente)}</div>
+      ${srv?`<div style="font-size:11.5px;color:var(--gray-500);margin-top:2px">${escH(srv.slice(0,110))}${srv.length>110?'…':''}</div>`:''}
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px">
+        ${p?`<span class="chip badge-navy" style="font-size:10px">${PRAZO_TIPOS[p.tipo]||''}</span>`:''}
+        ${p&&!p.entregueEm?`<span class="chip" style="font-size:10px;background:var(--gray-100);color:var(--gray-700)">${PRAZO_ETAPAS[p.etapa]||''}</span>`:''}
+        ${p&&p.protocolo?`<span class="chip badge-blue" style="font-size:10px">🏛 ${escH(p.protocolo.slice(0,50))}</span>`:''}
+        <span class="chip" style="font-size:10px;background:var(--gray-50);color:${pct>=100?'var(--green)':'var(--gray-500)'}">💰 ${pct}% pago</span>
+      </div>
+      ${p?`<div style="font-size:11px;color:var(--gray-400);margin-top:4px">Início ${fmtD(p.inicio)} → Entrega <strong style="color:var(--gray-700)">${fmtD(p.prevista)}</strong> (${_diaSemana(p.prevista)}) · ${p.dias} d.u.${p.obs?' · '+escH(p.obs.slice(0,60)):''}</div>`:''}
+      ${o.andamento?`<div style="font-size:11px;color:var(--blue);margin-top:3px">📌 ${escH(o.andamento.slice(0,80))}</div>`:''}
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+      ${i?`<span style="background:${i.bg};color:${i.cor};font-weight:600;font-size:12px;padding:5px 11px;border-radius:20px;white-space:nowrap">${i.txt}</span>${i.sub?`<span style="font-size:10.5px;color:var(--gray-400)">${i.sub}</span>`:''}`:`<span style="background:var(--gray-100);color:var(--gray-500);font-size:11.5px;padding:5px 11px;border-radius:20px">Sem prazo</span>`}
+      <div style="display:flex;gap:2px">
+        <button class="btn btn-ghost btn-sm" onclick="abrirAndamento('${o.id}')" title="Anotar andamento">📋</button>
+        <button class="btn btn-ghost btn-sm" onclick="abrirFinanceiro('${o.id}')" title="Financeiro">💰</button>
+        ${!p?`<button class="btn btn-gold btn-sm" onclick="abrirPrazo('${o.id}')">Definir prazo</button>`:`<button class="btn btn-ghost btn-sm" onclick="abrirPrazo('${o.id}')" title="Editar prazo">✏</button>`}
+        ${p&&!p.entregueEm?`<button class="btn btn-green btn-sm" onclick="marcarEntregue('${o.id}')" title="Marcar como entregue">✅</button>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+function _grupoHTML(titulo,lista,cor){
+  if(!lista.length)return'';
+  return`<div style="padding:10px 18px 4px;font-size:10px;font-weight:700;color:${cor||'var(--gray-400)'};text-transform:uppercase;letter-spacing:.06em;border-top:1px solid var(--gray-100)">${titulo} (${lista.length})</div>`+lista.map(_srvRow).join('');
+}
+function renderAgendaServicos(){
+  const el=document.getElementById('agenda-servicos');if(!el)return;
+  const L=_listasPrazos();
+  if(_agSrvTab==='ent'){
+    el.innerHTML=L.entregues.length?_grupoHTML('Entregues recentemente',L.entregues.slice(0,30),'var(--green)')
+      :'<div class="empty-state" style="padding:22px"><div class="empty-icon">✅</div><div class="empty-title">Nenhuma entrega registrada ainda</div></div>';
+    return;
+  }
+  const total=L.ativos.length+L.semPrazo.length;
+  if(!total){
+    el.innerHTML='<div class="empty-state" style="padding:22px"><div class="empty-icon">🔧</div><div class="empty-title">Nenhum serviço aguardando entrega</div><div class="empty-text">Ao registrar o pagamento inicial de um orçamento, ele vira Ordem de Serviço e aparece aqui com a data de entrega prevista.</div></div>';
+    return;
+  }
+  el.innerHTML=
+    _grupoHTML('⚠ Atrasados',L.g.atrasado,'var(--red)')+
+    _grupoHTML('⏰ Entrega hoje',L.g.hoje,'var(--red)')+
+    _grupoHTML('Vencendo em breve',L.g.urgente,'var(--amber)')+
+    _grupoHTML('Próximos 5 dias úteis',L.g.semana,'var(--blue)')+
+    _grupoHTML('Demais prazos',L.g.ok,'var(--green)')+
+    _grupoHTML('Sem prazo definido',L.semPrazo,'var(--gray-500)');
+}
+
+// --- Painel: alerta + métrica + badge no menu ---
+function renderPainelPrazos(){
+  const L=_listasPrazos();
+  const crit=[...L.g.atrasado,...L.g.hoje,...L.g.urgente];
+  const m=document.getElementById('m-prazos'),sub=document.getElementById('m-prazos-sub');
+  if(m){m.textContent=L.ativos.length;m.style.color=L.g.atrasado.length?'var(--red)':'var(--navy)';}
+  if(sub){
+    if(L.g.atrasado.length){sub.className='metric-badge badge-red';sub.textContent=`⚠ ${L.g.atrasado.length} atrasado(s)`;}
+    else if(L.g.hoje.length+L.g.urgente.length){sub.className='metric-badge badge-amber';sub.textContent=`⏰ ${L.g.hoje.length+L.g.urgente.length} vencendo`;}
+    else{sub.className='metric-badge badge-navy';sub.textContent=L.semPrazo.length?`${L.semPrazo.length} sem prazo`:'🔧 Ver prazos';}
+  }
+  const nb=document.getElementById('nav-prazo-badge');
+  if(nb){nb.style.display=crit.length?'inline-block':'none';nb.textContent=crit.length;}
+  const al=document.getElementById('painel-prazos-alerta');if(!al)return;
+  if(!crit.length){al.innerHTML='';return}
+  const temAtraso=L.g.atrasado.length>0;
+  al.innerHTML=`<div style="background:${temAtraso?'var(--red-light)':'var(--amber-light)'};border:1px solid ${temAtraso?'#e8b4b4':'#e8d6a8'};border-radius:var(--radius-lg);padding:12px 16px;margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+      <strong style="font-size:13px;color:${temAtraso?'var(--red)':'var(--amber)'}">${temAtraso?'⚠ Atenção aos prazos de entrega':'⏰ Entregas se aproximando'}</strong>
+      <button class="btn btn-sm btn-outline" onclick="nav('agenda')">Abrir Agenda de Serviços →</button>
+    </div>
+    ${crit.slice(0,5).map(o=>{const i=prazoInfo(o);return`<div onclick="abrirPrazo('${o.id}')" style="cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:4px 0;border-top:1px dashed rgba(0,0,0,.08)">
+      <span style="color:var(--gray-700)"><strong>OS ${escH(o.num)}</strong> — ${escH(o.cliente)}</span>
+      <span style="color:${i.cor};font-weight:600;white-space:nowrap">${i.txt} · ${fmtD(o.prazo.prevista).slice(0,5)}</span></div>`}).join('')}
+    ${crit.length>5?`<div style="font-size:11px;color:var(--gray-500);margin-top:4px">+ ${crit.length-5} outro(s)</div>`:''}
+  </div>`;
+}
+
+// Aviso local 1x por dia ao abrir o app (complementa as notificações push dos compromissos)
+function avisoDiarioPrazos(){
+  try{
+    const L=_listasPrazos();
+    const at=L.g.atrasado.length,ur=L.g.hoje.length+L.g.urgente.length;
+    if(!at&&!ur)return;
+    if(!('Notification' in window)||Notification.permission!=='granted')return;
+    const chave='topagenda_aviso_prazos';
+    if(localStorage.getItem(chave)===today())return;
+    localStorage.setItem(chave,today());
+    const corpo=[at?`${at} serviço(s) atrasado(s)`:'',ur?`${ur} entrega(s) vencendo`:''].filter(Boolean).join(' · ');
+    const opts={body:corpo,icon:'./icon-192.png',badge:'./icon-192.png'};
+    if(navigator.serviceWorker&&navigator.serviceWorker.ready){
+      navigator.serviceWorker.ready.then(r=>r.showNotification('Top-Agenda — Prazos de entrega',opts)).catch(()=>new Notification('Top-Agenda — Prazos de entrega',opts));
+    }else new Notification('Top-Agenda — Prazos de entrega',opts);
+  }catch(e){console.warn('Aviso de prazos:',e);}
+}
+
 // ===== AGENDA / COMPROMISSOS =====
 const TIPO_ICON={'visita':'🏠','reuniao':'🤝','entrega':'📋','campo':'📍','cartorio':'🏛','outro':'📌'};
 
@@ -3228,6 +3734,7 @@ function agendarLembrete(comp){
 
 function renderAgenda(){
   if(!ST.compromissos)ST.compromissos=[];
+  renderAgendaServicos();
   const hoje=today();
   const todos=[...ST.compromissos].sort((a,b)=>(a.data+a.hora).localeCompare(b.data+b.hora));
   const hojeList=todos.filter(c=>c.data===hoje&&!c.concluido);
@@ -3291,7 +3798,7 @@ function compCard(comp,destaque){
     </div>
     <div style="display:flex;gap:4px;flex-shrink:0">
       <button class="btn btn-ghost btn-sm" onclick="toggleCompromisso('${comp.id}')" title="${comp.concluido?'Reabrir':'Concluir'}" style="font-size:16px">${comp.concluido?'↩':'✓'}</button>
-      <button class="btn btn-ghost btn-sm" onclick="editarCompromisso('${comp.id}')" title="Editar">✏</button>
+      ${comp.orcId&&comp.auto?`<button class="btn btn-ghost btn-sm" onclick="abrirPrazo('${comp.orcId}')" title="Prazo da OS">📦</button>`:`<button class="btn btn-ghost btn-sm" onclick="editarCompromisso('${comp.id}')" title="Editar">✏</button>`}
     </div>
   </div>`;
 }
@@ -3330,7 +3837,13 @@ function confirmarConclusao(){
   ST.orcamentos[idx].dataConclusao=today();
   ST.orcamentos[idx].entregue=tipo==='entregue';
   ST.orcamentos[idx].motivoNaoEntrega=tipo==='nao-entregue'?motivo:'';
+  const _oc=ST.orcamentos[idx];
+  if(tipo==='entregue'&&_oc.prazo&&!_oc.prazo.entregueEm){_oc.prazo.entregueEm=today();}
+  if(tipo==='nao-entregue'&&_oc.prazo){_oc.prazo.entregueEm='';_oc.prazo.etapa='pronto';}
+  if(_oc.prazo)_syncCompPrazo(_oc);
   save();closeM('modal-conclusao');renderOrc();renderDash();
+  if(document.getElementById('view-agenda').classList.contains('active'))renderAgenda();
+  if(_finOrcAberto===_oc.id&&document.getElementById('view-financeiro').classList.contains('active'))renderFinanceiro(_oc);
   const badge=document.createElement('div');
   badge.style.cssText='position:fixed;bottom:16px;right:16px;background:var(--green-light);color:var(--green);padding:8px 14px;border-radius:20px;font-size:12px;font-weight:500;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,.15)';
   badge.textContent=tipo==='entregue'?'✅ Concluído e Entregue!':'📦 Concluído — Aguardando Entrega';
@@ -4674,6 +5187,7 @@ function gerarEAbrirDrive(){
   renderDash();
   startRealtimeSync();
   atualizarBotaoNotif();
+  setTimeout(avisoDiarioPrazos,1500);
   // Notificação em primeiro plano (app aberto na tela) — o service worker só cuida do app em segundo plano/fechado
   try{
     if(typeof firebase!=='undefined'&&firebase.messaging.isSupported&&firebase.messaging.isSupported()){
