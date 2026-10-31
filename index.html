@@ -1931,7 +1931,7 @@ function verOrc(id){
   document.getElementById('ver-orc-imp').onclick=()=>{closeM('modal-ver-orc');editarOrc(id);setTimeout(()=>imprimir(),300)};
   openM('modal-ver-orc');
 }
-function excluirOrc(id){if(!confirm('Excluir orçamento?'))return;ST.orcamentos=ST.orcamentos.filter(x=>x.id!==id);ST.compromissos=(ST.compromissos||[]).filter(c=>c.id!=='prz-'+id&&c.id!=='prza-'+id);save();renderOrc();renderDash()}
+function excluirOrc(id){if(!confirm('Excluir orçamento?'))return;ST.orcamentos=ST.orcamentos.filter(x=>x.id!==id);ST.compromissos=(ST.compromissos||[]).filter(c=>!(c.auto&&c.orcId===id));save();renderOrc();renderDash()}
 
 // ===== CLONAR =====
 function openClonar(){
@@ -3381,17 +3381,19 @@ function prazoBlocoHTML(o,pre){
 // Compromissos automáticos vinculados ao prazo (entrega + aviso antecipado)
 function _syncCompPrazo(o){
   if(!ST.compromissos)ST.compromissos=[];
-  const idE='prz-'+o.id,idA='prza-'+o.id;
-  ST.compromissos=ST.compromissos.filter(c=>c.id!==idE&&c.id!==idA);
+  // Remove os compromissos automáticos anteriores desta OS
+  ST.compromissos=ST.compromissos.filter(c=>!(c.auto&&c.orcId===o.id));
   if(!_prazoAtivo(o))return;
   const p=o.prazo,ref=`${o.num} — ${o.cliente}`,srv=_srvResumo(o).slice(0,140);
-  ST.compromissos.push({id:idE,titulo:`📦 Entrega prevista — OS ${o.num}`,data:p.prevista,hora:'08:00',cliente:ref,
-    obs:srv,lembrete:'0',tipo:'entrega',concluido:false,auto:true,orcId:o.id});
+  // lembrete '60' (hora 08:00 -> push às 07:00): a função verificarLembretes só notifica compromissos com lembrete.
+  // A data entra no id para que, se o prazo mudar, a notificação da nova data não seja tratada como "já enviada".
+  ST.compromissos.push({id:'prz-'+o.id+'-'+p.prevista,titulo:`📦 Entrega prevista — OS ${o.num}`,data:p.prevista,hora:'08:00',cliente:ref,
+    obs:srv,lembrete:'60',tipo:'entrega',concluido:false,auto:true,orcId:o.id});
   const av=parseInt(p.aviso)||0;
   if(av>0){
     const dA=subDiasUteis(p.prevista,av);
-    if(dA>=today()&&dA<p.prevista)ST.compromissos.push({id:idA,titulo:`⏰ Prazo da OS ${o.num} vence em ${av} dia(s) útil(eis)`,data:dA,hora:'08:00',
-      cliente:ref,obs:srv,lembrete:'0',tipo:'entrega',concluido:false,auto:true,orcId:o.id});
+    if(dA>=today()&&dA<p.prevista)ST.compromissos.push({id:'prza-'+o.id+'-'+dA,titulo:`⏰ Prazo da OS ${o.num} vence em ${av} dia(s) útil(eis)`,data:dA,hora:'08:00',
+      cliente:ref,obs:srv,lembrete:'60',tipo:'entrega',concluido:false,auto:true,orcId:o.id});
   }
 }
 
