@@ -1272,8 +1272,17 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
   <div class="modal-body">
     <input type="hidden" id="prot-id">
     <div class="form-grid form-grid-2" style="margin-bottom:10px">
-      <div class="form-group" style="grid-column:1/-1"><label>Ordem de Serviço</label><select class="form-control" id="prot-orc" onchange="_togProtCampos()"></select></div>
-      <div class="form-group" style="grid-column:1/-1;display:none" id="prot-cliente-box"><label>Cliente / descrição do processo</label><input class="form-control" id="prot-cliente" placeholder="Ex: Usucapião da Dra. Rosângela"></div>
+      <div class="form-group" style="grid-column:1/-1"><label>🔎 Vincular a uma OS (buscar por cliente ou nº)</label>
+        <div style="display:flex;gap:6px">
+          <input class="form-control" id="prot-busca-os" list="dl-prot-os" placeholder="Digite o nome do cliente ou o nº da OS..." oninput="protBuscaOS()" onchange="protBuscaOS(true)" style="flex:1">
+          <button type="button" class="btn btn-outline btn-sm" id="prot-os-limpar" onclick="protDesvincularOS()" style="display:none" title="Desvincular OS">✕</button>
+        </div>
+        <datalist id="dl-prot-os"></datalist>
+        <input type="hidden" id="prot-orc">
+        <div id="prot-os-info" style="font-size:11px;margin-top:4px;color:var(--gray-400)">Opcional — deixe em branco para processo avulso (sem OS no app).</div>
+      </div>
+      <div class="form-group"><label>Cliente</label><input class="form-control" id="prot-cliente" list="dl-prot-cli" placeholder="Nome do cliente"><datalist id="dl-prot-cli"></datalist></div>
+      <div class="form-group"><label>Descrição do processo</label><input class="form-control" id="prot-desc" placeholder="Ex: Usucapião extrajudicial — Rua X, 120"></div>
       <div class="form-group"><label>Cartório / órgão</label><input class="form-control" id="prot-orgao" list="dl-prot-orgao" placeholder="Ex: 2ª Zona de Fortaleza"><datalist id="dl-prot-orgao"></datalist></div>
       <div class="form-group"><label>Nº do protocolo</label><input class="form-control" id="prot-numero" placeholder="Ex: AC016467371"></div>
       <div class="form-group"><label>Forma de entrada</label>
@@ -3991,10 +4000,13 @@ function _fillFases(){
 let _protFiltro={forma:'',sit:'ativos',q:''};
 function _prots(){if(!ST.protocolos)ST.protocolos=[];return ST.protocolos}
 function _protAtivo(p){return p.situacao!=='concluido'&&p.situacao!=='cancelado'}
+function _protOS(p){return p&&p.orcId?ST.orcamentos.find(x=>x.id===p.orcId):null}
+function _protCliente(p){const o=_protOS(p);return p.cliente||(o?o.cliente:'')||'Processo avulso'}
 function _protRef(p){
-  const o=p.orcId?ST.orcamentos.find(x=>x.id===p.orcId):null;
-  return o?`OS ${o.num} — ${o.cliente}`:(p.cliente||'Processo avulso');
+  const o=_protOS(p);
+  return _protCliente(p)+(p.descricao?' — '+p.descricao:'')+(o?` (OS ${o.num})`:'');
 }
+function _osRotulo(o){return`OS ${o.num} — ${o.cliente}`}
 // Andamento = lista de ocorrências (data + texto). A mais recente é a fase atual; as anteriores formam o histórico.
 let _ocSeq=0;
 function _novoOcId(){return 'o'+Date.now().toString(36)+(_ocSeq++)}
@@ -4054,17 +4066,50 @@ function _syncCompProt(p){
 }
 
 // --- Modal protocolo ---
+function _osParaVincular(){
+  return ST.orcamentos.filter(o=>_orcValido(o)&&o.status!=='Cancelado')
+    .sort((a,b)=>(b.tipo==='os')-(a.tipo==='os')||String(b.num).localeCompare(String(a.num)));
+}
+function _protMostrarOS(o){
+  const info=document.getElementById('prot-os-info');
+  document.getElementById('prot-orc').value=o?o.id:'';
+  document.getElementById('prot-os-limpar').style.display=o?'inline-flex':'none';
+  if(o){
+    const srv=_srvResumo(o);
+    info.innerHTML=`<span style="color:var(--green)">✓ Vinculado à ${o.tipo==='os'?'OS':'orçamento'} <strong>${escH(o.num)}</strong> — ${escH(o.cliente)}</span>${srv?` · <span style="color:var(--gray-500)">${escH(srv.slice(0,80))}</span>`:''}`;
+  }else info.textContent='Opcional — deixe em branco para processo avulso (sem OS no app).';
+}
+function protBuscaOS(confirmar){
+  const v=document.getElementById('prot-busca-os').value.trim();
+  const lista=_osParaVincular();
+  let o=lista.find(x=>_osRotulo(x)===v);
+  if(!o&&confirmar&&v){
+    const q=norm(v);const achados=lista.filter(x=>norm(x.num).includes(q)||norm(x.cliente).includes(q));
+    if(achados.length===1)o=achados[0];
+  }
+  if(o){
+    document.getElementById('prot-busca-os').value=_osRotulo(o);
+    _protMostrarOS(o);
+    const cli=document.getElementById('prot-cliente');if(!cli.value.trim())cli.value=o.cliente;
+    const ds=document.getElementById('prot-desc');if(!ds.value.trim())ds.value=_srvResumo(o).slice(0,120);
+  }else if(!v){_protMostrarOS(null)}
+  else if(document.getElementById('prot-orc').value){
+    const at=ST.orcamentos.find(x=>x.id===document.getElementById('prot-orc').value);
+    if(!at||_osRotulo(at)!==v)_protMostrarOS(null);
+  }
+}
+function protDesvincularOS(){document.getElementById('prot-busca-os').value='';_protMostrarOS(null)}
 function _fillProtSelects(orcSel){
-  const os=ST.orcamentos.filter(o=>_orcValido(o)&&(o.tipo==='os'||o.id===orcSel)&&o.status!=='Cancelado')
-    .sort((a,b)=>String(b.num).localeCompare(String(a.num)));
-  document.getElementById('prot-orc').innerHTML='<option value="">— Processo avulso (sem OS no app) —</option>'+
-    os.map(o=>`<option value="${o.id}" ${o.id===orcSel?'selected':''}>OS ${escH(o.num)} — ${escH(o.cliente)}</option>`).join('');
+  const lista=_osParaVincular();
+  document.getElementById('dl-prot-os').innerHTML=lista.map(o=>`<option value="${escH(_osRotulo(o))}">${o.tipo==='os'?'OS':'Orçamento'} · ${escH(o.status||'')}</option>`).join('');
+  document.getElementById('dl-prot-cli').innerHTML=[...new Set([...ST.clientes.map(c=>c.nome),..._prots().map(p=>p.cliente)].filter(Boolean))].map(n=>`<option value="${escH(n)}">`).join('');
+  const o=orcSel?ST.orcamentos.find(x=>x.id===orcSel):null;
+  document.getElementById('prot-busca-os').value=o?_osRotulo(o):'';
+  _protMostrarOS(o);
   const orgaos=[...new Set(_prots().map(p=>p.orgao).filter(Boolean))];
   document.getElementById('dl-prot-orgao').innerHTML=orgaos.map(x=>`<option value="${escH(x)}">`).join('');
 }
 function _togProtCampos(){
-  const avulso=!document.getElementById('prot-orc').value;
-  document.getElementById('prot-cliente-box').style.display=avulso?'block':'none';
   document.getElementById('prot-exig-box').style.display=document.getElementById('prot-sit').value==='exigencia'?'block':'none';
 }
 function protSitMudou(){
@@ -4078,7 +4123,9 @@ function abrirProtocolo(id,orcId){
   document.getElementById('prot-id').value=p?p.id:'';
   document.getElementById('mprot-title').textContent=p?`🏛 Protocolo ${p.numero||''}`:'🏛 Novo Protocolo';
   _fillProtSelects(p?p.orcId:(orcId||''));
-  document.getElementById('prot-cliente').value=p?.cliente||'';
+  const _oVinc=p?_protOS(p):(orcId?ST.orcamentos.find(x=>x.id===orcId):null);
+  document.getElementById('prot-cliente').value=p?(p.cliente||(_oVinc?_oVinc.cliente:'')):(_oVinc?_oVinc.cliente:'');
+  document.getElementById('prot-desc').value=p?(p.descricao||''):(_oVinc?_srvResumo(_oVinc).slice(0,120):'');
   document.getElementById('prot-orgao').value=p?.orgao||'';
   document.getElementById('prot-numero').value=p?.numero||'';
   document.getElementById('prot-forma').value=p?.forma||'onr';
@@ -4125,8 +4172,9 @@ function salvarProtocolo(){
   const numero=document.getElementById('prot-numero').value.trim();
   const orgao=document.getElementById('prot-orgao').value.trim();
   const cliente=document.getElementById('prot-cliente').value.trim();
+  const descricao=document.getElementById('prot-desc').value.trim();
   if(!numero&&!orgao){alert('Informe ao menos o órgão/cartório ou o nº do protocolo.');return}
-  if(!orcId&&!cliente){alert('Informe o cliente/descrição do processo avulso.');return}
+  if(!orcId&&!cliente&&!descricao){alert('Informe o cliente ou a descrição do processo.');return}
   const sit=document.getElementById('prot-sit').value;
   const prazoExig=sit==='exigencia'?document.getElementById('prot-exig-data').value:'';
   if(sit==='exigencia'&&!prazoExig){alert('Informe a data limite para cumprir a exigência.');return}
@@ -4135,7 +4183,7 @@ function salvarProtocolo(){
   const p=ant||{id:'p'+Date.now().toString(36),hist:[],criadoEm:today()};
   const mudouSit=!ant||ant.situacao!==sit;
   const proxEtapa=document.getElementById('prot-prox').value.trim(),proxData=document.getElementById('prot-prox-data').value;
-  Object.assign(p,{orcId,cliente:orcId?'':cliente,orgao,numero,forma:document.getElementById('prot-forma').value,
+  Object.assign(p,{orcId,cliente,descricao,orgao,numero,forma:document.getElementById('prot-forma').value,
     dataEntrada:document.getElementById('prot-data').value||today(),situacao:sit,prazoExig,proxEtapa,proxData});
   if(mudouSit&&ant)_ocEdit.push({id:_novoOcId(),data:today(),texto:(PROT_SIT[sit]||{}).t||sit,tipo:'sit'});
   p.oc=_ocEdit.map(({_i,...o})=>o);
@@ -4222,7 +4270,8 @@ function renderProtocolos(){
     const px=protProxInfo(p);
     return`<div style="display:flex;gap:12px;padding:12px 18px;border-bottom:1px solid var(--gray-100);border-left:4px solid ${s.c};flex-wrap:wrap;align-items:center">
       <div style="flex:1;min-width:210px;cursor:pointer" onclick="abrirProtocolo('${p.id}')">
-        <div style="font-size:13px;font-weight:600;color:var(--navy)">${escH(_protRef(p))}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--navy);display:flex;gap:6px;flex-wrap:wrap;align-items:center">${escH(_protCliente(p))}${_protOS(p)?`<span class="chip badge-navy" style="font-size:9.5px">OS ${escH(_protOS(p).num)}</span>`:''}</div>
+        ${p.descricao?`<div style="font-size:12px;color:var(--gray-700);margin-top:1px">${escH(p.descricao)}</div>`:''}
         <div style="font-size:12px;color:var(--gray-700);margin-top:2px">🏛 ${escH(p.orgao||'—')} · <strong>Prot. ${escH(p.numero||'—')}</strong> · entrada ${fmtD(p.dataEntrada)}</div>
         ${p.fase||p.proxEtapa||p.proxData?`<div style="margin-top:7px;padding:8px 10px;background:var(--gray-50);border-radius:8px;border-left:3px solid var(--navy)">
           ${p.fase?`<div style="font-size:12.5px;color:var(--navy)">📍 <span style="font-size:11px;color:var(--gray-500)">${fmtD(p.faseData)}</span> — <strong>${escH(p.fase)}</strong></div>`:''}

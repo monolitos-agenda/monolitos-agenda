@@ -1,4 +1,4 @@
-const CACHE = 'monolitos-v69';
+const CACHE = 'monolitos-v70';
 const ASSETS = ['./','./index.html','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install', e => {
