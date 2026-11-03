@@ -2040,6 +2040,12 @@ function initParcs(lista){parcCnt=0;document.getElementById('parcs').innerHTML='
     ${parcCnt>1?`<button class="btn btn-danger btn-sm" onclick="rmParc('${id}')">✕</button>`:'<div style="width:26px"></div>'}`;
   document.getElementById('parcs').appendChild(div);calcParcs();
 }
+// Remove uma parcela (a função faltava: o botão ✕ não fazia nada)
+function rmParc(id){
+  const el=document.querySelector('#parcs > [id="'+id+'"]');
+  if(el)el.remove();
+  calcParcs();
+}
 function addParcAVista(){
   parcCnt=0;
   const cont=document.getElementById('parcs');
