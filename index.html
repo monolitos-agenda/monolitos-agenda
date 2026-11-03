@@ -1369,6 +1369,24 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
   </div>
 </div></div>
 
+<!-- MODAL REGISTRAR ENTREGA -->
+<div class="modal-overlay" id="modal-entrega" style="display:none">
+<div class="modal" style="max-width:440px">
+  <div class="modal-header">
+    <div><div class="modal-title" id="ment-title">✅ Registrar entrega</div><div style="font-size:12px;color:var(--gray-500);margin-top:2px" id="ment-sub"></div></div>
+    <button class="btn btn-ghost" onclick="closeM('modal-entrega')">✕</button>
+  </div>
+  <div class="modal-body">
+    <input type="hidden" id="ment-id">
+    <div class="form-group"><label>Data da entrega ao cliente</label><input class="form-control" type="date" id="ment-data"></div>
+    <div id="ment-info" style="margin-top:10px;font-size:12px;border-radius:var(--radius);padding:9px 12px"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-outline" onclick="closeM('modal-entrega')">Cancelar</button>
+    <button class="btn btn-green" onclick="confirmarEntrega()">✅ Confirmar entrega</button>
+  </div>
+</div></div>
+
 <!-- MODAL PRAZOS PADRÃO -->
 <div class="modal-overlay" id="modal-cfg-prazos" style="display:none">
 <div class="modal" style="max-width:420px">
@@ -3683,9 +3701,9 @@ function prazoInfo(o){
   if(!o||!o.prazo)return null;
   const p=o.prazo,hoje=today();
   if(p.entregueEm){
-    const atraso=p.entregueEm>p.prevista?diasUteisEntre(p.prevista,p.entregueEm):0;
+    const atraso=!p.retroativo&&p.entregueEm>p.prevista?diasUteisEntre(p.prevista,p.entregueEm):0;
     return{nivel:'entregue',cor:'var(--green)',bg:'var(--green-light)',
-      txt:'✅ Entregue '+fmtD(p.entregueEm).slice(0,5),sub:atraso>0?`${atraso} d.u. após o prazo`:'dentro do prazo',atraso};
+      txt:'✅ Entregue '+fmtD(p.entregueEm).slice(0,5),sub:p.retroativo?'':(atraso>0?`${atraso} d.u. após o prazo`:'dentro do prazo'),atraso};
   }
   if(p.prevista<hoje){
     const n=Math.max(1,diasUteisEntre(p.prevista,hoje));
@@ -3803,15 +3821,16 @@ function abrirPrazo(id,novo){
   else{be.textContent='✅ Entregue';be.onclick=()=>salvarPrazo(true);}
   openM('modal-prazo');
 }
-function _entregarOrc(o){
-  o.prazo.entregueEm=today();
+function _entregarOrc(o,dataEnt){
+  const dE=dataEnt||today();
+  o.prazo.entregueEm=dE;
   o.prazo.etapa='pronto';
   o.entregue=true;o.motivoNaoEntrega='';
   const _oc=_ocsOS(o);
-  if(!_oc.some(x=>x.data===today()&&/entregue/i.test(x.texto)))_oc.push({id:_novoOcId(),data:today(),texto:'Serviço entregue ao cliente'});
+  if(!_oc.some(x=>x.data===dE&&/entregue/i.test(x.texto)))_oc.push({id:_novoOcId(),data:dE,texto:'Serviço entregue ao cliente'});
   const _at=_ocAtiva(_oc);o.andamento=_at?_at.texto:'';o.andamentoData=_at?_at.data:'';
   const tot=parseFloat(o.valor||0);
-  if(o.status!=='Concluído'&&tot>0&&recPorOrc(o.id)>=tot){o.status='Concluído';o.dataConclusao=o.dataConclusao||today();}
+  if(o.status!=='Concluído'&&tot>0&&recPorOrc(o.id)>=tot){o.status='Concluído';o.dataConclusao=o.dataConclusao||dE;}
 }
 function receberDaAgenda(id){
   abrirRec_orc(id);
@@ -3841,7 +3860,7 @@ function salvarPrazo(acao){
     criadoEm:ant.criadoEm||today(),entregueEm:ant.entregueEm||''};
   if(o.tipo!=='os')o.tipo='os';
   if(acao===true){
-    _entregarOrc(o);
+    closeM('modal-prazo');_aposAlterarPrazo(o);marcarEntregue(o.id);return;
   }else if(acao==='reabrir'){
     o.prazo.entregueEm='';o.prazo.etapa='pronto';
     if(o.status==='Concluído')o.entregue=false;
@@ -3860,10 +3879,30 @@ function removerPrazo(){
 }
 function marcarEntregue(id){
   const o=ST.orcamentos.find(x=>x.id===id);if(!o)return;
-  if(!o.prazo){abrirPrazo(id);return}
-  if(!confirm(`Confirmar entrega da OS ${o.num} — ${o.cliente}?`))return;
-  _entregarOrc(o);_aposAlterarPrazo(o);
-  _toastPrazo('✅ Serviço marcado como entregue');
+  document.getElementById('ment-id').value=id;
+  document.getElementById('ment-title').textContent='✅ Registrar entrega — OS '+o.num;
+  document.getElementById('ment-sub').textContent=o.cliente;
+  document.getElementById('ment-data').value=today();
+  const falta=Math.max(0,parseFloat(o.valor||0)-recPorOrc(o.id));
+  const info=document.getElementById('ment-info');
+  if(falta>0.009){info.style.background='var(--amber-light)';info.style.color='var(--amber)';
+    info.innerHTML=`Ainda falta receber <strong>${fmtM(falta)}</strong>. A OS vai para <strong>“Entregues — aguardando pagamento”</strong> e sai da lista quando o pagamento for registrado.`;}
+  else{info.style.background='var(--green-light)';info.style.color='var(--green)';
+    info.innerHTML='Pagamento completo — a OS será <strong>encerrada</strong> e irá para o <strong>Acervo</strong>.';}
+  openM('modal-entrega');
+}
+function confirmarEntrega(){
+  const id=document.getElementById('ment-id').value;
+  const o=ST.orcamentos.find(x=>x.id===id);if(!o)return;
+  const d=document.getElementById('ment-data').value||today();
+  if(d>today()){alert('A data da entrega não pode ser no futuro.');return}
+  if(!o.prazo){o.prazo=_novoPrazo(o);o.prazo.retroativo=true;}
+  if(o.tipo!=='os')o.tipo='os';
+  _entregarOrc(o,d);
+  closeM('modal-entrega');
+  _aposAlterarPrazo(o);
+  if(document.getElementById('view-orcamentos').classList.contains('active'))renderOrc();
+  _toastPrazo(osEncerrada(o)?'✅ Entregue e encerrada — foi para o Acervo':'✅ Entrega registrada em '+fmtD(d));
 }
 function _toastPrazo(t){
   const b=document.createElement('div');
@@ -3921,7 +3960,7 @@ function _srvRow(o){
         <span class="chip" style="font-size:10px;background:${p&&p.entregueEm&&pct<100?'var(--amber-light)':'var(--gray-50)'};color:${pct>=100?'var(--green)':(p&&p.entregueEm?'var(--amber)':'var(--gray-500)')}">💰 ${pct}% pago${p&&p.entregueEm&&pct<100?' · falta '+fmtM(tot-rec):''}</span>
         ${protChipsOS(o.id)}
       </div>
-      ${p?`<div style="font-size:11px;color:var(--gray-400);margin-top:4px">Início ${fmtD(p.inicio)} → Entrega <strong style="color:var(--gray-700)">${fmtD(p.prevista)}</strong> (${_diaSemana(p.prevista)}) · ${p.dias} d.u.${p.obs?' · '+escH(p.obs.slice(0,60)):''}</div>`:''}
+      ${p&&!p.retroativo?`<div style="font-size:11px;color:var(--gray-400);margin-top:4px">Início ${fmtD(p.inicio)} → Entrega <strong style="color:var(--gray-700)">${fmtD(p.prevista)}</strong> (${_diaSemana(p.prevista)}) · ${p.dias} d.u.${p.obs?' · '+escH(p.obs.slice(0,60)):''}</div>`:''}
       ${(()=>{const ord=_ocOrdenadas(_ocsOS(o)),at=ord[0],ant=ord[1],px=osProxInfo(o);
         if(!at&&!o.proxEtapa&&!o.proxData)return'';
         return`<div style="margin-top:7px;padding:8px 10px;background:var(--gray-50);border-radius:8px;border-left:3px solid var(--navy)">
@@ -3939,7 +3978,7 @@ function _srvRow(o){
         <button class="btn btn-ghost btn-sm" onclick="abrirProtocolo(null,'${o.id}')" title="Novo protocolo desta OS">🏛</button>
         <button class="btn btn-ghost btn-sm" onclick="addPautaDe('os','${o.id}')" title="Pôr na pauta de hoje">📝</button>
         ${!p?`<button class="btn btn-gold btn-sm" onclick="abrirPrazo('${o.id}')">Definir prazo</button>`:`<button class="btn btn-ghost btn-sm" onclick="abrirPrazo('${o.id}')" title="Editar prazo">✏</button>`}
-        ${p&&!p.entregueEm?`<button class="btn btn-green btn-sm" onclick="marcarEntregue('${o.id}')" title="Marcar como entregue">✅</button>`:''}
+        ${!p||!p.entregueEm?`<button class="btn btn-green btn-sm" onclick="marcarEntregue('${o.id}')" title="Registrar entrega">✅</button>`:''}
       </div>
     </div>
   </div>`;
