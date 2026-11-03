@@ -206,6 +206,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
     <div class="nav-label">Principal</div>
     <button class="nav-item active" onclick="nav('painel')"><span class="nav-icon">◈</span>Painel</button>
     <button class="nav-item" onclick="nav('orcamentos')"><span class="nav-icon">◷</span>Orçamentos</button>
+    <button class="nav-item" onclick="nav('acervo')"><span class="nav-icon">🗄</span>Acervo (encerrados)</button>
     <button class="nav-item" onclick="nav('clientes')"><span class="nav-icon">◉</span>Clientes</button>
     <div class="nav-label">Financeiro</div>
     <button class="nav-item" onclick="nav('recebimentos')"><span class="nav-icon">◈</span>Recebimentos</button>
@@ -303,6 +304,26 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
       <div class="card"><div class="table-wrap">
         <table><thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Valor</th><th>Recebido</th><th>Status</th><th>Ações</th></tr></thead>
         <tbody id="tbody-orc"></tbody></table>
+      </div></div>
+    </div>
+
+    <!-- ACERVO (serviços encerrados: entregues e pagos) -->
+    <div class="view" id="view-acervo">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:9px">
+        <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
+          <div class="search-bar"><span class="search-icon">⌕</span><input class="form-control search-input" id="acv-busca" placeholder="Nº, cliente ou serviço..." oninput="renderAcervo()" style="width:230px"></div>
+          <select class="form-control" id="acv-ano" onchange="renderAcervo()" style="width:150px"></select>
+          <select class="form-control" id="acv-tipo" onchange="renderAcervo()" style="width:170px">
+            <option value="encerrados">Entregues e pagos</option>
+            <option value="cancelados">Cancelados</option>
+            <option value="todos">Todos</option>
+          </select>
+        </div>
+        <div id="acv-resumo" style="font-size:12.5px;color:var(--gray-500)"></div>
+      </div>
+      <div class="card"><div class="table-wrap">
+        <table><thead><tr><th>Nº</th><th>Cliente / Serviço</th><th>Entrega</th><th>Valor</th><th>Ações</th></tr></thead>
+        <tbody id="tbody-acervo"></tbody></table>
       </div></div>
     </div>
 
@@ -1102,10 +1123,10 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
 
 <!-- MODAL ANDAMENTO -->
 <div class="modal-overlay" id="modal-andamento" style="display:none">
-<div class="modal" style="max-width:540px">
+<div class="modal" style="max-width:560px">
   <div class="modal-header">
     <div>
-      <div class="modal-title" id="mand-title">📋 Anotações de Andamento</div>
+      <div class="modal-title" id="mand-title">📋 Andamento do Serviço</div>
       <div id="mand-sub" style="font-size:12px;color:var(--gray-400);margin-top:3px"></div>
     </div>
     <button class="btn btn-ghost" onclick="closeM('modal-andamento')">✕</button>
@@ -1113,19 +1134,23 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
   <div class="modal-body">
     <input type="hidden" id="mand-orc-id">
     <div class="form-group" style="margin-bottom:12px">
-      <label>Status atual do serviço</label>
-      <textarea class="form-control" id="mand-texto" rows="5" 
-        placeholder="Ex: Levantamento de campo concluído em 01/04. Aguardando memorial descritivo. Entrega prevista para 10/04..."
-        style="text-align:left;line-height:1.7"></textarea>
+      <label>📍 Andamento do serviço</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <input class="form-control" type="date" id="and-oc-data" style="width:150px;flex:0 0 auto">
+        <input class="form-control" id="and-oc-texto" list="dl-and-fase" placeholder="Nova ocorrência (ex: Levantamento agendado para sábado 07/11)" style="flex:1;min-width:200px" onkeydown="if(event.key==='Enter'){event.preventDefault();andOcAdicionar()}">
+        <button type="button" class="btn btn-gold btn-sm" onclick="andOcAdicionar()">+ Inserir</button>
+      </div>
+      <datalist id="dl-and-fase"></datalist>
+      <div id="and-oc-lista" style="margin-top:8px;max-height:240px;overflow-y:auto"></div>
     </div>
-    <div id="mand-historico" style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px;max-height:160px;overflow-y:auto">
-      <div style="font-size:10.5px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Histórico de Anotações</div>
-      <div id="mand-historico-list" style="font-size:12px;color:var(--gray-600);line-height:1.8"></div>
+    <div class="form-grid form-grid-2" style="gap:10px">
+      <div class="form-group"><label>➡ Próxima etapa</label><input class="form-control" id="and-prox" list="dl-and-fase" placeholder="Ex: Levantamento de campo"></div>
+      <div class="form-group"><label>Data prevista / verificar em</label><input class="form-control" type="date" id="and-prox-data"><div style="font-size:10.5px;color:var(--gray-400);margin-top:3px">Gera lembrete (notificação) nesse dia.</div></div>
     </div>
   </div>
   <div class="modal-footer">
     <button class="btn btn-outline" onclick="closeM('modal-andamento')">Fechar</button>
-    <button class="btn btn-gold" onclick="salvarAndamento()">Salvar Anotação</button>
+    <button class="btn btn-gold" onclick="salvarAndamento()">Salvar</button>
   </div>
 </div></div>
 
@@ -1889,10 +1914,10 @@ function nav(n){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-'+n).classList.add('active');
-  const T={painel:'Painel',orcamentos:'Orçamentos',clientes:'Clientes',recebimentos:'Recebimentos',custos:'Custos',configuracoes:'Empresa e Banco',sincronizar:'Sincronizar',relatorios:'Faturamento',agenda:'Agenda de Serviços',protocolos:'Protocolos',sigef:'Vértices SIGEF',vistoria:'Vistoria Cadastral',consulta:'Consulta CPF/CNPJ'};
+  const T={painel:'Painel',orcamentos:'Orçamentos',clientes:'Clientes',recebimentos:'Recebimentos',custos:'Custos',configuracoes:'Empresa e Banco',sincronizar:'Sincronizar',relatorios:'Faturamento',acervo:'Acervo — Serviços Encerrados',agenda:'Agenda de Serviços',protocolos:'Protocolos',sigef:'Vértices SIGEF',vistoria:'Vistoria Cadastral',consulta:'Consulta CPF/CNPJ'};
   document.getElementById('page-title').textContent=T[n]||n;
   document.querySelectorAll('.nav-item').forEach(b=>{if(b.textContent.trim().startsWith((T[n]||'').slice(0,5)))b.classList.add('active')});
-  const R={painel:renderDash,agenda:renderAgenda,servicos:renderServicos,orcamentos:renderOrc,clientes:renderCli,recebimentos:renderRec,custos:renderCus,relatorios:renderRel,configuracoes:renderCfg,financeiro:()=>{},protocolos:renderProtocolos,sigef:renderSigef,vistoria:initVistoria,consulta:initConsulta};
+  const R={painel:renderDash,agenda:renderAgenda,servicos:renderServicos,orcamentos:renderOrc,clientes:renderCli,recebimentos:renderRec,custos:renderCus,relatorios:renderRel,configuracoes:renderCfg,financeiro:()=>{},acervo:renderAcervo,protocolos:renderProtocolos,sigef:renderSigef,vistoria:initVistoria,consulta:initConsulta};
   if(R[n])R[n]();
 }
 function closeM(id){document.getElementById(id).style.display='none'}
@@ -2588,10 +2613,19 @@ function autoPreencherCliente(val){
 
 // ===== ORÇAMENTOS =====
 function norm(t){return(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')}
+// Encerrado = concluído, entregue e totalmente pago (vai para o Acervo)
+function osEncerrada(o){
+  if(!o||o.status!=='Concluído'||o.entregue===false)return false;
+  if(o.prazo&&!o.prazo.entregueEm)return false;
+  return parseFloat(o.valor||0)-recPorOrc(o.id)<=0.009;
+}
 function renderOrc(){
   const s=norm(document.getElementById('search-orc')?.value||'');
   const f=document.getElementById('filter-st')?.value||'';
+  const qtdAcervo=ST.orcamentos.filter(o=>_orcValido(o)&&(osEncerrada(o)||o.status==='Cancelado')).length;
   const list=ST.orcamentos.filter(o=>{
+    // Sem busca e sem filtro: mostra só o que está ativo (encerrados e cancelados ficam no Acervo)
+    if(!s&&!f&&(osEncerrada(o)||o.status==='Cancelado'))return false;
     const matchStatus=!f||o.status===f;
     if(!s)return matchStatus;
     const matchBase=norm(o.num).includes(s)||norm(o.cliente).includes(s)||norm(o.matricula).includes(s);
@@ -2601,17 +2635,19 @@ function renderOrc(){
   });
   const tbody=document.getElementById('tbody-orc');
   if(!list.length){tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Nenhum orçamento</div></div></td></tr>';return}
+  const rodapeAcervo=(!s&&!f&&qtdAcervo)?`<tr><td colspan="7" style="text-align:center;padding:12px;font-size:12px;color:var(--gray-500);background:var(--gray-50)">🗄 ${qtdAcervo} serviço(s) encerrado(s) ou cancelado(s) no <a href="#" onclick="nav('acervo');return false" style="color:var(--blue);font-weight:600">Acervo</a> — a busca acima também os encontra.</td></tr>`:'';
   tbody.innerHTML=list.map(o=>{const r=recPorOrc(o.id);const p=o.valor>0?Math.round((r/o.valor)*100):0;
     const dispNum=o.num&&o.num.length<20?o.num:(o.num?o.num.slice(-8):'—');
     const entregaBadge=o.status==='Concluído'?(o.entregue===false?'<br><span class="chip" style="background:var(--amber-light);color:var(--amber);font-size:9.5px;margin-top:2px">📦 Não entregue</span>':'<br><span class="chip" style="background:var(--green-light);color:var(--green);font-size:9.5px;margin-top:2px">✅ Entregue</span>'):'';
     const rowStyle=o.status==='Concluído'&&o.entregue!==false?'opacity:.65':'';
-    return`<tr style="cursor:pointer;${rowStyle}" onclick="verOrc('${o.id}')"><td><strong style="color:var(--navy)">${dispNum}</strong>${o.tipo==='os'?'<br><span class="chip" style="background:#e6f0fb;color:#1a4a7a;font-size:9.5px;margin-top:2px">OS</span>':''}${entregaBadge}</td>
+    const seloAcervo=osEncerrada(o)?'<br><span class="chip" style="background:var(--gray-100);color:var(--gray-700);font-size:9.5px;margin-top:2px">🗄 Acervo</span>':'';
+    return`<tr style="cursor:pointer;${rowStyle}" onclick="verOrc('${o.id}')"><td><strong style="color:var(--navy)">${dispNum}</strong>${o.tipo==='os'?'<br><span class="chip" style="background:#e6f0fb;color:#1a4a7a;font-size:9.5px;margin-top:2px">OS</span>':''}${entregaBadge}${seloAcervo}</td>
     <td style="font-size:11px;color:var(--gray-500)">${fmtD(o.data)}${o.status==='Concluído'&&o.dataConclusao?`<br><span style="color:var(--green)">✓ ${fmtD(o.dataConclusao)}</span>`:''}</td><td>${o.cliente}</td>
     <td><strong>${fmtM(o.valor)}</strong></td>
     <td><div style="min-width:78px"><div style="font-size:11px;color:var(--green);margin-bottom:3px">${fmtM(r)} (${p}%)</div><div class="progress-bar"><div class="progress-fill" style="width:${p}%"></div></div></div></td>
     <td>${stB(o.status)}${prazoChip(o)?'<br><span style="display:inline-block;margin-top:3px">'+prazoChip(o)+'</span>':''}</td>
     <td onclick="event.stopPropagation()"><div style="display:flex;gap:2px"><button class="btn btn-ghost btn-sm" onclick="abrirFinanceiro('${o.id}')" title="Financeiro">💰</button>${o.tipo==='os'&&o.status!=='Cancelado'?`<button class="btn btn-ghost btn-sm" onclick="abrirPrazo('${o.id}')" title="Prazo de entrega">📦</button>`:''}<button class="btn btn-ghost btn-sm" onclick="abrirNovoCompromisso('${o.num}')" title="Agendar">📅</button><button class="btn btn-ghost btn-sm" onclick="editarOrc('${o.id}')">✏</button><button class="btn btn-ghost btn-sm" onclick="printById('${o.id}')">🖨</button><button class="btn btn-danger btn-sm" onclick="excluirOrc('${o.id}')">✕</button></div></td></tr>`;
-  }).join('');
+  }).join('')+rodapeAcervo;
 }
 
 // ===== CLIENTES =====
@@ -2835,6 +2871,7 @@ function salvarRec(){
   const _prazoNovo=atualizarStatusAutoOrc(orcId);
   save();closeM('modal-rec');renderRec();renderDash();
   if(gr)printRecibo(r);
+  if(document.getElementById('view-agenda').classList.contains('active'))renderAgenda();
   if(_prazoNovo)setTimeout(()=>abrirPrazo(orcId,true),gr?900:250);
   // Return to financeiro panel if opened from there
   if(window._recAfterSave){
@@ -3694,7 +3731,8 @@ function prazoBlocoHTML(o,pre){
 function _syncCompPrazo(o){
   if(!ST.compromissos)ST.compromissos=[];
   // Remove os compromissos automáticos anteriores desta OS
-  ST.compromissos=ST.compromissos.filter(c=>!(c.auto&&c.orcId===o.id));
+  ST.compromissos=ST.compromissos.filter(c=>!(c.auto&&c.orcId===o.id&&!String(c.id).startsWith('osx-')));
+  _syncCompOSProx(o);
   if(!_prazoAtivo(o))return;
   const p=o.prazo,ref=`${o.num} — ${o.cliente}`,srv=_srvResumo(o).slice(0,140);
   // lembrete '60' (hora 08:00 -> push às 07:00): a função verificarLembretes só notifica compromissos com lembrete.
@@ -3769,8 +3807,17 @@ function _entregarOrc(o){
   o.prazo.entregueEm=today();
   o.prazo.etapa='pronto';
   o.entregue=true;o.motivoNaoEntrega='';
+  const _oc=_ocsOS(o);
+  if(!_oc.some(x=>x.data===today()&&/entregue/i.test(x.texto)))_oc.push({id:_novoOcId(),data:today(),texto:'Serviço entregue ao cliente'});
+  const _at=_ocAtiva(_oc);o.andamento=_at?_at.texto:'';o.andamentoData=_at?_at.data:'';
   const tot=parseFloat(o.valor||0);
   if(o.status!=='Concluído'&&tot>0&&recPorOrc(o.id)>=tot){o.status='Concluído';o.dataConclusao=o.dataConclusao||today();}
+}
+function receberDaAgenda(id){
+  abrirRec_orc(id);
+  window._recAfterSave=null; // continua na Agenda depois de salvar
+  const o=ST.orcamentos.find(x=>x.id===id);
+  if(o){const falta=Math.max(0,parseFloat(o.valor||0)-recPorOrc(id));const v=document.getElementById('rec-valor');if(v&&!v.value)v.value=falta.toFixed(2);if(typeof updRecPrev==='function')updRecPrev();}
 }
 function _aposAlterarPrazo(o){
   _syncCompPrazo(o);
@@ -3849,7 +3896,8 @@ function _listasPrazos(){
   ativos.forEach(o=>{const i=prazoInfo(o);(g[i.nivel]||g.ok).push(o)});
   const semPrazo=os.filter(_semPrazoPendente);
   const entregues=os.filter(o=>o.prazo&&o.prazo.entregueEm).sort((a,b)=>b.prazo.entregueEm.localeCompare(a.prazo.entregueEm));
-  return{ativos,g,semPrazo,entregues};
+  const aguardPag=entregues.filter(o=>o.status!=='Cancelado'&&parseFloat(o.valor||0)-recPorOrc(o.id)>0.009);
+  return{ativos,g,semPrazo,entregues,aguardPag};
 }
 function setAgSrvTab(t){
   _agSrvTab=t;
@@ -3870,17 +3918,24 @@ function _srvRow(o){
         ${p?`<span class="chip badge-navy" style="font-size:10px">${PRAZO_TIPOS[p.tipo]||''}</span>`:''}
         ${p&&!p.entregueEm?`<span class="chip" style="font-size:10px;background:var(--gray-100);color:var(--gray-700)">${PRAZO_ETAPAS[p.etapa]||''}</span>`:''}
         ${p&&p.protocolo?`<span class="chip badge-blue" style="font-size:10px">🏛 ${escH(p.protocolo.slice(0,50))}</span>`:''}
-        <span class="chip" style="font-size:10px;background:var(--gray-50);color:${pct>=100?'var(--green)':'var(--gray-500)'}">💰 ${pct}% pago</span>
+        <span class="chip" style="font-size:10px;background:${p&&p.entregueEm&&pct<100?'var(--amber-light)':'var(--gray-50)'};color:${pct>=100?'var(--green)':(p&&p.entregueEm?'var(--amber)':'var(--gray-500)')}">💰 ${pct}% pago${p&&p.entregueEm&&pct<100?' · falta '+fmtM(tot-rec):''}</span>
         ${protChipsOS(o.id)}
       </div>
       ${p?`<div style="font-size:11px;color:var(--gray-400);margin-top:4px">Início ${fmtD(p.inicio)} → Entrega <strong style="color:var(--gray-700)">${fmtD(p.prevista)}</strong> (${_diaSemana(p.prevista)}) · ${p.dias} d.u.${p.obs?' · '+escH(p.obs.slice(0,60)):''}</div>`:''}
-      ${o.andamento?`<div style="font-size:11px;color:var(--blue);margin-top:3px">📌 ${escH(o.andamento.slice(0,80))}</div>`:''}
+      ${(()=>{const ord=_ocOrdenadas(_ocsOS(o)),at=ord[0],ant=ord[1],px=osProxInfo(o);
+        if(!at&&!o.proxEtapa&&!o.proxData)return'';
+        return`<div style="margin-top:7px;padding:8px 10px;background:var(--gray-50);border-radius:8px;border-left:3px solid var(--navy)">
+          ${at?`<div style="font-size:12.5px;color:var(--navy)">📍 <span style="font-size:11px;color:var(--gray-500)">${fmtD(at.data)}</span> — <strong>${escH(at.texto)}</strong></div>`:''}
+          ${ant?`<div style="font-size:11px;color:var(--gray-400);margin-top:2px;opacity:.8">${fmtD(ant.data)} — ${escH(ant.texto.slice(0,90))}${ord.length>2?` <span style="font-style:italic">(+${ord.length-2} no histórico)</span>`:''}</div>`:''}
+          ${o.proxEtapa||o.proxData?`<div style="font-size:11.5px;color:var(--gray-700);margin-top:3px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">➡ ${escH(o.proxEtapa||'Próxima verificação')}${px?`<span class="chip" style="font-size:10px;background:${px.bg};color:${px.cor}">${px.txt}</span>`:''}</div>`:''}
+        </div>`;})()}
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
       ${i?`<span style="background:${i.bg};color:${i.cor};font-weight:600;font-size:12px;padding:5px 11px;border-radius:20px;white-space:nowrap">${i.txt}</span>${i.sub?`<span style="font-size:10.5px;color:var(--gray-400)">${i.sub}</span>`:''}`:`<span style="background:var(--gray-100);color:var(--gray-500);font-size:11.5px;padding:5px 11px;border-radius:20px">Sem prazo</span>`}
       <div style="display:flex;gap:2px">
         <button class="btn btn-ghost btn-sm" onclick="abrirAndamento('${o.id}')" title="Anotar andamento">📋</button>
         <button class="btn btn-ghost btn-sm" onclick="abrirFinanceiro('${o.id}')" title="Financeiro">💰</button>
+        ${p&&p.entregueEm&&pct<100?`<button class="btn btn-gold btn-sm" onclick="receberDaAgenda('${o.id}')" title="Registrar o pagamento que falta">💰 Receber</button>`:''}
         <button class="btn btn-ghost btn-sm" onclick="abrirProtocolo(null,'${o.id}')" title="Novo protocolo desta OS">🏛</button>
         <button class="btn btn-ghost btn-sm" onclick="addPautaDe('os','${o.id}')" title="Pôr na pauta de hoje">📝</button>
         ${!p?`<button class="btn btn-gold btn-sm" onclick="abrirPrazo('${o.id}')">Definir prazo</button>`:`<button class="btn btn-ghost btn-sm" onclick="abrirPrazo('${o.id}')" title="Editar prazo">✏</button>`}
@@ -3901,7 +3956,7 @@ function renderAgendaServicos(){
       :'<div class="empty-state" style="padding:22px"><div class="empty-icon">✅</div><div class="empty-title">Nenhuma entrega registrada ainda</div></div>';
     return;
   }
-  const total=L.ativos.length+L.semPrazo.length;
+  const total=L.ativos.length+L.semPrazo.length+L.aguardPag.length;
   if(!total){
     el.innerHTML='<div class="empty-state" style="padding:22px"><div class="empty-icon">🔧</div><div class="empty-title">Nenhum serviço aguardando entrega</div><div class="empty-text">Ao registrar o pagamento inicial de um orçamento, ele vira Ordem de Serviço e aparece aqui com a data de entrega prevista.</div></div>';
     return;
@@ -3912,7 +3967,8 @@ function renderAgendaServicos(){
     _grupoHTML('Vencendo em breve',L.g.urgente,'var(--amber)')+
     _grupoHTML('Próximos 5 dias úteis',L.g.semana,'var(--blue)')+
     _grupoHTML('Demais prazos',L.g.ok,'var(--green)')+
-    _grupoHTML('Sem prazo definido',L.semPrazo,'var(--gray-500)');
+    _grupoHTML('Sem prazo definido',L.semPrazo,'var(--gray-500)')+
+    _grupoHTML('✅ Entregues — aguardando pagamento',L.aguardPag,'var(--amber)');
 }
 
 // --- Painel: alerta + métrica + badge no menu ---
@@ -3921,6 +3977,7 @@ function renderPainelPrazos(){
   const crit=[...L.g.atrasado,...L.g.hoje,...L.g.urgente];
   const exig=(ST.protocolos||[]).filter(p=>{const i=protInfoExig(p);return i&&i.nivel!=='ok'});
   const verif=(ST.protocolos||[]).filter(p=>{const i=protProxInfo(p);return i&&(i.nivel==='vencido'||i.nivel==='hoje')});
+  const verifOS=ST.orcamentos.filter(o=>_orcValido(o)&&(()=>{const i=osProxInfo(o);return i&&(i.nivel==='vencido'||i.nivel==='hoje')})());
   const nbp=document.getElementById('nav-prot-badge');
   if(nbp){const n=new Set([...(ST.protocolos||[]).filter(p=>p.situacao==='exigencia'),...verif].map(p=>p.id)).size;nbp.style.display=n?'inline-block':'none';nbp.textContent=n;}
   const m=document.getElementById('m-prazos'),sub=document.getElementById('m-prazos-sub');
@@ -3933,7 +3990,7 @@ function renderPainelPrazos(){
   const nb=document.getElementById('nav-prazo-badge');
   if(nb){nb.style.display=crit.length?'inline-block':'none';nb.textContent=crit.length;}
   const al=document.getElementById('painel-prazos-alerta');if(!al)return;
-  if(!crit.length&&!exig.length&&!verif.length){al.innerHTML='';return}
+  if(!crit.length&&!exig.length&&!verif.length&&!verifOS.length){al.innerHTML='';return}
   const temAtraso=L.g.atrasado.length>0||exig.some(p=>protInfoExig(p).nivel!=='urgente');
   al.innerHTML=`<div style="background:${temAtraso?'var(--red-light)':'var(--amber-light)'};border:1px solid ${temAtraso?'#e8b4b4':'#e8d6a8'};border-radius:var(--radius-lg);padding:12px 16px;margin-bottom:16px">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
@@ -3946,6 +4003,9 @@ function renderPainelPrazos(){
     ${crit.length>5?`<div style="font-size:11px;color:var(--gray-500);margin-top:4px">+ ${crit.length-5} outro(s)</div>`:''}
     ${exig.map(p=>{const i=protInfoExig(p);return`<div onclick="abrirProtocolo('${p.id}')" style="cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:4px 0;border-top:1px dashed rgba(0,0,0,.08)">
       <span style="color:var(--gray-700)">🏛 <strong>Prot. ${escH(p.numero||'')}</strong> — ${escH(_protRef(p))}</span>
+      <span style="color:${i.cor};font-weight:600;white-space:nowrap">${i.txt}</span></div>`}).join('')}
+    ${verifOS.map(o=>{const i=osProxInfo(o);return`<div onclick="abrirAndamento('${o.id}')" style="cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:4px 0;border-top:1px dashed rgba(0,0,0,.08)">
+      <span style="color:var(--gray-700)">📍 <strong>OS ${escH(o.num)}</strong> — ${escH(o.proxEtapa||o.andamento||o.cliente)}</span>
       <span style="color:${i.cor};font-weight:600;white-space:nowrap">${i.txt}</span></div>`}).join('')}
     ${verif.map(p=>{const i=protProxInfo(p);return`<div onclick="protConsultei('${p.id}')" style="cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:4px 0;border-top:1px dashed rgba(0,0,0,.08)">
       <span style="color:var(--gray-700)">📍 <strong>Prot. ${escH(p.numero||'')}</strong> — ${escH(p.proxEtapa||p.fase||_protRef(p))}</span>
@@ -4171,7 +4231,7 @@ function ocAdicionar(){
   document.getElementById('oc-texto').value='';document.getElementById('oc-data').value=today();
   _renderOcLista();
 }
-function ocRemover(oid){_ocEdit=_ocEdit.filter(o=>o.id!==oid);_renderOcLista()}
+function ocRemover(oid){_ocEdit=_ocEdit.filter(o=>o.id!==oid);_renderOcLista();_andRenderLista()}
 function salvarProtocolo(){
   const id=document.getElementById('prot-id').value;
   const orcId=document.getElementById('prot-orc').value;
@@ -4441,6 +4501,35 @@ function sigefAjustar(){
   save();renderSigef();
 }
 
+// ===== ACERVO =====
+function _dataEncerr(o){return (o.prazo&&o.prazo.entregueEm)||o.dataConclusao||o.data||''}
+function renderAcervo(){
+  const tb=document.getElementById('tbody-acervo');if(!tb)return;
+  const tipo=document.getElementById('acv-tipo').value||'encerrados';
+  const q=norm(document.getElementById('acv-busca').value||'');
+  let base=ST.orcamentos.filter(o=>_orcValido(o)&&(tipo==='encerrados'?osEncerrada(o):tipo==='cancelados'?o.status==='Cancelado':(osEncerrada(o)||o.status==='Cancelado')));
+  const anos=[...new Set(base.map(o=>String(_dataEncerr(o)).slice(0,4)).filter(a=>/^\d{4}$/.test(a)))].sort().reverse();
+  const selAno=document.getElementById('acv-ano');const anoAtual=selAno.value;
+  selAno.innerHTML='<option value="">Todos os anos</option>'+anos.map(a=>`<option ${a===anoAtual?'selected':''}>${a}</option>`).join('');
+  if(anoAtual&&anos.includes(anoAtual))base=base.filter(o=>String(_dataEncerr(o)).startsWith(anoAtual));
+  if(q)base=base.filter(o=>norm(o.num).includes(q)||norm(o.cliente).includes(q)||norm(o.matricula).includes(q)||norm(_srvResumo(o)).includes(q));
+  base.sort((a,b)=>String(_dataEncerr(b)).localeCompare(String(_dataEncerr(a))));
+  const tot=base.reduce((a,o)=>a+parseFloat(o.valor||0),0);
+  document.getElementById('acv-resumo').innerHTML=`<strong style="color:var(--navy)">${base.length}</strong> serviço(s)${tipo!=='cancelados'?` · <span class="val-ocultavel">${fmtM(tot)}</span>`:''}`;
+  if(!base.length){tb.innerHTML='<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">🗄</div><div class="empty-title">Nada no acervo com esse filtro</div><div class="empty-text">Serviços entregues e totalmente pagos vêm para cá automaticamente.</div></div></td></tr>';return}
+  tb.innerHTML=base.map(o=>{const srv=_srvResumo(o);const de=_dataEncerr(o);
+    return`<tr style="cursor:pointer" onclick="verOrc('${o.id}')">
+      <td><strong style="color:var(--navy)">${escH(o.num)}</strong>${o.status==='Cancelado'?'<br><span class="chip badge-red" style="font-size:9.5px">Cancelado</span>':''}</td>
+      <td><div>${escH(o.cliente)}</div>${srv?`<div style="font-size:11px;color:var(--gray-500)">${escH(srv.slice(0,90))}${srv.length>90?'…':''}</div>`:''}</td>
+      <td style="font-size:11.5px;color:var(--gray-500);white-space:nowrap">${fmtD(de)}</td>
+      <td><strong>${fmtM(o.valor)}</strong></td>
+      <td onclick="event.stopPropagation()"><div style="display:flex;gap:2px">
+        <button class="btn btn-ghost btn-sm" onclick="abrirFinanceiro('${o.id}')" title="Financeiro">💰</button>
+        <button class="btn btn-ghost btn-sm" onclick="abrirAndamento('${o.id}')" title="Histórico do andamento">📋</button>
+        <button class="btn btn-ghost btn-sm" onclick="printById('${o.id}')" title="Imprimir">🖨</button>
+      </div></td></tr>`}).join('');
+}
+
 // ===== AGENDA / COMPROMISSOS =====
 const TIPO_ICON={'visita':'🏠','reuniao':'🤝','entrega':'📋','campo':'📍','cartorio':'🏛','outro':'📌'};
 
@@ -4597,7 +4686,7 @@ function compCard(comp,destaque){
     </div>
     <div style="display:flex;gap:4px;flex-shrink:0">
       <button class="btn btn-ghost btn-sm" onclick="toggleCompromisso('${comp.id}')" title="${comp.concluido?'Reabrir':'Concluir'}" style="font-size:16px">${comp.concluido?'↩':'✓'}</button>
-      ${comp.protId&&comp.auto?`<button class="btn btn-ghost btn-sm" onclick="abrirProtocolo('${comp.protId}')" title="Protocolo">🏛</button>`:comp.orcId&&comp.auto?`<button class="btn btn-ghost btn-sm" onclick="abrirPrazo('${comp.orcId}')" title="Prazo da OS">📦</button>`:`<button class="btn btn-ghost btn-sm" onclick="editarCompromisso('${comp.id}')" title="Editar">✏</button>`}
+      ${comp.protId&&comp.auto?`<button class="btn btn-ghost btn-sm" onclick="abrirProtocolo('${comp.protId}')" title="Protocolo">🏛</button>`:comp.orcId&&comp.auto&&String(comp.id).startsWith('osx-')?`<button class="btn btn-ghost btn-sm" onclick="abrirAndamento('${comp.orcId}')" title="Andamento da OS">📋</button>`:comp.orcId&&comp.auto?`<button class="btn btn-ghost btn-sm" onclick="abrirPrazo('${comp.orcId}')" title="Prazo da OS">📦</button>`:`<button class="btn btn-ghost btn-sm" onclick="editarCompromisso('${comp.id}')" title="Editar">✏</button>`}
     </div>
   </div>`;
 }
@@ -4650,48 +4739,79 @@ function confirmarConclusao(){
 }
 
 
+const OS_FASES=['Aguardando agendamento do levantamento','Levantamento de campo agendado','Levantamento de campo realizado','Processamento dos dados',
+  'Elaboração da planta e memorial','Aguardando documentos do cliente','Aguardando assinatura do cliente','Documentação pronta para entrega','Entregue ao cliente'];
+function _isoDeBR(d){const m=String(d||'').match(/^(\d{2})\/(\d{2})\/(\d{4})/);return m?`${m[3]}-${m[2]}-${m[1]}`:(/^\d{4}-\d{2}-\d{2}/.test(d||'')?d.slice(0,10):today())}
+// Ocorrências da OS (migra as anotações antigas)
+function _ocsOS(o){
+  if(!o)return[];
+  if(!Array.isArray(o.oc)){
+    const oc=(o.andamentoHist||[]).map(h=>({id:_novoOcId(),data:_isoDeBR(h.data),texto:h.texto}));
+    if(!oc.length&&o.andamento)oc.push({id:_novoOcId(),data:today(),texto:o.andamento});
+    o.oc=oc;
+  }
+  return o.oc;
+}
+function _osAtivaNaAgenda(o){return _prazoAtivo(o)||_semPrazoPendente(o)}
+function osProxInfo(o){
+  if(!o||!o.proxData||!_osAtivaNaAgenda(o))return null;
+  const hoje=today();
+  if(o.proxData<hoje)return{nivel:'vencido',cor:'var(--red)',bg:'var(--red-light)',txt:`Verificar — previsto p/ ${fmtD(o.proxData).slice(0,5)}`};
+  if(o.proxData===hoje)return{nivel:'hoje',cor:'var(--red)',bg:'var(--red-light)',txt:'Previsto para HOJE'};
+  const n=_diasCorridos(hoje,o.proxData);
+  return{nivel:n<=3?'breve':'ok',cor:n<=3?'var(--amber)':'var(--blue)',bg:n<=3?'var(--amber-light)':'var(--blue-light)',txt:`Previsto em ${fmtD(o.proxData).slice(0,5)} (${n} dia${n>1?'s':''})`};
+}
+function _syncCompOSProx(o){
+  if(!ST.compromissos)ST.compromissos=[];
+  ST.compromissos=ST.compromissos.filter(c=>!(c.auto&&c.orcId===o.id&&String(c.id).startsWith('osx-')));
+  if(!o.proxData||o.proxData<today()||!_osAtivaNaAgenda(o))return;
+  ST.compromissos.push({id:'osx-'+o.id+'-'+o.proxData,titulo:`📍 OS ${o.num} — ${o.proxEtapa||o.andamento||'verificar andamento'}`,data:o.proxData,hora:'08:00',
+    cliente:`${o.num} — ${o.cliente}`,obs:o.andamento?'Atual: '+o.andamento:'',lembrete:'60',tipo:'campo',concluido:false,auto:true,orcId:o.id});
+}
+function _andRenderLista(){
+  const el=document.getElementById('and-oc-lista');if(!el)return;
+  const ord=_ocOrdenadas(_ocEdit),at=_ocAtiva(_ocEdit);
+  el.innerHTML=ord.length?ord.map(x=>_ocLinhaHTML(x,at&&x.id===at.id,true)).join('')
+    :'<div style="font-size:11.5px;color:var(--gray-400);padding:4px 2px">Nenhuma ocorrência ainda. Insira a primeira acima.</div>';
+}
+function andOcAdicionar(){
+  const t=document.getElementById('and-oc-texto').value.trim();
+  if(!t){document.getElementById('and-oc-texto').focus();return}
+  _ocEdit.push({id:_novoOcId(),data:document.getElementById('and-oc-data').value||today(),texto:t});
+  document.getElementById('and-oc-texto').value='';document.getElementById('and-oc-data').value=today();
+  _andRenderLista();
+}
 function abrirAndamento(id){
   const o=ST.orcamentos.find(x=>x.id===id);if(!o)return;
   document.getElementById('mand-orc-id').value=id;
-  document.getElementById('mand-title').textContent='📋 Andamento — '+o.num;
-  document.getElementById('mand-sub').textContent=o.cliente+' · '+fmtM(o.valor);
-  document.getElementById('mand-texto').value='';
-  // Show history
-  const hist=(o.andamentoHist||[]);
-  const listEl=document.getElementById('mand-historico-list');
-  if(!hist.length){
-    listEl.innerHTML='<span style="color:var(--gray-400)">Nenhuma anotação ainda</span>';
-  } else {
-    listEl.innerHTML=[...hist].reverse().map(h=>
-      `<div style="padding:6px 0;border-bottom:1px solid var(--gray-100)">
-        <div style="font-size:10px;color:var(--gray-400)">${h.data} — ${h.hora}</div>
-        <div style="margin-top:2px">${h.texto}</div>
-      </div>`
-    ).join('');
-  }
-  // Show last note in textarea
-  if(o.andamento) document.getElementById('mand-texto').value=o.andamento;
+  document.getElementById('mand-title').textContent='📋 Andamento — OS '+o.num;
+  document.getElementById('mand-sub').textContent=o.cliente+(_srvResumo(o)?' · '+_srvResumo(o).slice(0,90):'');
+  _ocEdit=_ocsOS(o).map(x=>({...x}));
+  document.getElementById('and-oc-data').value=today();
+  document.getElementById('and-oc-texto').value='';
+  document.getElementById('and-prox').value=o.proxEtapa||'';
+  document.getElementById('and-prox-data').value=o.proxData||'';
+  const usadas=ST.orcamentos.flatMap(x=>[...(Array.isArray(x.oc)?x.oc.map(y=>y.texto):[]),x.proxEtapa]).filter(Boolean);
+  document.getElementById('dl-and-fase').innerHTML=[...new Set([...OS_FASES,...usadas])].map(x=>`<option value="${escH(x)}">`).join('');
+  _andRenderLista();
   openM('modal-andamento');
 }
-
 function salvarAndamento(){
   const id=document.getElementById('mand-orc-id').value;
-  const texto=document.getElementById('mand-texto').value.trim();
-  if(!texto){alert('Escreva uma anotação.');return}
-  const idx=ST.orcamentos.findIndex(x=>x.id===id);if(idx<0)return;
-  const agora=new Date();
-  const dataFmt=agora.toLocaleDateString('pt-BR');
-  const horaFmt=agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  if(!ST.orcamentos[idx].andamentoHist)ST.orcamentos[idx].andamentoHist=[];
-  ST.orcamentos[idx].andamentoHist.push({data:dataFmt,hora:horaFmt,texto});
-  ST.orcamentos[idx].andamento=texto; // latest note
-  save();closeM('modal-andamento');renderDash();
-  // Show success
-  const badge=document.createElement('div');
-  badge.style.cssText='position:fixed;bottom:16px;right:16px;background:var(--green-light);color:var(--green);padding:8px 14px;border-radius:20px;font-size:12px;font-weight:500;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,.15)';
-  badge.textContent='✓ Anotação salva';
-  document.body.appendChild(badge);
-  setTimeout(()=>badge.remove(),3000);
+  const o=ST.orcamentos.find(x=>x.id===id);if(!o)return;
+  if(document.getElementById('and-oc-texto').value.trim())andOcAdicionar();
+  o.oc=_ocEdit.map(({_i,...x})=>x);
+  const at=_ocAtiva(o.oc);
+  o.andamento=at?at.texto:'';o.andamentoData=at?at.data:'';
+  o.proxEtapa=document.getElementById('and-prox').value.trim();
+  o.proxData=document.getElementById('and-prox-data').value;
+  _syncCompOSProx(o);
+  save();closeM('modal-andamento');
+  renderDash();
+  if(document.getElementById('view-agenda').classList.contains('active'))renderAgenda();
+  if(document.getElementById('view-orcamentos').classList.contains('active'))renderOrc();
+  if(_finOrcAberto===o.id&&document.getElementById('view-financeiro').classList.contains('active'))renderFinanceiro(o);
+  _toastPrazo('✓ Andamento salvo');
 }
 
 // ===== BUSCA GLOBAL =====
