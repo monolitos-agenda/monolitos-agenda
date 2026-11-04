@@ -1234,21 +1234,54 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
       </div>
       <input type="hidden" id="prazo-tipo" value="padrao">
     </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Fase do prazo</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap" id="prazo-fases">
+        <button type="button" class="btn btn-sm btn-outline" data-fs="interna" onclick="setPrazoFase('interna')">⚙ Minha parte</button>
+        <button type="button" class="btn btn-sm btn-outline" data-fs="orgao" onclick="setPrazoFase('orgao')">🏛 Aguardando órgão</button>
+        <button type="button" class="btn btn-sm btn-outline" data-fs="exigencia" onclick="setPrazoFase('exigencia')">⚠ Exigência</button>
+        <button type="button" class="btn btn-sm btn-outline" data-fs="pos" onclick="setPrazoFase('pos')">🔧 Após retorno</button>
+      </div>
+      <input type="hidden" id="prazo-fase" value="interna">
+      <div style="font-size:10.5px;color:var(--gray-400);margin-top:4px" id="prazo-fase-dica"></div>
+    </div>
+    <div id="prazo-orgao-box" style="display:none;background:#f3effa;border:1px solid #ddd2f0;border-radius:var(--radius);padding:10px 12px;margin-bottom:12px">
+      <div class="form-grid form-grid-2" style="gap:10px">
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Órgão / cartório</label>
+          <input class="form-control" id="prazo-orgao" list="dl-prazo-orgao" placeholder="Ex: SEPLAN Caucaia">
+          <datalist id="dl-prazo-orgao"></datalist>
+        </div>
+        <div class="form-group">
+          <label>Protocolado / reenviado em</label>
+          <input class="form-control" type="date" id="prazo-orgao-desde">
+        </div>
+        <div class="form-group">
+          <label>Cobrar andamento a cada</label>
+          <select class="form-control" id="prazo-cobrar">
+            <option value="7">7 dias</option><option value="10">10 dias</option><option value="15">15 dias</option>
+            <option value="20">20 dias</option><option value="30">30 dias</option>
+          </select>
+        </div>
+      </div>
+      <div id="prazo-orgao-info" style="font-size:11.5px;color:#5b3f99;margin-top:8px"></div>
+      <button type="button" class="btn btn-sm btn-outline" id="prazo-mov-btn" style="margin-top:8px" onclick="prazoAbrirMov()">📞 Registrar cobrança ou retorno do órgão</button>
+    </div>
     <div class="form-grid form-grid-2" style="margin-bottom:12px">
-      <div class="form-group">
+      <div class="form-group prz-datas">
         <label>Início da contagem</label>
         <input class="form-control" type="date" id="prazo-inicio" onchange="recalcPrazo()">
       </div>
-      <div class="form-group">
+      <div class="form-group prz-datas">
         <label>Prazo (dias úteis)</label>
         <input class="form-control" type="number" min="1" max="365" id="prazo-dias" oninput="recalcPrazo()">
       </div>
-      <div class="form-group">
-        <label>Entrega prevista</label>
+      <div class="form-group prz-datas">
+        <label id="prazo-prevista-lbl">Entrega prevista</label>
         <input class="form-control" type="date" id="prazo-prevista" onchange="prazoDataManual()">
         <div style="font-size:10.5px;color:var(--gray-400);margin-top:3px" id="prazo-prevista-info"></div>
       </div>
-      <div class="form-group">
+      <div class="form-group prz-datas">
         <label>Avisar antes</label>
         <select class="form-control" id="prazo-aviso">
           <option value="0">Sem aviso antecipado</option>
@@ -1258,7 +1291,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
           <option value="5">5 dias úteis antes</option>
         </select>
       </div>
-      <div class="form-group" style="grid-column:1/-1">
+      <div class="form-group prz-datas" style="grid-column:1/-1">
         <label>Etapa atual</label>
         <select class="form-control" id="prazo-etapa">
           <option value="execucao">⚙ Em execução</option>
@@ -1277,6 +1310,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
         <input class="form-control" id="prazo-obs" placeholder="Ex: prazo combinado por telefone com a cliente">
       </div>
     </div>
+    <div id="prazo-hist" style="display:none;margin-bottom:10px"></div>
     <div style="font-size:11px;color:var(--gray-400)">Dias úteis desconsideram sábados, domingos e feriados nacionais, do Ceará e de Fortaleza. A data prevista também entra nos Compromissos (com aviso antecipado) para gerar notificação.</div>
   </div>
   <div class="modal-footer" style="flex-wrap:wrap">
@@ -1284,6 +1318,37 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
     <button class="btn btn-outline" onclick="closeM('modal-prazo')">Fechar</button>
     <button class="btn btn-green" id="prazo-entregar-btn">✅ Entregue</button>
     <button class="btn btn-gold" onclick="salvarPrazo(false)">Salvar prazo</button>
+  </div>
+</div></div>
+
+<!-- MODAL MOVIMENTO DO ÓRGÃO (cobrança / exigência / retorno) -->
+<div class="modal-overlay" id="modal-orgao-mov" style="display:none">
+<div class="modal" style="max-width:480px">
+  <div class="modal-header">
+    <div>
+      <div class="modal-title" id="movorg-title">🏛 Andamento no órgão</div>
+      <div style="font-size:12px;color:var(--gray-500);margin-top:2px" id="movorg-sub"></div>
+    </div>
+    <button class="btn btn-ghost" onclick="closeM('modal-orgao-mov')">✕</button>
+  </div>
+  <div class="modal-body">
+    <input type="hidden" id="movorg-id">
+    <input type="hidden" id="movorg-tipo" value="cobranca">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="movorg-tipos">
+      <button type="button" class="btn btn-sm btn-outline" data-mv="cobranca" onclick="setMovOrgao('cobranca')">📞 Cobrei — sem novidade</button>
+      <button type="button" class="btn btn-sm btn-outline" data-mv="exigencia" onclick="setMovOrgao('exigencia')">⚠ Pediu ajuste/exigência</button>
+      <button type="button" class="btn btn-sm btn-outline" data-mv="aprovado" onclick="setMovOrgao('aprovado')">✅ Aprovado / respondeu</button>
+    </div>
+    <div class="form-grid form-grid-2" style="gap:10px">
+      <div class="form-group"><label>Data</label><input class="form-control" type="date" id="movorg-data" onchange="recalcMovOrgao()"></div>
+      <div class="form-group" id="movorg-dias-box"><label id="movorg-dias-lbl">Meu prazo (dias úteis)</label><input class="form-control" type="number" min="1" max="120" id="movorg-dias" oninput="recalcMovOrgao()"></div>
+      <div class="form-group" style="grid-column:1/-1"><label>Observação</label><input class="form-control" id="movorg-obs" placeholder="Ex: liguei, processo está com o analista"></div>
+    </div>
+    <div id="movorg-info" style="font-size:11.5px;color:var(--gray-500);margin-top:8px"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-outline" onclick="closeM('modal-orgao-mov')">Cancelar</button>
+    <button class="btn btn-gold" onclick="confirmarMovOrgao()">Registrar</button>
   </div>
 </div></div>
 
@@ -1400,7 +1465,9 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
       <div class="form-group"><label>🧩 Serviço complexo</label><input class="form-control" type="number" min="1" id="cfgp-complexo"></div>
       <div class="form-group"><label>🏛 Depende de cartório/órgão</label><input class="form-control" type="number" min="1" id="cfgp-cartorio"></div>
       <div class="form-group"><label>Avisar antes (dias úteis)</label><input class="form-control" type="number" min="0" max="10" id="cfgp-aviso"></div>
-      <div class="form-group"><label>⚠ Prazo p/ cumprir nota devolutiva</label><input class="form-control" type="number" min="1" id="cfgp-exigencia"></div>
+      <div class="form-group"><label>⚠ Prazo p/ cumprir nota devolutiva / exigência</label><input class="form-control" type="number" min="1" id="cfgp-exigencia"></div>
+      <div class="form-group"><label>🔧 Prazo p/ finalizar após retorno do órgão</label><input class="form-control" type="number" min="1" id="cfgp-pos"></div>
+      <div class="form-group"><label>📞 Cobrar andamento do órgão a cada (dias corridos)</label><input class="form-control" type="number" min="1" max="60" id="cfgp-cobranca"></div>
     </div>
     <div style="font-size:11px;color:var(--gray-400);margin-top:10px">Vale para as próximas Ordens de Serviço. Prazos já definidos não são alterados.</div>
   </div>
@@ -3650,7 +3717,35 @@ let _agSrvTab='pend';
 function escH(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 function _cfgPrazos(){
   const c=ST.cfgPrazos||{};
-  return{padrao:parseInt(c.padrao)||7,complexo:parseInt(c.complexo)||15,cartorio:parseInt(c.cartorio)||30,exigencia:parseInt(c.exigencia)||10,aviso:c.aviso!=null&&c.aviso!==''?parseInt(c.aviso):2};
+  return{padrao:parseInt(c.padrao)||7,complexo:parseInt(c.complexo)||15,cartorio:parseInt(c.cartorio)||30,exigencia:parseInt(c.exigencia)||10,
+    pos:parseInt(c.pos)||5,cobranca:parseInt(c.cobranca)||15,aviso:c.aviso!=null&&c.aviso!==''?parseInt(c.aviso):2};
+}
+
+// --- Fases do prazo (prazos que dependem de terceiros) ---
+// interna  = minha parte, com prazo em dias úteis
+// orgao    = aguardando órgão/cartório: relógio PARADO, sem atraso; só lembretes periódicos de cobrança
+// exigencia= órgão pediu ajuste: volta a ter prazo (meu)
+// pos      = órgão respondeu/aprovou: prazo para finalizar e entregar
+const PRAZO_FASES={interna:'⚙ Minha parte',orgao:'🏛 Aguardando órgão',exigencia:'⚠ Cumprindo exigência',pos:'🔧 Finalizando após retorno'};
+const PRAZO_FASE_DICA={
+  interna:'Prazo normal da sua parte do serviço.',
+  orgao:'O prazo fica PAUSADO: a OS não aparece como atrasada. O app lembra de cobrar o andamento no intervalo escolhido.',
+  exigencia:'O órgão pediu ajuste — conta um novo prazo seu para cumprir e reenviar.',
+  pos:'O órgão respondeu — conta o prazo para finalizar e entregar ao cliente.'
+};
+const ORG_COR='#5b3f99',ORG_BG='#efe9f8';
+function _fase(p){return(p&&p.fase)||'interna'}
+function _addDiasCorr(s,n){const d=_dt(s);d.setDate(d.getDate()+n);return _ymd(d)}
+function _proxCobranca(p){
+  const ini=p.orgaoDesde||today();
+  const base=p.ultCobranca&&p.ultCobranca>ini?p.ultCobranca:ini;
+  return _addDiasCorr(base,parseInt(p.cobrarCada)||_cfgPrazos().cobranca);
+}
+function _histPrazo(p){if(!Array.isArray(p.hist))p.hist=[];return p.hist}
+function _orgaoResumo(p){
+  const hoje=today(),n=Math.max(0,_diasCorridos(p.orgaoDesde||hoje,hoje)),px=_proxCobranca(p);
+  return`Aguardando ${escH(p.orgao||'órgão')} desde ${fmtD(p.orgaoDesde)} (${n} dia${n===1?'':'s'})`+
+    `${p.ultCobranca?' · última cobrança '+fmtD(p.ultCobranca).slice(0,5):''} · próxima cobrança <strong>${fmtD(px).slice(0,5)}</strong>`;
 }
 
 // --- Dias úteis (sáb/dom + feriados nacionais, Ceará e Fortaleza) ---
@@ -3696,12 +3791,26 @@ function _semPrazoPendente(o){
 function _orcValido(o){return o&&o.num&&String(o.num).length<30}
 function _srvResumo(o){return(o.servicos||[]).filter(s=>!s.titulo&&s.desc).map(s=>s.desc).join('; ')||o.descricao||''}
 
-// Situação do prazo: nivel = atrasado | hoje | urgente | semana | ok | entregue
+// Situação do prazo: nivel = atrasado | hoje | urgente | semana | ok | entregue | orgao
 function prazoInfo(o){
+  const i=_prazoInfoBase(o);
+  if(i&&o.prazo&&!o.prazo.entregueEm){
+    const f=_fase(o.prazo);
+    if(f==='exigencia')i.sub='⚠ exigência do órgão'+(o.prazo.orgao?' ('+o.prazo.orgao+')':'');
+    else if(f==='pos')i.sub='🔧 após retorno do órgão';
+  }
+  return i;
+}
+function _prazoInfoBase(o){
   if(!o||!o.prazo)return null;
   const p=o.prazo,hoje=today();
+  if(!p.entregueEm&&_fase(p)==='orgao'){
+    const n=Math.max(0,_diasCorridos(p.orgaoDesde||hoje,hoje)),px=_proxCobranca(p),cobrar=px<=hoje;
+    return{nivel:'orgao',cor:ORG_COR,bg:ORG_BG,txt:`🏛 Aguardando órgão · ${n} dia${n===1?'':'s'}`,n,cobrar,px,
+      sub:cobrar?`📞 Cobrar andamento${px<hoje?' (desde '+fmtD(px).slice(0,5)+')':' hoje'}`:`próx. cobrança ${fmtD(px).slice(0,5)}`};
+  }
   if(p.entregueEm){
-    const atraso=!p.retroativo&&p.entregueEm>p.prevista?diasUteisEntre(p.prevista,p.entregueEm):0;
+    const atraso=!p.retroativo&&_fase(p)!=='orgao'&&p.entregueEm>p.prevista?diasUteisEntre(p.prevista,p.entregueEm):0;
     return{nivel:'entregue',cor:'var(--green)',bg:'var(--green-light)',
       txt:'✅ Entregue '+fmtD(p.entregueEm).slice(0,5),sub:p.retroativo?'':(atraso>0?`${atraso} d.u. após o prazo`:'dentro do prazo'),atraso};
   }
@@ -3719,6 +3828,7 @@ function prazoInfo(o){
 function prazoChip(o){
   const i=prazoInfo(o);if(!i)return'';
   if(i.nivel==='entregue'&&o.status==='Concluído')return'';
+  if(i.nivel==='orgao')return`<span class="chip" style="background:${i.bg};color:${i.cor};font-size:9.5px;white-space:nowrap">${i.txt}${i.cobrar?' · 📞 cobrar':''}</span>`;
   const prev=i.nivel==='entregue'?'':' · '+fmtD(o.prazo.prevista).slice(0,5);
   return`<span class="chip" style="background:${i.bg};color:${i.cor};font-size:9.5px;white-space:nowrap">📦 ${i.txt}${prev}</span>`;
 }
@@ -3729,8 +3839,10 @@ function prazoBlocoHTML(o,pre){
     return`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:${i.bg};border-radius:var(--radius);border-left:4px solid ${i.cor}">
       <div style="font-size:12px;color:var(--gray-700)">
         <div style="font-weight:600;color:${i.cor}">📦 ${i.txt}${i.sub?' — '+i.sub:''}</div>
-        <div style="margin-top:2px">Início ${fmtD(p.inicio)} → Entrega prevista <strong>${fmtD(p.prevista)}</strong> (${_diaSemana(p.prevista)}) · ${p.dias} d.u. · ${PRAZO_TIPOS[p.tipo]||''}</div>
-        ${!p.entregueEm?`<div style="margin-top:2px;color:var(--gray-500)">${PRAZO_ETAPAS[p.etapa]||''}${p.protocolo?' · '+escH(p.protocolo):''}</div>`:''}
+        ${i.nivel==='orgao'?`<div style="margin-top:2px">${_orgaoResumo(p)}</div>${p.fase1?`<div style="margin-top:2px;color:var(--gray-500)">Minha parte concluída em ${fmtD(p.fase1.concluidaEm)} (prazo era ${fmtD(p.fase1.prevista)})</div>`:''}`
+          :`<div style="margin-top:2px">Início ${fmtD(p.inicio)} → ${_fase(p)==='interna'?'Entrega prevista':'Meu prazo'} <strong>${fmtD(p.prevista)}</strong> (${_diaSemana(p.prevista)}) · ${p.dias} d.u. · ${PRAZO_TIPOS[p.tipo]||''}</div>`}
+        ${!p.entregueEm?`<div style="margin-top:2px;color:var(--gray-500)">${_fase(p)!=='interna'?PRAZO_FASES[_fase(p)]:(PRAZO_ETAPAS[p.etapa]||'')}${p.protocolo?' · '+escH(p.protocolo):''}</div>`:''}
+        ${i.nivel==='orgao'?`<button class="btn btn-sm btn-outline" style="margin-top:6px" onclick="${pre}abrirMovOrgao('${o.id}')">📞 Registrar cobrança / retorno</button>`:''}
         <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">${protChipsOS(o.id)}<span class="chip" onclick="${pre}abrirProtocolo(null,'${o.id}')" style="cursor:pointer;font-size:10px;background:white;color:var(--navy);border:1px dashed var(--gray-300)">+ protocolo</span></div>
       </div>
       <button class="btn btn-outline btn-sm" onclick="${pre}abrirPrazo('${o.id}')">✏ Prazo</button>
@@ -3753,6 +3865,13 @@ function _syncCompPrazo(o){
   _syncCompOSProx(o);
   if(!_prazoAtivo(o))return;
   const p=o.prazo,ref=`${o.num} — ${o.cliente}`,srv=_srvResumo(o).slice(0,140);
+  if(_fase(p)==='orgao'){
+    // Prazo pausado: em vez da entrega, um lembrete de cobrança do órgão
+    const px=_proxCobranca(p);
+    ST.compromissos.push({id:'prc-'+o.id+'-'+px,titulo:`📞 Cobrar andamento — ${p.orgao||'órgão'} — OS ${o.num}`,data:px,hora:'08:00',cliente:ref,
+      obs:[p.protocolo,srv].filter(Boolean).join(' · '),lembrete:'60',tipo:'cartorio',concluido:false,auto:true,orcId:o.id});
+    return;
+  }
   // lembrete '60' (hora 08:00 -> push às 07:00): a função verificarLembretes só notifica compromissos com lembrete.
   // A data entra no id para que, se o prazo mudar, a notificação da nova data não seja tratada como "já enviada".
   ST.compromissos.push({id:'prz-'+o.id+'-'+p.prevista,titulo:`📦 Entrega prevista — OS ${o.num}`,data:p.prevista,hora:'08:00',cliente:ref,
@@ -3774,8 +3893,63 @@ function _marcarTipoPrazo(t){
   _togProtocolo();
 }
 function _togProtocolo(){
-  const t=document.getElementById('prazo-tipo').value,e=document.getElementById('prazo-etapa').value;
-  document.getElementById('prazo-protocolo-box').style.display=(t==='cartorio'||e==='cartorio')?'block':'none';
+  const t=document.getElementById('prazo-tipo').value,e=document.getElementById('prazo-etapa').value,f=document.getElementById('prazo-fase').value;
+  document.getElementById('prazo-protocolo-box').style.display=(t==='cartorio'||e==='cartorio'||f!=='interna')?'block':'none';
+}
+let _prazoFaseOrig='interna';
+function _aplicarFaseUI(){
+  const f=document.getElementById('prazo-fase').value;
+  document.querySelectorAll('#prazo-fases [data-fs]').forEach(b=>{
+    const on=b.dataset.fs===f;b.classList.toggle('btn-primary',on);b.classList.toggle('btn-outline',!on);
+  });
+  document.getElementById('prazo-fase-dica').textContent=PRAZO_FASE_DICA[f]||'';
+  const org=f==='orgao';
+  document.getElementById('prazo-orgao-box').style.display=org?'block':'none';
+  document.querySelectorAll('#modal-prazo .prz-datas').forEach(el=>el.style.display=org?'none':'');
+  document.getElementById('prazo-prevista-lbl').textContent=f==='interna'?'Entrega prevista':f==='exigencia'?'Cumprir exigência até':'Finalizar/entregar até';
+  document.getElementById('prazo-mov-btn').style.display=org&&_prazoFaseOrig==='orgao'?'inline-flex':'none';
+  _infoOrgaoModal();
+  _togProtocolo();
+}
+function _infoOrgaoModal(){
+  const el=document.getElementById('prazo-orgao-info');if(!el)return;
+  const d=document.getElementById('prazo-orgao-desde').value;
+  if(!d){el.textContent='';return}
+  const px=_proxCobranca({orgaoDesde:d,ultCobranca:_prazoUltCob,cobrarCada:document.getElementById('prazo-cobrar').value});
+  const n=Math.max(0,_diasCorridos(d,today()));
+  el.innerHTML=`${n} dia${n===1?'':'s'} aguardando${_prazoUltCob?' · última cobrança '+fmtD(_prazoUltCob):''} · próxima cobrança <strong>${fmtD(px)}</strong>`;
+}
+let _prazoUltCob='';
+function setPrazoFase(f){
+  document.getElementById('prazo-fase').value=f;
+  const c=_cfgPrazos();
+  if(f==='orgao'){
+    if(!document.getElementById('prazo-orgao-desde').value||_prazoFaseOrig!=='orgao')document.getElementById('prazo-orgao-desde').value=today();
+    document.getElementById('prazo-etapa').value='cartorio';
+  }else if(f!==_prazoFaseOrig&&(f==='exigencia'||f==='pos')){
+    document.getElementById('prazo-inicio').value=today();
+    document.getElementById('prazo-dias').value=f==='exigencia'?c.exigencia:c.pos;
+    document.getElementById('prazo-etapa').value='execucao';
+    recalcPrazo();
+  }
+  _aplicarFaseUI();
+}
+function _renderHistPrazo(p){
+  const el=document.getElementById('prazo-hist');
+  const h=(p&&Array.isArray(p.hist)?p.hist:[]).map((x,i)=>({...x,_i:i})).sort((a,b)=>(b.data||'').localeCompare(a.data||'')||b._i-a._i);
+  if(!h.length&&!(p&&p.fase1)){el.style.display='none';el.innerHTML='';return}
+  el.style.display='block';
+  el.innerHTML=`<div style="font-size:10px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Histórico do prazo</div>`+
+    h.map(x=>`<div style="display:flex;gap:8px;font-size:11.5px;padding:3px 0;border-top:1px dashed var(--gray-100)"><span style="color:var(--gray-500);white-space:nowrap">${fmtD(x.data)}</span><span style="color:var(--gray-700)">${escH(x.texto)}</span></div>`).join('')+
+    (p.fase1?`<div style="font-size:11px;color:var(--gray-400);margin-top:4px">Minha parte inicial: ${fmtD(p.fase1.inicio)} → prazo ${fmtD(p.fase1.prevista)} (${p.fase1.dias} d.u.) · concluída em ${fmtD(p.fase1.concluidaEm)}</div>`:'');
+}
+function _fillOrgaosPrazo(){
+  const l=[...new Set([...(ST.protocolos||[]).map(p=>p.orgao),...ST.orcamentos.map(o=>o.prazo&&o.prazo.orgao)].filter(Boolean))];
+  document.getElementById('dl-prazo-orgao').innerHTML=l.map(x=>`<option value="${escH(x)}">`).join('');
+}
+function prazoAbrirMov(){
+  const id=document.getElementById('prazo-orc-id').value;
+  closeM('modal-prazo');abrirMovOrgao(id);
 }
 function setPrazoTipo(t){
   _marcarTipoPrazo(t);
@@ -3798,9 +3972,20 @@ function prazoDataManual(){
   if(ini&&prev&&prev>ini)document.getElementById('prazo-dias').value=diasUteisEntre(ini,prev);
   _infoPrevista();
 }
-function abrirPrazo(id,novo){
+function abrirPrazo(id,novo,faseIni){
   const o=ST.orcamentos.find(x=>x.id===id);if(!o)return;
   const p=o.prazo||_novoPrazo(o);
+  _prazoFaseOrig=_fase(p);_prazoUltCob=p.ultCobranca||'';
+  document.getElementById('prazo-fase').value=_prazoFaseOrig;
+  // Órgão: pré-preenche com o protocolo vinculado à OS, se houver
+  const pv=_protsDaOS(o.id).filter(_protAtivo)[0];
+  document.getElementById('prazo-orgao').value=p.orgao||(pv?pv.orgao||'':'');
+  document.getElementById('prazo-orgao-desde').value=p.orgaoDesde||(pv&&pv.dataEntrada?pv.dataEntrada:'');
+  const cb=document.getElementById('prazo-cobrar');cb.value=String(p.cobrarCada||_cfgPrazos().cobranca);
+  if(cb.value!==String(p.cobrarCada||_cfgPrazos().cobranca)){const op=document.createElement('option');op.value=op.textContent=String(p.cobrarCada||_cfgPrazos().cobranca);op.textContent+=' dias';cb.appendChild(op);cb.value=op.value;}
+  document.getElementById('prazo-orgao-desde').onchange=_infoOrgaoModal;cb.onchange=_infoOrgaoModal;
+  _fillOrgaosPrazo();
+  _renderHistPrazo(o.prazo);
   document.getElementById('prazo-orc-id').value=id;
   document.getElementById('mprazo-title').textContent=`📦 Prazo de Entrega — OS ${o.num}`;
   document.getElementById('mprazo-sub').textContent=o.cliente+(_srvResumo(o)?' · '+_srvResumo(o).slice(0,90):'');
@@ -3811,10 +3996,11 @@ function abrirPrazo(id,novo){
   const av=document.getElementById('prazo-aviso');av.value=String(p.aviso);if(av.value!==String(p.aviso))av.value='2';
   document.getElementById('prazo-etapa').value=p.etapa||'execucao';
   document.getElementById('prazo-etapa').onchange=_togProtocolo;
-  document.getElementById('prazo-protocolo').value=p.protocolo||'';
+  document.getElementById('prazo-protocolo').value=p.protocolo||(pv?[pv.orgao,pv.numero?'Prot. '+pv.numero:''].filter(Boolean).join(' — '):'');
   document.getElementById('prazo-obs').value=p.obs||'';
   _marcarTipoPrazo(p.tipo||'padrao');
   _infoPrevista();
+  if(faseIni)setPrazoFase(faseIni);else _aplicarFaseUI();
   document.getElementById('prazo-del-btn').style.display=o.prazo?'inline-flex':'none';
   const be=document.getElementById('prazo-entregar-btn');
   if(p.entregueEm){be.textContent='↩ Reabrir';be.onclick=()=>salvarPrazo('reabrir');}
@@ -3848,16 +4034,41 @@ function _aposAlterarPrazo(o){
 function salvarPrazo(acao){
   const id=document.getElementById('prazo-orc-id').value;
   const o=ST.orcamentos.find(x=>x.id===id);if(!o)return;
-  const inicio=document.getElementById('prazo-inicio').value,prevista=document.getElementById('prazo-prevista').value;
-  const dias=parseInt(document.getElementById('prazo-dias').value)||0;
+  const fase=document.getElementById('prazo-fase').value;
+  let inicio=document.getElementById('prazo-inicio').value,prevista=document.getElementById('prazo-prevista').value;
+  let dias=parseInt(document.getElementById('prazo-dias').value)||0;
+  const orgao=document.getElementById('prazo-orgao').value.trim(),orgaoDesde=document.getElementById('prazo-orgao-desde').value;
+  const ant=o.prazo||{};
+  if(fase==='orgao'&&acao!==true){
+    if(!orgao){alert('Informe o órgão/cartório que está analisando.');return}
+    if(!orgaoDesde){alert('Informe a data em que foi protocolado/enviado ao órgão.');return}
+    if(orgaoDesde>today()){alert('A data de protocolo não pode ser no futuro.');return}
+    // mantém as datas da fase anterior (prazo pausado)
+    inicio=ant.inicio||inicio;prevista=ant.prevista||prevista;dias=ant.dias||dias;
+  }
   if(!inicio||!prevista){alert('Informe a data de início e a data de entrega prevista.');return}
   if(prevista<inicio){alert('A entrega prevista não pode ser antes do início.');return}
-  const ant=o.prazo||{};
+  const faseAnt=_fase(ant);
+  const hist=Array.isArray(ant.hist)?ant.hist.slice():[];
+  let fase1=ant.fase1||null;
+  if(fase!==faseAnt){
+    if(fase==='orgao'){
+      if(faseAnt==='interna'&&!fase1&&ant.inicio)fase1={inicio:ant.inicio,prevista:ant.prevista,dias:ant.dias,concluidaEm:orgaoDesde};
+      const prot=document.getElementById('prazo-protocolo').value.trim();
+      hist.push({data:orgaoDesde,texto:(faseAnt==='exigencia'?'🔁 Reenviado ao órgão após exigência':'🏛 Protocolado/enviado ao órgão')+` (${orgao})`+(prot?' — '+prot:'')});
+    }else hist.push({data:today(),texto:'Fase alterada para: '+PRAZO_FASES[fase]});
+  }else if(fase==='orgao'&&ant.orgaoDesde&&orgaoDesde!==ant.orgaoDesde){
+    hist.push({data:today(),texto:'Data de protocolo corrigida para '+fmtD(orgaoDesde)});
+  }
   o.prazo={...ant,inicio,dias:dias||diasUteisEntre(inicio,prevista),prevista,
-    tipo:document.getElementById('prazo-tipo').value,etapa:document.getElementById('prazo-etapa').value,
+    tipo:document.getElementById('prazo-tipo').value,etapa:fase==='orgao'?'cartorio':document.getElementById('prazo-etapa').value,
     aviso:parseInt(document.getElementById('prazo-aviso').value)||0,
     protocolo:document.getElementById('prazo-protocolo').value.trim(),obs:document.getElementById('prazo-obs').value.trim(),
-    criadoEm:ant.criadoEm||today(),entregueEm:ant.entregueEm||''};
+    criadoEm:ant.criadoEm||today(),entregueEm:ant.entregueEm||'',
+    fase,hist,fase1,orgao,orgaoDesde:fase==='orgao'?orgaoDesde:(ant.orgaoDesde||''),
+    cobrarCada:parseInt(document.getElementById('prazo-cobrar').value)||_cfgPrazos().cobranca};
+  if(fase==='orgao'&&faseAnt!=='orgao')o.prazo.ultCobranca='';
+  if(!fase1)delete o.prazo.fase1;
   if(o.tipo!=='os')o.tipo='os';
   if(acao===true){
     closeM('modal-prazo');_aposAlterarPrazo(o);marcarEntregue(o.id);return;
@@ -3867,7 +4078,68 @@ function salvarPrazo(acao){
   }else if(o.status==='Concluído'&&!o.prazo.entregueEm){o.entregue=false;}
   closeM('modal-prazo');
   _aposAlterarPrazo(o);
-  _toastPrazo(acao===true?'✅ Serviço marcado como entregue':acao==='reabrir'?'↩ Serviço voltou para a agenda':'📦 Prazo salvo — entrega em '+fmtD(prevista));
+  _toastPrazo(acao===true?'✅ Serviço marcado como entregue':acao==='reabrir'?'↩ Serviço voltou para a agenda':
+    fase==='orgao'?(_proxCobranca(o.prazo)<=today()?'🏛 Prazo pausado — cobrança do órgão já está pendente':'🏛 Prazo pausado — próxima cobrança em '+fmtD(_proxCobranca(o.prazo))):'📦 Prazo salvo — '+(fase==='interna'?'entrega em ':'meu prazo até ')+fmtD(prevista));
+}
+
+// --- Movimento no órgão: cobrança / exigência / aprovação ---
+function abrirMovOrgao(id,tipo){
+  const o=ST.orcamentos.find(x=>x.id===id);if(!o||!o.prazo)return;
+  const p=o.prazo;
+  document.getElementById('movorg-id').value=id;
+  document.getElementById('movorg-title').textContent=`🏛 ${p.orgao||'Órgão'} — OS ${o.num}`;
+  document.getElementById('movorg-sub').innerHTML=escH(o.cliente)+(p.orgaoDesde?` · aguardando desde ${fmtD(p.orgaoDesde)}`:'');
+  document.getElementById('movorg-data').value=today();
+  document.getElementById('movorg-obs').value='';
+  setMovOrgao(tipo||'cobranca');
+  openM('modal-orgao-mov');
+}
+function setMovOrgao(t){
+  document.getElementById('movorg-tipo').value=t;
+  document.querySelectorAll('#movorg-tipos [data-mv]').forEach(b=>{
+    const on=b.dataset.mv===t;b.classList.toggle('btn-primary',on);b.classList.toggle('btn-outline',!on);
+  });
+  const c=_cfgPrazos();
+  document.getElementById('movorg-dias-box').style.display=t==='cobranca'?'none':'';
+  document.getElementById('movorg-dias-lbl').textContent=t==='exigencia'?'Prazo p/ cumprir (dias úteis)':'Prazo p/ finalizar (dias úteis)';
+  document.getElementById('movorg-dias').value=t==='exigencia'?c.exigencia:c.pos;
+  document.getElementById('movorg-obs').placeholder=t==='cobranca'?'Ex: liguei, processo está com o analista':t==='exigencia'?'Ex: ajustar confrontação do lado leste':'Ex: autorização emitida, retirar documento';
+  recalcMovOrgao();
+}
+function recalcMovOrgao(){
+  const t=document.getElementById('movorg-tipo').value,d=document.getElementById('movorg-data').value||today();
+  const o=ST.orcamentos.find(x=>x.id===document.getElementById('movorg-id').value);
+  const el=document.getElementById('movorg-info');
+  if(t==='cobranca'){
+    const px=o?_proxCobranca({...o.prazo,ultCobranca:d}):'';
+    el.innerHTML=`O prazo continua pausado. Próxima cobrança: <strong>${fmtD(px)}</strong>.`;
+  }else{
+    const n=parseInt(document.getElementById('movorg-dias').value)||0;
+    el.innerHTML=n>0?`O prazo volta a contar para você: <strong>${fmtD(addDiasUteis(d,n))}</strong> (${_diaSemana(addDiasUteis(d,n))}).`+
+      (t==='aprovado'?' Se não houver nada a fazer, registre e depois marque como entregue.':' Depois de cumprir, use “Aguardando órgão” no prazo para reenviar.'):'';
+  }
+}
+function confirmarMovOrgao(){
+  const o=ST.orcamentos.find(x=>x.id===document.getElementById('movorg-id').value);if(!o||!o.prazo)return;
+  const p=o.prazo,t=document.getElementById('movorg-tipo').value,d=document.getElementById('movorg-data').value||today();
+  const obs=document.getElementById('movorg-obs').value.trim();
+  if(d>today()){alert('A data não pode ser no futuro.');return}
+  const h=_histPrazo(p),org=p.orgao||'órgão';
+  if(t==='cobranca'){
+    p.ultCobranca=d>(p.ultCobranca||'')?d:p.ultCobranca;
+    h.push({data:d,texto:`📞 Cobrança/consulta — ${org}`+(obs?': '+obs:' — sem novidade')});
+  }else{
+    const n=parseInt(document.getElementById('movorg-dias').value)||0;
+    if(n<1){alert('Informe o prazo em dias úteis.');return}
+    if(_fase(p)==='interna'&&!p.fase1&&p.inicio)p.fase1={inicio:p.inicio,prevista:p.prevista,dias:p.dias,concluidaEm:p.orgaoDesde||d};
+    p.fase=t==='exigencia'?'exigencia':'pos';
+    p.inicio=d;p.dias=n;p.prevista=addDiasUteis(d,n);p.etapa='execucao';
+    if(t==='exigencia'){p.exigencias=(p.exigencias||0)+1;h.push({data:d,texto:`⚠ Exigência/ajuste pedido — ${org}`+(obs?': '+obs:'')});}
+    else{p.retornoEm=d;h.push({data:d,texto:`✅ Retorno/aprovação — ${org}`+(obs?': '+obs:'')});}
+  }
+  closeM('modal-orgao-mov');
+  _aposAlterarPrazo(o);
+  _toastPrazo(t==='cobranca'?'📞 Cobrança registrada — próxima em '+fmtD(_proxCobranca(p)):(t==='exigencia'?'⚠ Exigência registrada — cumprir até ':'✅ Retorno registrado — finalizar até ')+fmtD(p.prevista));
 }
 function removerPrazo(){
   const id=document.getElementById('prazo-orc-id').value;
@@ -3918,12 +4190,15 @@ function abrirCfgPrazos(){
   document.getElementById('cfgp-cartorio').value=c.cartorio;
   document.getElementById('cfgp-aviso').value=c.aviso;
   document.getElementById('cfgp-exigencia').value=c.exigencia;
+  document.getElementById('cfgp-pos').value=c.pos;
+  document.getElementById('cfgp-cobranca').value=c.cobranca;
   openM('modal-cfg-prazos');
 }
 function salvarCfgPrazos(){
   const v=k=>parseInt(document.getElementById('cfgp-'+k).value);
   if(!(v('padrao')>0&&v('complexo')>0&&v('cartorio')>0)){alert('Os prazos devem ser maiores que zero.');return}
-  ST.cfgPrazos={padrao:v('padrao'),complexo:v('complexo'),cartorio:v('cartorio'),exigencia:v('exigencia')>0?v('exigencia'):10,aviso:Math.max(0,v('aviso')||0)};
+  ST.cfgPrazos={padrao:v('padrao'),complexo:v('complexo'),cartorio:v('cartorio'),exigencia:v('exigencia')>0?v('exigencia'):10,
+    pos:v('pos')>0?v('pos'):5,cobranca:v('cobranca')>0?v('cobranca'):15,aviso:Math.max(0,v('aviso')||0)};
   save();closeM('modal-cfg-prazos');_toastPrazo('⚙ Prazos padrão salvos');
 }
 
@@ -3931,12 +4206,14 @@ function salvarCfgPrazos(){
 function _listasPrazos(){
   const os=ST.orcamentos.filter(_orcValido);
   const ativos=os.filter(_prazoAtivo).sort((a,b)=>a.prazo.prevista.localeCompare(b.prazo.prevista));
-  const g={atrasado:[],hoje:[],urgente:[],semana:[],ok:[]};
+  const g={atrasado:[],hoje:[],urgente:[],semana:[],ok:[],orgao:[]};
   ativos.forEach(o=>{const i=prazoInfo(o);(g[i.nivel]||g.ok).push(o)});
+  g.orgao.sort((a,b)=>_proxCobranca(a.prazo).localeCompare(_proxCobranca(b.prazo)));
+  const cobrar=g.orgao.filter(o=>prazoInfo(o).cobrar);
   const semPrazo=os.filter(_semPrazoPendente);
   const entregues=os.filter(o=>o.prazo&&o.prazo.entregueEm).sort((a,b)=>b.prazo.entregueEm.localeCompare(a.prazo.entregueEm));
   const aguardPag=entregues.filter(o=>o.status!=='Cancelado'&&parseFloat(o.valor||0)-recPorOrc(o.id)>0.009);
-  return{ativos,g,semPrazo,entregues,aguardPag};
+  return{ativos,g,semPrazo,entregues,aguardPag,cobrar};
 }
 function setAgSrvTab(t){
   _agSrvTab=t;
@@ -3955,12 +4232,14 @@ function _srvRow(o){
       ${srv?`<div style="font-size:11.5px;color:var(--gray-500);margin-top:2px">${escH(srv.slice(0,110))}${srv.length>110?'…':''}</div>`:''}
       <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px">
         ${p?`<span class="chip badge-navy" style="font-size:10px">${PRAZO_TIPOS[p.tipo]||''}</span>`:''}
-        ${p&&!p.entregueEm?`<span class="chip" style="font-size:10px;background:var(--gray-100);color:var(--gray-700)">${PRAZO_ETAPAS[p.etapa]||''}</span>`:''}
+        ${p&&!p.entregueEm?(_fase(p)!=='interna'?`<span class="chip" style="font-size:10px;background:${ORG_BG};color:${ORG_COR}">${PRAZO_FASES[_fase(p)]}${p.orgao&&_fase(p)==='orgao'?' · '+escH(p.orgao.slice(0,30)):''}</span>`
+          :`<span class="chip" style="font-size:10px;background:var(--gray-100);color:var(--gray-700)">${PRAZO_ETAPAS[p.etapa]||''}</span>`):''}
         ${p&&p.protocolo?`<span class="chip badge-blue" style="font-size:10px">🏛 ${escH(p.protocolo.slice(0,50))}</span>`:''}
         <span class="chip" style="font-size:10px;background:${p&&p.entregueEm&&pct<100?'var(--amber-light)':'var(--gray-50)'};color:${pct>=100?'var(--green)':(p&&p.entregueEm?'var(--amber)':'var(--gray-500)')}">💰 ${pct}% pago${p&&p.entregueEm&&pct<100?' · falta '+fmtM(tot-rec):''}</span>
         ${protChipsOS(o.id)}
       </div>
-      ${p&&!p.retroativo?`<div style="font-size:11px;color:var(--gray-400);margin-top:4px">Início ${fmtD(p.inicio)} → Entrega <strong style="color:var(--gray-700)">${fmtD(p.prevista)}</strong> (${_diaSemana(p.prevista)}) · ${p.dias} d.u.${p.obs?' · '+escH(p.obs.slice(0,60)):''}</div>`:''}
+      ${p&&!p.entregueEm&&_fase(p)==='orgao'?`<div style="font-size:11px;color:${ORG_COR};margin-top:4px">${_orgaoResumo(p)}${p.fase1?` <span style="color:var(--gray-400)">· minha parte concluída em ${fmtD(p.fase1.concluidaEm).slice(0,5)}</span>`:''}</div>`
+      :p&&!p.retroativo?`<div style="font-size:11px;color:var(--gray-400);margin-top:4px">Início ${fmtD(p.inicio)} → Entrega <strong style="color:var(--gray-700)">${fmtD(p.prevista)}</strong> (${_diaSemana(p.prevista)}) · ${p.dias} d.u.${p.obs?' · '+escH(p.obs.slice(0,60)):''}</div>`:''}
       ${(()=>{const ord=_ocOrdenadas(_ocsOS(o)),at=ord[0],ant=ord[1],px=osProxInfo(o);
         if(!at&&!o.proxEtapa&&!o.proxData)return'';
         return`<div style="margin-top:7px;padding:8px 10px;background:var(--gray-50);border-radius:8px;border-left:3px solid var(--navy)">
@@ -3972,6 +4251,8 @@ function _srvRow(o){
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
       ${i?`<span style="background:${i.bg};color:${i.cor};font-weight:600;font-size:12px;padding:5px 11px;border-radius:20px;white-space:nowrap">${i.txt}</span>${i.sub?`<span style="font-size:10.5px;color:var(--gray-400)">${i.sub}</span>`:''}`:`<span style="background:var(--gray-100);color:var(--gray-500);font-size:11.5px;padding:5px 11px;border-radius:20px">Sem prazo</span>`}
       <div style="display:flex;gap:2px">
+        ${p&&!p.entregueEm&&_fase(p)==='orgao'?`<button class="btn btn-sm" style="background:${ORG_BG};color:${ORG_COR}" onclick="abrirMovOrgao('${o.id}')" title="Registrar cobrança, exigência ou retorno do órgão">📞 Órgão</button>`:''}
+        ${p&&!p.entregueEm&&(_fase(p)==='exigencia'||(_fase(p)==='interna'&&(p.tipo==='cartorio'||p.etapa==='cartorio')))?`<button class="btn btn-sm" style="background:${ORG_BG};color:${ORG_COR}" onclick="abrirPrazo('${o.id}',false,'orgao')" title="Protocolei/reenviei — pausar o prazo enquanto o órgão analisa">🏛 ${_fase(p)==='exigencia'?'Reenviei':'Protocolei'}</button>`:''}
         <button class="btn btn-ghost btn-sm" onclick="abrirAndamento('${o.id}')" title="Anotar andamento">📋</button>
         <button class="btn btn-ghost btn-sm" onclick="abrirFinanceiro('${o.id}')" title="Financeiro">💰</button>
         ${p&&p.entregueEm&&pct<100?`<button class="btn btn-gold btn-sm" onclick="receberDaAgenda('${o.id}')" title="Registrar o pagamento que falta">💰 Receber</button>`:''}
@@ -4006,6 +4287,7 @@ function renderAgendaServicos(){
     _grupoHTML('Vencendo em breve',L.g.urgente,'var(--amber)')+
     _grupoHTML('Próximos 5 dias úteis',L.g.semana,'var(--blue)')+
     _grupoHTML('Demais prazos',L.g.ok,'var(--green)')+
+    _grupoHTML('🏛 Aguardando órgão — prazo pausado',L.g.orgao,ORG_COR)+
     _grupoHTML('Sem prazo definido',L.semPrazo,'var(--gray-500)')+
     _grupoHTML('✅ Entregues — aguardando pagamento',L.aguardPag,'var(--amber)');
 }
@@ -4027,9 +4309,9 @@ function renderPainelPrazos(){
     else{sub.className='metric-badge badge-navy';sub.textContent=L.semPrazo.length?`${L.semPrazo.length} sem prazo`:'🔧 Ver prazos';}
   }
   const nb=document.getElementById('nav-prazo-badge');
-  if(nb){nb.style.display=crit.length?'inline-block':'none';nb.textContent=crit.length;}
+  if(nb){const nn=crit.length+L.cobrar.length;nb.style.display=nn?'inline-block':'none';nb.textContent=nn;}
   const al=document.getElementById('painel-prazos-alerta');if(!al)return;
-  if(!crit.length&&!exig.length&&!verif.length&&!verifOS.length){al.innerHTML='';return}
+  if(!crit.length&&!exig.length&&!verif.length&&!verifOS.length&&!L.cobrar.length){al.innerHTML='';return}
   const temAtraso=L.g.atrasado.length>0||exig.some(p=>protInfoExig(p).nivel!=='urgente');
   al.innerHTML=`<div style="background:${temAtraso?'var(--red-light)':'var(--amber-light)'};border:1px solid ${temAtraso?'#e8b4b4':'#e8d6a8'};border-radius:var(--radius-lg);padding:12px 16px;margin-bottom:16px">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
@@ -4040,6 +4322,9 @@ function renderPainelPrazos(){
       <span style="color:var(--gray-700)"><strong>OS ${escH(o.num)}</strong> — ${escH(o.cliente)}</span>
       <span style="color:${i.cor};font-weight:600;white-space:nowrap">${i.txt} · ${fmtD(o.prazo.prevista).slice(0,5)}</span></div>`}).join('')}
     ${crit.length>5?`<div style="font-size:11px;color:var(--gray-500);margin-top:4px">+ ${crit.length-5} outro(s)</div>`:''}
+    ${L.cobrar.map(o=>{const i=prazoInfo(o);return`<div onclick="abrirMovOrgao('${o.id}')" style="cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:4px 0;border-top:1px dashed rgba(0,0,0,.08)">
+      <span style="color:var(--gray-700)">🏛 <strong>OS ${escH(o.num)}</strong> — ${escH(o.prazo.orgao||'órgão')} · ${escH(o.cliente)}</span>
+      <span style="color:${ORG_COR};font-weight:600;white-space:nowrap">${i.sub} · ${i.n} dias</span></div>`}).join('')}
     ${exig.map(p=>{const i=protInfoExig(p);return`<div onclick="abrirProtocolo('${p.id}')" style="cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:4px 0;border-top:1px dashed rgba(0,0,0,.08)">
       <span style="color:var(--gray-700)">🏛 <strong>Prot. ${escH(p.numero||'')}</strong> — ${escH(_protRef(p))}</span>
       <span style="color:${i.cor};font-weight:600;white-space:nowrap">${i.txt}</span></div>`}).join('')}
@@ -4056,13 +4341,13 @@ function renderPainelPrazos(){
 function avisoDiarioPrazos(){
   try{
     const L=_listasPrazos();
-    const at=L.g.atrasado.length,ur=L.g.hoje.length+L.g.urgente.length;
-    if(!at&&!ur)return;
+    const at=L.g.atrasado.length,ur=L.g.hoje.length+L.g.urgente.length,cb=L.cobrar.length;
+    if(!at&&!ur&&!cb)return;
     if(!('Notification' in window)||Notification.permission!=='granted')return;
     const chave='topagenda_aviso_prazos';
     if(localStorage.getItem(chave)===today())return;
     localStorage.setItem(chave,today());
-    const corpo=[at?`${at} serviço(s) atrasado(s)`:'',ur?`${ur} entrega(s) vencendo`:''].filter(Boolean).join(' · ');
+    const corpo=[at?`${at} serviço(s) atrasado(s)`:'',ur?`${ur} entrega(s) vencendo`:'',cb?`${cb} processo(s) para cobrar no órgão`:''].filter(Boolean).join(' · ');
     const opts={body:corpo,icon:'./icon-192.png',badge:'./icon-192.png'};
     if(navigator.serviceWorker&&navigator.serviceWorker.ready){
       navigator.serviceWorker.ready.then(r=>r.showNotification('Top-Agenda — Prazos de entrega',opts)).catch(()=>new Notification('Top-Agenda — Prazos de entrega',opts));
