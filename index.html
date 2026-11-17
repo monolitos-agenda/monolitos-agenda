@@ -1211,13 +1211,14 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
       <label>📍 Andamento do serviço</label>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <input class="form-control" type="date" id="and-oc-data" style="width:150px;flex:0 0 auto">
-        <input class="form-control" id="and-oc-texto" list="dl-and-fase" placeholder="Nova ocorrência (ex: Levantamento agendado para sábado 07/11)" style="flex:1;min-width:200px" onkeydown="if(event.key==='Enter'){event.preventDefault();andOcAdicionar()}">
+        <input class="form-control" id="and-oc-texto" list="dl-and-fase" onchange="faseSugerir('and')" placeholder="Nova ocorrência (ex: Levantamento agendado para sábado 07/11)" style="flex:1;min-width:200px" onkeydown="if(event.key==='Enter'){event.preventDefault();andOcAdicionar()}">
         <button type="button" class="btn btn-gold btn-sm" id="and-oc-btn" onclick="andOcAdicionar()">+ Inserir</button>
       </div>
       <datalist id="dl-and-fase"></datalist>
       <div id="and-oc-lista" style="margin-top:8px;max-height:240px;overflow-y:auto"></div>
     </div>
     <div class="form-grid form-grid-2" style="gap:10px">
+      <div id="and-prox-hint" style="grid-column:1/-1;font-size:11px;color:var(--navy)"></div>
       <div class="form-group"><label>➡ Próxima etapa</label><input class="form-control" id="and-prox" list="dl-and-fase" placeholder="Ex: Levantamento de campo"></div>
       <div class="form-group"><label>Data prevista / verificar em</label><input class="form-control" type="date" id="and-prox-data"><div style="font-size:10.5px;color:var(--gray-400);margin-top:3px">Gera lembrete (notificação) nesse dia.</div></div>
     </div>
@@ -1394,18 +1395,19 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
           <option value="exigencia">⚠ Nota devolutiva (exigência)</option><option value="reingresso">🔁 Reingresso feito</option>
           <option value="concluido">✅ Registrado / Concluído</option><option value="cancelado">✕ Cancelado</option>
         </select></div>
-      <div class="form-group" style="grid-column:1/-1;display:none" id="prot-exig-box"><label>Prazo para cumprir a exigência</label><input class="form-control" type="date" id="prot-exig-data"><div style="font-size:10.5px;color:var(--gray-400);margin-top:3px">Gera aviso 2 dias úteis antes e no dia (notificação).</div></div>
+      <div class="form-group" style="grid-column:1/-1;display:none" id="prot-exig-box"><label>Prazo para cumprir a exigência (opcional)</label><input class="form-control" type="date" id="prot-exig-data"><div style="font-size:10.5px;color:var(--gray-400);margin-top:3px">Se informar, gera aviso 2 dias úteis antes e no dia.</div></div>
       <div class="form-group" style="grid-column:1/-1">
         <label>📍 Andamento do processo</label>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <input class="form-control" type="date" id="oc-data" style="width:150px;flex:0 0 auto">
-          <input class="form-control" id="oc-texto" list="dl-prot-fase" placeholder="Nova ocorrência (ex: Aguardando decurso de prazo das notificações)" style="flex:1;min-width:200px" onkeydown="if(event.key==='Enter'){event.preventDefault();ocAdicionar()}">
+          <input class="form-control" id="oc-texto" list="dl-prot-fase" placeholder="Nova ocorrência (ex: Aguardando decurso de prazo das notificações)" style="flex:1;min-width:200px" onchange="faseSugerir('prot')" onkeydown="if(event.key==='Enter'){event.preventDefault();ocAdicionar()}">
           <button type="button" class="btn btn-gold btn-sm" id="oc-btn" onclick="ocAdicionar()">+ Inserir</button>
         </div>
         <datalist id="dl-prot-fase"></datalist>
         <div style="font-size:10.5px;color:var(--gray-400);margin-top:4px">Cada movimento entra como nova linha; o histórico fica visível. Use ✏ para substituir ou ✕ para excluir uma linha.</div>
         <div id="oc-lista" style="margin-top:8px;max-height:260px;overflow-y:auto"></div>
       </div>
+      <div id="prot-prox-hint" style="grid-column:1/-1;font-size:11px;color:var(--navy)"></div>
       <div class="form-group"><label>➡ Próxima etapa</label><input class="form-control" id="prot-prox" list="dl-prot-fase" placeholder="Ex: Publicação dos editais"></div>
       <div class="form-group"><label>Data prevista / verificar em</label><input class="form-control" type="date" id="prot-prox-data"><div style="font-size:10.5px;color:var(--gray-400);margin-top:3px">Gera lembrete (notificação) nesse dia. Em branco: o app marca automaticamente o prazo de análise (⚙ Prazos padrão) a partir da entrada.</div></div>
     </div>
@@ -1433,17 +1435,18 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
           <option value="exigencia">⚠ Nota devolutiva (exigência)</option><option value="reingresso">🔁 Reingresso feito</option>
           <option value="concluido">✅ Registrado / Concluído</option><option value="cancelado">✕ Cancelado</option>
         </select></div>
-      <div class="form-group" id="mpa-exig-box" style="display:none"><label>Prazo da exigência</label><input class="form-control" type="date" id="mpa-exig-data"></div>
+      <div class="form-group" id="mpa-exig-box" style="display:none"><label>Prazo da exigência (opcional)</label><input class="form-control" type="date" id="mpa-exig-data"></div>
     </div>
     <div class="form-group"><label>📍 Novo movimento (o que foi informado)</label>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <input class="form-control" type="date" id="mpa-data" style="width:150px;flex:0 0 auto">
-        <input class="form-control" id="mpa-fase" list="dl-prot-fase" style="flex:1;min-width:180px" placeholder="Ex: Aguardando publicação dos editais" onkeydown="if(event.key==='Enter'){event.preventDefault();mpaOcAdicionar()}">
+        <input class="form-control" id="mpa-fase" list="dl-prot-fase" style="flex:1;min-width:180px" onchange="faseSugerir('mpa')" placeholder="Ex: Aguardando publicação dos editais" onkeydown="if(event.key==='Enter'){event.preventDefault();mpaOcAdicionar()}">
         <button type="button" class="btn btn-gold btn-sm" id="mpa-btn" onclick="mpaOcAdicionar()">+ Inserir</button>
       </div>
       <div style="font-size:10.5px;color:var(--gray-400);margin-top:4px">Histórico abaixo: ✏ substitui a linha pelo novo texto, ✕ exclui.</div>
       <div id="mpa-lista" style="margin-top:8px;max-height:230px;overflow-y:auto"></div>
     </div>
+    <div id="mpa-prox-hint" style="font-size:11px;color:var(--navy);margin-top:6px"></div>
     <div class="form-grid form-grid-2" style="gap:10px;margin-top:6px">
       <div class="form-group"><label>➡ Próxima etapa</label><input class="form-control" id="mpa-prox" list="dl-prot-fase"></div>
       <div class="form-group"><label>Data prevista / verificar em</label><input class="form-control" type="date" id="mpa-prox-data"></div>
@@ -1522,8 +1525,8 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
 </div></div>
 
 <!-- MODAL PRAZOS PADRÃO -->
-<div class="modal-overlay" id="modal-cfg-prazos" style="display:none">
-<div class="modal" style="max-width:420px">
+<div class="modal-overlay" id="modal-cfg-prazos" style="display:none;z-index:1100">
+<div class="modal" style="max-width:520px">
   <div class="modal-header">
     <div class="modal-title">⚙ Prazos padrão (dias úteis)</div>
     <button class="btn btn-ghost" onclick="closeM('modal-cfg-prazos')">✕</button>
@@ -1534,8 +1537,13 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
       <div class="form-group"><label>🧩 Serviço complexo</label><input class="form-control" type="number" min="1" id="cfgp-complexo"></div>
       <div class="form-group"><label>🏛 Depende de cartório/órgão</label><input class="form-control" type="number" min="1" id="cfgp-cartorio"></div>
       <div class="form-group"><label>Avisar antes (dias úteis)</label><input class="form-control" type="number" min="0" max="10" id="cfgp-aviso"></div>
-      <div class="form-group"><label>⚠ Prazo p/ cumprir nota devolutiva</label><input class="form-control" type="number" min="1" id="cfgp-exigencia"></div>
-      <div class="form-group"><label>🔎 Verificar análise do protocolo após</label><input class="form-control" type="number" min="1" id="cfgp-analise"><div style="font-size:10.5px;color:var(--gray-400);margin-top:3px">Dias úteis contados da entrada (ou do reingresso).</div></div>
+      <input type="hidden" id="cfgp-exigencia">
+      <input type="hidden" id="cfgp-analise">
+      <div style="grid-column:1/-1;border-top:1px solid var(--gray-100);padding-top:10px">
+        <div class="qd-sec">Verificar o processo após cada fase (dias úteis)</div>
+        <div style="font-size:10.5px;color:var(--gray-400);margin-bottom:6px">Ao escolher a fase no andamento, o app sugere a próxima etapa e a data. Você pode mudar a data antes de salvar. Nota devolutiva fica sem data automática.</div>
+        <div id="cfgp-fases" style="display:grid;grid-template-columns:1fr 70px;gap:5px 8px;align-items:center;font-size:12px"></div>
+      </div>
     </div>
     <div style="font-size:11px;color:var(--gray-400);margin-top:10px">Vale para as próximas Ordens de Serviço. Prazos já definidos não são alterados.</div>
   </div>
@@ -4061,12 +4069,14 @@ function abrirCfgPrazos(){
   document.getElementById('cfgp-aviso').value=c.aviso;
   document.getElementById('cfgp-exigencia').value=c.exigencia;
   document.getElementById('cfgp-analise').value=c.analise;
+  document.getElementById('cfgp-fases').innerHTML=['prenot','reingresso','notifPart','notifEntes','decNotif','edital','decEdital','dilig','emol','registro','retirada'].map(k=>FASE_REGRAS.find(r=>r.k===k)).map(r=>`<label for="cfgf-${r.k}" style="color:var(--gray-700)">${r.ic} ${r.nome}</label><input class="form-control" type="number" min="1" id="cfgf-${r.k}" value="${_diasFase(r)}" style="padding:4px 6px">`).join('');
   openM('modal-cfg-prazos');
 }
 function salvarCfgPrazos(){
   const v=k=>parseInt(document.getElementById('cfgp-'+k).value);
   if(!(v('padrao')>0&&v('complexo')>0&&v('cartorio')>0)){alert('Os prazos devem ser maiores que zero.');return}
-  ST.cfgPrazos={padrao:v('padrao'),complexo:v('complexo'),cartorio:v('cartorio'),exigencia:v('exigencia')>0?v('exigencia'):10,analise:v('analise')>0?v('analise'):7,aviso:Math.max(0,v('aviso')||0)};
+  ST.cfgFases={};FASE_REGRAS.filter(r=>r.dias!==null).forEach(r=>{const x=parseInt(document.getElementById('cfgf-'+r.k)?.value);if(x>0)ST.cfgFases[r.k]=x});
+  ST.cfgPrazos={padrao:v('padrao'),complexo:v('complexo'),cartorio:v('cartorio'),exigencia:v('exigencia')>0?v('exigencia'):10,analise:(parseInt(document.getElementById('cfgf-prenot')?.value)||v('analise')||7),aviso:Math.max(0,v('aviso')||0)};
   save();closeM('modal-cfg-prazos');_toastPrazo('⚙ Prazos padrão salvos');
 }
 
@@ -4229,8 +4239,8 @@ const PROT_SIT={
 };
 const PROT_FORMA={onr:'🌐 ONR (online)',balcao:'☎ Balcão (ligar)',outro:'📄 Outro'};
 const PROT_DIAS_SEM_CONSULTA=7;
-const PROT_FASES=['Prenotado / aguardando análise','Em análise pelo registrador','Nota devolutiva emitida','Pendente com nota devolutiva','Aguardando cumprimento de exigências','Reingresso — em reanálise',
-  'Notificação dos confrontantes / titulares','Aguardando decurso de prazo das notificações','Notificação dos entes públicos (União, Estado, Município)',
+const PROT_FASES=['Prenotado / aguardando análise','Em análise pelo registrador','Nota devolutiva emitida','Pendente com nota devolutiva','Exigências cumpridas — reingresso feito','Aguardando cumprimento de exigências','Reingresso — em reanálise',
+  'Notificação dos confrontantes / titulares (pessoa física ou jurídica)','Aguardando decurso de prazo das notificações','Notificação dos entes públicos (União, Estado, Município)',
   'Publicação dos editais','Aguardando decurso de prazo do edital','Diligência / vistoria','Aguardando pagamento de emolumentos',
   'Registro em andamento','Registrado — aguardando retirada','Concluído / matrícula aberta'];
 // Próximo evento previsto (ex.: decurso de prazo das notificações) — gera lembrete e alerta
@@ -4242,6 +4252,41 @@ function protProxInfo(p){
   const n=_diasCorridos(hoje,p.proxData);
   return{nivel:n<=3?'breve':'ok',cor:n<=3?'var(--amber)':'var(--blue)',bg:n<=3?'var(--amber-light)':'var(--blue-light)',txt:`Previsto em ${fmtD(p.proxData).slice(0,5)} (${n} dia${n>1?'s':''})`};
 }
+// ===== Regras de prazo por fase do processo (sugere próxima etapa + data; editável em ⚙ Prazos padrão) =====
+// dias=null: sem data automática (ex.: cumprimento de nota devolutiva — você define quando conseguir).
+const FASE_REGRAS=[
+  {k:'reingresso',ic:'🔁',nome:'Reingresso / reanálise',re:/reingress|reanalis/,dias:7,prox:'Verificar resultado da reanálise',sit:'reingresso'},
+  {k:'exig',ic:'⚠',nome:'Nota devolutiva / pendência',re:/nota devolutiva|exigenc|pendente|pendencia/,dias:null,prox:'Cumprir exigências e fazer o reingresso',sit:'exigencia'},
+  {k:'decEdital',ic:'⏳',nome:'Decurso do prazo do edital',re:/decurso.*edita/,dias:15,prox:'Verificar impugnações / próxima fase',sit:'analise'},
+  {k:'edital',ic:'📰',nome:'Publicação de edital',re:/edita/,dias:20,prox:'Verificar decurso do prazo do edital',sit:'analise'},
+  {k:'notifEntes',ic:'🏛',nome:'Notificação de entes públicos (União, Estado, Município)',re:/(notific|intima|cientific).*(ente|uniao|estado|municip|fazenda|spu|incra)|(ente|uniao|estado|municip).*(notific|intima)/,dias:30,prox:'Verificar manifestação dos entes públicos',sit:'analise'},
+  {k:'decNotif',ic:'⏳',nome:'Decurso do prazo das notificações',re:/decurso/,dias:15,prox:'Verificar manifestações / próxima fase',sit:'analise'},
+  {k:'notifPart',ic:'✉',nome:'Notificação de confrontantes / titulares (PF ou PJ)',re:/notific|intima|confront|confinant/,dias:20,prox:'Verificar decurso do prazo das notificações',sit:'analise'},
+  {k:'retirada',ic:'📦',nome:'Registrado — aguardando retirada',re:/retirada|registrado/,dias:3,prox:'Retirar documentos no cartório'},
+  {k:'registro',ic:'🖊',nome:'Registro em andamento',re:/registro em andamento|em registro/,dias:7,prox:'Verificar se o registro foi concluído',sit:'analise'},
+  {k:'emol',ic:'💲',nome:'Aguardando pagamento de emolumentos',re:/emolument|boleto|guia/,dias:5,prox:'Confirmar pagamento dos emolumentos',sit:'analise'},
+  {k:'dilig',ic:'🔍',nome:'Diligência / vistoria',re:/diligenc|vistoria/,dias:10,prox:'Verificar resultado da diligência',sit:'analise'},
+  {k:'prenot',ic:'📥',nome:'Prenotação / protocolo / análise',re:/prenot|protocolad|analise|registrador/,dias:7,prox:'Verificar resultado da análise',sit:'analise'}
+];
+function _diasFase(r){if(r.dias===null)return null;if(r.k==='prenot')return _cfgPrazos().analise;const c=ST.cfgFases||{};return parseInt(c[r.k])||r.dias}
+function _regraFase(txt){const t=norm(txt||'');if(!t)return null;return FASE_REGRAS.find(r=>r.re.test(t))||null}
+// Liga o campo de ocorrência às sugestões: ctx = prot | mpa | and
+const FASE_CAMPOS={prot:{txt:'oc-texto',data:'oc-data',prox:'prot-prox',pd:'prot-prox-data',sit:'prot-sit',sitFn:()=>protSitMudou(),hint:'prot-prox-hint'},
+  mpa:{txt:'mpa-fase',data:'mpa-data',prox:'mpa-prox',pd:'mpa-prox-data',sit:'mpa-sit',sitFn:()=>mpaSitMudou(),hint:'mpa-prox-hint'},
+  and:{txt:'and-oc-texto',data:'and-oc-data',prox:'and-prox',pd:'and-prox-data',hint:'and-prox-hint'}};
+function faseSugerir(ctx){
+  const c=FASE_CAMPOS[ctx];const r=_regraFase(document.getElementById(c.txt).value);
+  const h=document.getElementById(c.hint);
+  if(!r){if(h)h.textContent='';return}
+  const base=document.getElementById(c.data).value||today(),n=_diasFase(r);
+  document.getElementById(c.prox).value=r.prox;
+  document.getElementById(c.pd).value=n?addDiasUteis(base,n):'';
+  if(c.sit&&r.sit){const sel=document.getElementById(c.sit);
+    if(sel&&sel.value!==r.sit&&!(r.sit==='analise'&&sel.value==='protocolado')){sel.value=r.sit;c.sitFn();}}
+  if(h)h.innerHTML=`💡 ${r.ic} ${escH(r.nome)}: ${n?`verificar em ${n} dias úteis (${fmtD(addDiasUteis(base,n))})`:'sem data automática — informe quando for cumprir'} · <span style="cursor:pointer;text-decoration:underline" onclick="abrirCfgPrazos()">ajustar prazos</span>`;
+}
+function _faseHintLimpar(){['prot-prox-hint','mpa-prox-hint','and-prox-hint'].forEach(i=>{const e=document.getElementById(i);if(e)e.textContent=''})}
+
 // Prazo de análise: ao protocolar (ou reingressar), agenda a verificação N dias úteis depois (⚙ Prazos padrão)
 const PROT_VERIF_ETAPA='Verificar resultado da análise';
 function _protPrazoAnalise(desde){return addDiasUteis(desde||today(),_cfgPrazos().analise)}
@@ -4376,9 +4421,7 @@ function _togProtCampos(){
 }
 function protSitMudou(){
   _togProtCampos();
-  if(document.getElementById('prot-sit').value==='exigencia'&&!document.getElementById('prot-exig-data').value){
-    const n=_cfgPrazos().exigencia;document.getElementById('prot-exig-data').value=addDiasUteis(today(),n);
-  }
+
 }
 function abrirProtocolo(id,orcId){
   const p=id?_prots().find(x=>x.id===id):null;
@@ -4394,7 +4437,7 @@ function abrirProtocolo(id,orcId){
   document.getElementById('prot-data').value=p?.dataEntrada||today();
   document.getElementById('prot-sit').value=p?.situacao||'protocolado';
   document.getElementById('prot-exig-data').value=p?.prazoExig||'';
-  _ocEdit=p?_ocs(p).map(o=>({...o})):[];_ocCtx='prot';_ocResetSubst();
+  _ocEdit=p?_ocs(p).map(o=>({...o})):[];_ocCtx='prot';_ocResetSubst();_faseHintLimpar();
   document.getElementById('oc-data').value=today();
   document.getElementById('oc-texto').value='';
   _renderOcLista();
@@ -4460,7 +4503,6 @@ function salvarProtocolo(){
   if(!orcId&&!cliente&&!descricao){alert('Informe o cliente ou a descrição do processo.');return}
   const sit=document.getElementById('prot-sit').value;
   const prazoExig=sit==='exigencia'?document.getElementById('prot-exig-data').value:'';
-  if(sit==='exigencia'&&!prazoExig){alert('Informe a data limite para cumprir a exigência.');return}
   if(document.getElementById('oc-texto').value.trim()){_ocCtx='prot';_ocGravarInput();} // não perde o que foi digitado sem clicar em Inserir
   const ant=id?_prots().find(x=>x.id===id):null;
   const p=ant||{id:'p'+Date.now().toString(36),hist:[],criadoEm:today()};
@@ -4496,7 +4538,7 @@ function protConsultei(id){
   document.getElementById('mpa-id').value=id;
   document.getElementById('mpa-title').textContent=(p.forma==='balcao'?'☎ Andamento':'🌐 Andamento')+' — Prot. '+(p.numero||'');
   document.getElementById('mpa-sub').textContent=_protRef(p)+(p.orgao?' · '+p.orgao:'');
-  _ocEdit=_ocs(p).map(o=>({...o}));_ocCtx='mpa';_ocResetSubst();
+  _ocEdit=_ocs(p).map(o=>({...o}));_ocCtx='mpa';_ocResetSubst();_faseHintLimpar();
   document.getElementById('mpa-sit').value=p.situacao||'protocolado';
   document.getElementById('mpa-exig-data').value=p.prazoExig||'';
   document.getElementById('mpa-exig-box').style.display=p.situacao==='exigencia'?'block':'none';
@@ -4517,8 +4559,7 @@ function mpaOcAdicionar(){_ocCtx='mpa';_ocGravarInput()}
 function mpaSitMudou(){
   const v=document.getElementById('mpa-sit').value;
   document.getElementById('mpa-exig-box').style.display=v==='exigencia'?'block':'none';
-  if(v==='exigencia'&&!document.getElementById('mpa-exig-data').value)
-    document.getElementById('mpa-exig-data').value=addDiasUteis(today(),_cfgPrazos().exigencia);
+
 }
 function salvarAndamentoProt(semAlteracao){
   const id=document.getElementById('mpa-id').value;
@@ -4528,7 +4569,6 @@ function salvarAndamentoProt(semAlteracao){
     _ocCtx='mpa';
     if(document.getElementById('mpa-fase').value.trim())_ocGravarInput();
     const sit=document.getElementById('mpa-sit').value;
-    if(sit==='exigencia'&&!document.getElementById('mpa-exig-data').value){alert('Informe o prazo para cumprir a exigência.');return}
     const _sitMudou=sit!==p.situacao;
     if(_sitMudou){_ocEdit.push({id:_novoOcId(),data:document.getElementById('mpa-data').value||today(),texto:(PROT_SIT[sit]||{}).t||sit,tipo:'sit'});p.situacao=sit;}
     p.prazoExig=sit==='exigencia'?document.getElementById('mpa-exig-data').value:'';
@@ -4821,6 +4861,7 @@ function _qdProx(d){
   if(d<hoje)return{nivel:'vencido',tom:'danger',txt:`Verificar (desde ${fmtD(d).slice(0,5)})`};
   if(d===hoje)return{nivel:'hoje',tom:'warning',txt:'Verificar hoje'};
   const n=_diasCorridos(hoje,d);
+  if(n===1)return{nivel:'amanha',tom:'warning',txt:'Verificar amanhã'};
   return{nivel:n<=3?'breve':'ok',tom:'neutral',txt:fmtD(d).slice(0,5)+(n<=3?` (${n} dia${n>1?'s':''})`:'')};
 }
 function _qdColunaOS(o){
@@ -4848,7 +4889,7 @@ function _qdEnriquecer(it){
     if(p.proxData)addProx(p.proxData);
     const ex=protInfoExig(p);
     if(p.situacao==='exigencia')fl.exig=true;
-    if(ex)sinais.push({tom:ex.nivel==='ok'?'neutral':(ex.nivel==='urgente'?'warning':'danger'),txt:ex.nivel==='atrasado'?'Exigência vencida':ex.nivel==='hoje'?'Exigência vence hoje':'Exigência até '+fmtD(p.prazoExig).slice(0,5),d:p.prazoExig});
+    if(ex)sinais.push({tom:ex.nivel==='ok'?'neutral':(ex.nivel==='urgente'?'warning':'danger'),txt:ex.nivel==='atrasado'?'Exigência vencida':ex.nivel==='hoje'?'Exigência vence hoje':_diasCorridos(today(),p.prazoExig)===1?'Exigência vence amanhã':'Exigência até '+fmtD(p.prazoExig).slice(0,5),d:p.prazoExig});
   };
   const sitDe=et=>{if(et==='cliente'||et==='terceiros')fl.aguardando=true;return et&&et!=='execucao'?PRAZO_ETAPAS[et]||'':''};
   let titulo='',sub='',prox='',proxD='',proxProt='',col='',busca='',sit='',local='',localTxt='';
@@ -4904,8 +4945,9 @@ function _qdEnriquecer(it){
     busca=[titulo,sub,prox].join(' ');
   }
   const rk={danger:0,warning:1,success:2,neutral:3};
-  sinais.sort((a,b)=>rk[a.tom]-rk[b.tom]||String(a.d||'9').localeCompare(String(b.d||'9')));
-  return{...it,titulo,sub,prox,proxD,proxProt,col,fl,sit,local,localTxt,badge:sinais[0]||null,rank:sinais[0]?rk[sinais[0].tom]:4,dataOrd:(sinais[0]&&sinais[0].d)||'9999',busca:norm(busca)};
+  sinais.sort((a,b)=>rk[a.tom]-rk[b.tom]||String(a.d||'9').localeCompare(String(b.d||'9'))||(/^Exig/.test(b.txt)-/^Exig/.test(a.txt)));
+  const topo=sinais[0],datas=topo?sinais.filter(x=>x.tom===topo.tom&&x.d).map(x=>String(x.d)).sort():[];
+  return{...it,titulo,sub,prox,proxD,proxProt,col,fl,sit,local,localTxt,badge:topo||null,rank:topo?rk[topo.tom]:4,dataOrd:datas[0]||'9999',busca:norm(busca)};
 }
 function qdSetFiltro(f){_qdFiltro=_qdFiltro===f?'':f;if(_qdModo==='lista')_qdModo='quadro';renderQuadro()}
 function qdAlternarModo(){_qdModo=_qdModo==='lista'?'quadro':'lista';renderQuadro()}
@@ -5548,7 +5590,9 @@ function confirmarConclusao(){
 
 const OS_FASES=['Aguardando agendamento do levantamento','Levantamento de campo agendado','Levantamento de campo realizado','Processamento dos dados',
   'Elaboração da planta e memorial','Aguardando documentos do cliente','Aguardando assinatura do cliente','Documentação pronta para entrega',
-  'Protocolado no cartório / órgão','Em análise pelo registrador','Pendente com nota devolutiva','Exigências cumpridas — reingresso feito','Registrado / concluído no cartório','Entregue ao cliente'];
+  'Protocolado no cartório / órgão','Em análise pelo registrador','Pendente com nota devolutiva','Exigências cumpridas — reingresso feito',
+  'Notificação dos confrontantes / titulares (pessoa física ou jurídica)','Notificação dos entes públicos (União, Estado, Município)','Publicação do edital',
+  'Registrado / concluído no cartório','Entregue ao cliente'];
 function _isoDeBR(d){const m=String(d||'').match(/^(\d{2})\/(\d{2})\/(\d{4})/);return m?`${m[3]}-${m[2]}-${m[1]}`:(/^\d{4}-\d{2}-\d{2}/.test(d||'')?d.slice(0,10):today())}
 // Ocorrências da OS (migra as anotações antigas)
 function _ocsOS(o){
@@ -5588,7 +5632,7 @@ function abrirAndamento(id){
   document.getElementById('mand-orc-id').value=id;
   document.getElementById('mand-title').textContent=o.isCartao?'📋 Andamento — '+o.titulo:'📋 Andamento — OS '+o.num;
   document.getElementById('mand-sub').textContent=o.isCartao?[o.cliente,o.desc].filter(Boolean).join(' · '):o.cliente+(_srvResumo(o)?' · '+_srvResumo(o).slice(0,90):'');
-  _ocEdit=_ocsOS(o).map(x=>({...x}));_ocCtx='and';_ocResetSubst();
+  _ocEdit=_ocsOS(o).map(x=>({...x}));_ocCtx='and';_ocResetSubst();_faseHintLimpar();
   const _ets=document.getElementById('and-etapa');
   _ets.innerHTML=Object.entries(PRAZO_ETAPAS).map(([k,t])=>`<option value="${k}">${t}</option>`).join('');
   _ets.value=_qdEtapa(o);
@@ -5618,10 +5662,12 @@ function salvarAndamento(){
   if(!o.isCartao){
     const nd=_novas.find(x=>x.tipo!=='sit'&&/nota devolutiva|exig[eê]ncia/i.test(x.texto));
     const pa=_protsDaOS(o.id).filter(p=>_protAtivo(p)&&p.situacao!=='exigencia');
-    if(nd&&pa.length&&confirm(`Marcar também o protocolo ${pa[0].numero||''} (${pa[0].orgao||''}) como ⚠ Nota devolutiva?\n\nO app agenda o prazo para cumprir a exigência (${_cfgPrazos().exigencia} dias úteis a partir de ${fmtD(nd.data)}) e os avisos.`)){
+    const _dPrev=document.getElementById('and-prox-data').value;
+    const _prazoND=!nd?'':(_dPrev&&_dPrev>=nd.data?_dPrev:'');
+    if(nd&&pa.length&&confirm(`Marcar também o protocolo ${pa[0].numero||''} (${pa[0].orgao||''}) como ⚠ Nota devolutiva?\n\n${_prazoND?'Prazo para cumprir a exigência: '+fmtD(_prazoND)+' — com avisos.':'Sem prazo definido (você pode informar depois no protocolo).'}`)){
       const p=pa[0];
       _ocs(p).push({id:_novoOcId(),data:nd.data,texto:PROT_SIT.exigencia.t,tipo:'sit'},{id:_novoOcId(),data:nd.data,texto:nd.texto});
-      p.situacao='exigencia';p.prazoExig=addDiasUteis(nd.data,_cfgPrazos().exigencia);p.ultConsulta=today();
+      p.situacao='exigencia';p.prazoExig=_prazoND;p.ultConsulta=today();
       p.proxEtapa='Cumprir exigências e fazer o reingresso';p.proxData='';
       _syncFase(p);_syncCompProt(p);
     }
