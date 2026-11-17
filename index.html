@@ -1407,7 +1407,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
         <div id="oc-lista" style="margin-top:8px;max-height:260px;overflow-y:auto"></div>
       </div>
       <div class="form-group"><label>➡ Próxima etapa</label><input class="form-control" id="prot-prox" list="dl-prot-fase" placeholder="Ex: Publicação dos editais"></div>
-      <div class="form-group"><label>Data prevista / verificar em</label><input class="form-control" type="date" id="prot-prox-data"><div style="font-size:10.5px;color:var(--gray-400);margin-top:3px">Gera lembrete (notificação) nesse dia.</div></div>
+      <div class="form-group"><label>Data prevista / verificar em</label><input class="form-control" type="date" id="prot-prox-data"><div style="font-size:10.5px;color:var(--gray-400);margin-top:3px">Gera lembrete (notificação) nesse dia. Em branco: o app marca automaticamente o prazo de análise (⚙ Prazos padrão) a partir da entrada.</div></div>
     </div>
   </div>
   <div class="modal-footer">
@@ -1535,6 +1535,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
       <div class="form-group"><label>🏛 Depende de cartório/órgão</label><input class="form-control" type="number" min="1" id="cfgp-cartorio"></div>
       <div class="form-group"><label>Avisar antes (dias úteis)</label><input class="form-control" type="number" min="0" max="10" id="cfgp-aviso"></div>
       <div class="form-group"><label>⚠ Prazo p/ cumprir nota devolutiva</label><input class="form-control" type="number" min="1" id="cfgp-exigencia"></div>
+      <div class="form-group"><label>🔎 Verificar análise do protocolo após</label><input class="form-control" type="number" min="1" id="cfgp-analise"><div style="font-size:10.5px;color:var(--gray-400);margin-top:3px">Dias úteis contados da entrada (ou do reingresso).</div></div>
     </div>
     <div style="font-size:11px;color:var(--gray-400);margin-top:10px">Vale para as próximas Ordens de Serviço. Prazos já definidos não são alterados.</div>
   </div>
@@ -3788,7 +3789,7 @@ let _agSrvTab='pend';
 function escH(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 function _cfgPrazos(){
   const c=ST.cfgPrazos||{};
-  return{padrao:parseInt(c.padrao)||7,complexo:parseInt(c.complexo)||15,cartorio:parseInt(c.cartorio)||30,exigencia:parseInt(c.exigencia)||10,aviso:c.aviso!=null&&c.aviso!==''?parseInt(c.aviso):2};
+  return{padrao:parseInt(c.padrao)||7,complexo:parseInt(c.complexo)||15,cartorio:parseInt(c.cartorio)||30,exigencia:parseInt(c.exigencia)||10,analise:parseInt(c.analise)||7,aviso:c.aviso!=null&&c.aviso!==''?parseInt(c.aviso):2};
 }
 
 // --- Dias úteis (sáb/dom + feriados nacionais, Ceará e Fortaleza) ---
@@ -4059,12 +4060,13 @@ function abrirCfgPrazos(){
   document.getElementById('cfgp-cartorio').value=c.cartorio;
   document.getElementById('cfgp-aviso').value=c.aviso;
   document.getElementById('cfgp-exigencia').value=c.exigencia;
+  document.getElementById('cfgp-analise').value=c.analise;
   openM('modal-cfg-prazos');
 }
 function salvarCfgPrazos(){
   const v=k=>parseInt(document.getElementById('cfgp-'+k).value);
   if(!(v('padrao')>0&&v('complexo')>0&&v('cartorio')>0)){alert('Os prazos devem ser maiores que zero.');return}
-  ST.cfgPrazos={padrao:v('padrao'),complexo:v('complexo'),cartorio:v('cartorio'),exigencia:v('exigencia')>0?v('exigencia'):10,aviso:Math.max(0,v('aviso')||0)};
+  ST.cfgPrazos={padrao:v('padrao'),complexo:v('complexo'),cartorio:v('cartorio'),exigencia:v('exigencia')>0?v('exigencia'):10,analise:v('analise')>0?v('analise'):7,aviso:Math.max(0,v('aviso')||0)};
   save();closeM('modal-cfg-prazos');_toastPrazo('⚙ Prazos padrão salvos');
 }
 
@@ -4227,7 +4229,7 @@ const PROT_SIT={
 };
 const PROT_FORMA={onr:'🌐 ONR (online)',balcao:'☎ Balcão (ligar)',outro:'📄 Outro'};
 const PROT_DIAS_SEM_CONSULTA=7;
-const PROT_FASES=['Prenotado / aguardando análise','Em análise pelo registrador','Nota devolutiva emitida','Aguardando cumprimento de exigências','Reingresso — em reanálise',
+const PROT_FASES=['Prenotado / aguardando análise','Em análise pelo registrador','Nota devolutiva emitida','Pendente com nota devolutiva','Aguardando cumprimento de exigências','Reingresso — em reanálise',
   'Notificação dos confrontantes / titulares','Aguardando decurso de prazo das notificações','Notificação dos entes públicos (União, Estado, Município)',
   'Publicação dos editais','Aguardando decurso de prazo do edital','Diligência / vistoria','Aguardando pagamento de emolumentos',
   'Registro em andamento','Registrado — aguardando retirada','Concluído / matrícula aberta'];
@@ -4239,6 +4241,20 @@ function protProxInfo(p){
   if(p.proxData===hoje)return{nivel:'hoje',cor:'var(--red)',bg:'var(--red-light)',txt:'Previsto para HOJE'};
   const n=_diasCorridos(hoje,p.proxData);
   return{nivel:n<=3?'breve':'ok',cor:n<=3?'var(--amber)':'var(--blue)',bg:n<=3?'var(--amber-light)':'var(--blue-light)',txt:`Previsto em ${fmtD(p.proxData).slice(0,5)} (${n} dia${n>1?'s':''})`};
+}
+// Prazo de análise: ao protocolar (ou reingressar), agenda a verificação N dias úteis depois (⚙ Prazos padrão)
+const PROT_VERIF_ETAPA='Verificar resultado da análise';
+function _protPrazoAnalise(desde){return addDiasUteis(desde||today(),_cfgPrazos().analise)}
+const PROT_SIT_ANALISE=['protocolado','analise','reingresso'];
+function _migrarPrazoAnalise(){
+  // protocolos ativos sem data de verificação e com movimento nos últimos 30 dias ganham a verificação automática
+  let n=0;const lim=_ymd(new Date(Date.now()-30*86400000));
+  _prots().forEach(p=>{
+    if(!_protAtivo(p)||p.proxData||!PROT_SIT_ANALISE.includes(p.situacao))return;
+    const ult=_ultimaConsulta(p);if(!ult||ult<lim)return;
+    p.proxData=_protPrazoAnalise(ult);if(!p.proxEtapa)p.proxEtapa=PROT_VERIF_ETAPA;_syncCompProt(p);n++;
+  });
+  return n;
 }
 function _fillFases(){
   const usadas=_prots().flatMap(p=>[..._ocs(p).filter(o=>o.tipo!=='sit').map(o=>o.texto),p.proxEtapa]).filter(Boolean);
@@ -4449,7 +4465,12 @@ function salvarProtocolo(){
   const ant=id?_prots().find(x=>x.id===id):null;
   const p=ant||{id:'p'+Date.now().toString(36),hist:[],criadoEm:today()};
   const mudouSit=!ant||ant.situacao!==sit;
-  const proxEtapa=document.getElementById('prot-prox').value.trim(),proxData=document.getElementById('prot-prox-data').value;
+  let proxEtapa=document.getElementById('prot-prox').value.trim(),proxData=document.getElementById('prot-prox-data').value;
+  const _dEnt=document.getElementById('prot-data').value||today();
+  if(PROT_SIT_ANALISE.includes(sit)){
+    const reing=sit==='reingresso'&&mudouSit&&ant;
+    if(!proxData||(reing&&proxData===(ant.proxData||''))){proxData=_protPrazoAnalise(reing?today():_dEnt);if(!proxEtapa||proxEtapa===(ant&&ant.proxEtapa))proxEtapa=proxEtapa||PROT_VERIF_ETAPA;}
+  }
   Object.assign(p,{orcId,cliente,descricao,orgao,numero,forma:document.getElementById('prot-forma').value,
     dataEntrada:document.getElementById('prot-data').value||today(),situacao:sit,prazoExig,proxEtapa,proxData});
   if(mudouSit&&ant)_ocEdit.push({id:_novoOcId(),data:today(),texto:(PROT_SIT[sit]||{}).t||sit,tipo:'sit'});
@@ -4508,11 +4529,18 @@ function salvarAndamentoProt(semAlteracao){
     if(document.getElementById('mpa-fase').value.trim())_ocGravarInput();
     const sit=document.getElementById('mpa-sit').value;
     if(sit==='exigencia'&&!document.getElementById('mpa-exig-data').value){alert('Informe o prazo para cumprir a exigência.');return}
-    if(sit!==p.situacao){_ocEdit.push({id:_novoOcId(),data:document.getElementById('mpa-data').value||today(),texto:(PROT_SIT[sit]||{}).t||sit,tipo:'sit'});p.situacao=sit;}
+    const _sitMudou=sit!==p.situacao;
+    if(_sitMudou){_ocEdit.push({id:_novoOcId(),data:document.getElementById('mpa-data').value||today(),texto:(PROT_SIT[sit]||{}).t||sit,tipo:'sit'});p.situacao=sit;}
     p.prazoExig=sit==='exigencia'?document.getElementById('mpa-exig-data').value:'';
     p.oc=_ocEdit.map(({_i,...o})=>o);
+    const _pdAnt=p.proxData||'';
     p.proxEtapa=document.getElementById('mpa-prox').value.trim();
     p.proxData=document.getElementById('mpa-prox-data').value;
+    // reingresso (ou volta para análise) sem nova data informada: agenda a verificação automaticamente
+    if(PROT_SIT_ANALISE.includes(sit)&&(!p.proxData||(_sitMudou&&p.proxData===_pdAnt))){
+      p.proxData=_protPrazoAnalise(document.getElementById('mpa-data').value||today());
+      if(!p.proxEtapa||_sitMudou)p.proxEtapa=PROT_VERIF_ETAPA;
+    }
     _syncFase(p);
   }
   _syncCompProt(p);
@@ -4780,9 +4808,10 @@ function qdSetEtapa(id,et){
   if(!x.isCartao&&x.prazo)_syncCompPrazo(x);
   save();renderDash();_toastPrazo('Situação: '+(PRAZO_ETAPAS[et]||et));
 }
+function _qdCampo(lbl,html){return`<div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:9.5px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em">${lbl}</span>${html}</div>`}
 function _qdSelEtapa(id,et){
-  return`<select class="form-control" style="width:auto;font-size:12px;padding:5px 8px" title="Situação do serviço" onchange="qdSetEtapa('${id}',this.value)">
-    ${Object.entries(PRAZO_ETAPAS).map(([k,t])=>`<option value="${k}" ${k===et?'selected':''}>${t}</option>`).join('')}</select>`;
+  return _qdCampo('Situação',`<select class="form-control" style="width:auto;font-size:12px;padding:5px 8px" title="Situação do serviço" onchange="qdSetEtapa('${id}',this.value)">
+    ${Object.entries(PRAZO_ETAPAS).map(([k,t])=>`<option value="${k}" ${k===et?'selected':''}>${t}</option>`).join('')}</select>`);
 }
 
 // Data prevista genérica (próxima verificação)
@@ -4822,7 +4851,7 @@ function _qdEnriquecer(it){
     if(ex)sinais.push({tom:ex.nivel==='ok'?'neutral':(ex.nivel==='urgente'?'warning':'danger'),txt:ex.nivel==='atrasado'?'Exigência vencida':ex.nivel==='hoje'?'Exigência vence hoje':'Exigência até '+fmtD(p.prazoExig).slice(0,5),d:p.prazoExig});
   };
   const sitDe=et=>{if(et==='cliente'||et==='terceiros')fl.aguardando=true;return et&&et!=='execucao'?PRAZO_ETAPAS[et]||'':''};
-  let titulo='',sub='',prox='',col='',busca='',sit='',local='',localTxt='';
+  let titulo='',sub='',prox='',proxD='',proxProt='',col='',busca='',sit='',local='',localTxt='';
   if(it.k==='e'){
     const o=it.ref,d=_orcDataEnvio(o),n=d?Math.max(0,_diasCorridos(d,today())):0;
     titulo=o.cliente;sub=`Orç. ${o.num} · ${fmtM(o.valor)}${_srvResumo(o)?' · '+_srvResumo(o).slice(0,40):''}`;
@@ -4835,7 +4864,10 @@ function _qdEnriquecer(it){
   }else if(it.k==='o'){
     const o=it.ref,pa=_protsDaOS(o.id).filter(_protAtivo);
     titulo=o.cliente;sub=`OS ${o.num} · ${_srvResumo(o).slice(0,48)}`;
-    prox=o.proxEtapa||(pa[0]&&(pa[0].proxEtapa||pa[0].fase))||(_osAReceber(o)?'Receber o saldo de '+fmtM(_saldoOS(o)):'')||o.andamento||'';
+    if(o.proxEtapa){prox=o.proxEtapa;proxD=o.proxData||'';}
+    else if(pa[0]&&(pa[0].proxEtapa||pa[0].fase)){const pp=pa.slice().sort((a,b)=>String(a.proxData||'9').localeCompare(String(b.proxData||'9')))[0];prox=pp.proxEtapa||pp.fase;proxD=pp.proxData||'';proxProt=pp.id;}
+    else if(_osAReceber(o))prox='Receber o saldo de '+fmtM(_saldoOS(o));
+    else{prox=o.andamento||'';proxD=o.proxData||'';}
     col=_qdColunaOS(o);
     if(col==='execucao')sit=sitDe(_qdEtapa(o));
     if(col==='cartorio'&&pa[0]){local=pa[0].orgao||'';localTxt=[pa[0].orgao,pa[0].numero&&'Prot. '+pa[0].numero].filter(Boolean).join(' · ')+(pa.length>1?` (+${pa.length-1})`:'');}
@@ -4852,7 +4884,7 @@ function _qdEnriquecer(it){
     const p=it.ref;
     titulo=_protCliente(p);sub=p.descricao||'';
     local=p.orgao||'';localTxt=[p.orgao,p.numero&&'Prot. '+p.numero].filter(Boolean).join(' · ');
-    prox=p.proxEtapa||p.fase||(PROT_SIT[p.situacao]||{}).t||'';
+    prox=p.proxEtapa||p.fase||(PROT_SIT[p.situacao]||{}).t||'';proxD=p.proxData||'';
     col=p.coluna==='execucao'?'execucao':'cartorio';addProt(p);
     busca=[titulo,sub,prox,p.numero,p.orgao].join(' ');
   }else if(it.k==='r'){
@@ -4867,13 +4899,13 @@ function _qdEnriquecer(it){
   }else{
     const c=it.ref;
     titulo=c.titulo;sub=[c.cliente,c.desc].filter(Boolean).join(' · ');
-    prox=c.proxEtapa||c.andamento||'';col=c.coluna==='cartorio'?'cartorio':'execucao';addProx(c.proxData);
+    prox=c.proxEtapa||c.andamento||'';proxD=c.proxData||'';col=c.coluna==='cartorio'?'cartorio':'execucao';addProx(c.proxData);
     if(col==='execucao')sit=sitDe(_qdEtapa(c));
     busca=[titulo,sub,prox].join(' ');
   }
   const rk={danger:0,warning:1,success:2,neutral:3};
   sinais.sort((a,b)=>rk[a.tom]-rk[b.tom]||String(a.d||'9').localeCompare(String(b.d||'9')));
-  return{...it,titulo,sub,prox,col,fl,sit,local,localTxt,badge:sinais[0]||null,rank:sinais[0]?rk[sinais[0].tom]:4,dataOrd:(sinais[0]&&sinais[0].d)||'9999',busca:norm(busca)};
+  return{...it,titulo,sub,prox,proxD,proxProt,col,fl,sit,local,localTxt,badge:sinais[0]||null,rank:sinais[0]?rk[sinais[0].tom]:4,dataOrd:(sinais[0]&&sinais[0].d)||'9999',busca:norm(busca)};
 }
 function qdSetFiltro(f){_qdFiltro=_qdFiltro===f?'':f;if(_qdModo==='lista')_qdModo='quadro';renderQuadro()}
 function qdAlternarModo(){_qdModo=_qdModo==='lista'?'quadro':'lista';renderQuadro()}
@@ -5008,8 +5040,8 @@ function renderQDDetalhe(){
   const el=document.getElementById('qd-det');if(!el||!_qdAberto)return;
   const {k,id}=_qdAberto;
   const it=_qdItens().find(x=>x.k===k&&x.id===id);
-  const selMover=col=>`<select class="form-control" style="width:auto;font-size:12px;padding:5px 8px" title="Coluna" onchange="qdMover('${k}','${id}',this.value)">
-      ${QD_COLS.filter(c=>c.k==='execucao'||c.k==='cartorio').map(c=>`<option value="${c.k}" ${c.k===col?'selected':''}>${c.ic} ${c.t}</option>`).join('')}</select>`;
+  const selMover=col=>_qdCampo('Coluna',`<select class="form-control" style="width:auto;font-size:12px;padding:5px 8px" title="Coluna" onchange="qdMover('${k}','${id}',this.value)">
+      ${QD_COLS.filter(c=>c.k==='execucao'||c.k==='cartorio').map(c=>`<option value="${c.k}" ${c.k===col?'selected':''}>${c.ic} ${c.t}</option>`).join('')}</select>`);
   let h='';
   if(k==='e'){
     const o=ST.orcamentos.find(x=>x.id===id);if(!o||!_orcEnviado(o)){closeM('modal-qd');return}
@@ -5036,7 +5068,7 @@ function renderQDDetalhe(){
     h+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
       <div style="font-size:12px;color:var(--gray-500)">💰 ${pct}% pago${saldo>0.009?' · falta '+fmtM(saldo):''} · ${o.prazo?(entregue?'✅ Entregue '+fmtD(o.prazo.entregueEm):'📦 Entrega prevista '+fmtD(o.prazo.prevista)):'Sem prazo de entrega'}</div>
       ${entregue?`<span class="qd-tag" style="font-size:11px">${_qdColLabel(col)}</span>`:`<div style="display:flex;gap:6px;flex-wrap:wrap">${_qdSelEtapa(id,_qdEtapa(o))}${selMover(col)}</div>`}</div>`;
-    h+=_qdProxBox(it?it.prox:(o.proxEtapa||o.andamento),o.proxData,tom,_qdBtn('✏ Alterar',`abrirAndamento('${id}')`));
+    h+=_qdProxBox(it?it.prox:(o.proxEtapa||o.andamento),it?it.proxD:o.proxData,tom,it&&it.proxProt?_qdBtn('✏ Alterar',`protConsultei('${it.proxProt}')`):_qdBtn('✏ Alterar',`abrirAndamento('${id}')`));
     h+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
       <div><div class="qd-sec">Linha do tempo</div>${_qdTimeline(_ocsOS(o))}</div>
       <div><div class="qd-sec">Protocolos</div>${pr.length?pr.map(p=>{const s=PROT_SIT[p.situacao]||{};const px=protProxInfo(p);
@@ -5515,7 +5547,8 @@ function confirmarConclusao(){
 
 
 const OS_FASES=['Aguardando agendamento do levantamento','Levantamento de campo agendado','Levantamento de campo realizado','Processamento dos dados',
-  'Elaboração da planta e memorial','Aguardando documentos do cliente','Aguardando assinatura do cliente','Documentação pronta para entrega','Entregue ao cliente'];
+  'Elaboração da planta e memorial','Aguardando documentos do cliente','Aguardando assinatura do cliente','Documentação pronta para entrega',
+  'Protocolado no cartório / órgão','Em análise pelo registrador','Pendente com nota devolutiva','Exigências cumpridas — reingresso feito','Registrado / concluído no cartório','Entregue ao cliente'];
 function _isoDeBR(d){const m=String(d||'').match(/^(\d{2})\/(\d{2})\/(\d{4})/);return m?`${m[3]}-${m[2]}-${m[1]}`:(/^\d{4}-\d{2}-\d{2}/.test(d||'')?d.slice(0,10):today())}
 // Ocorrências da OS (migra as anotações antigas)
 function _ocsOS(o){
@@ -5579,7 +5612,20 @@ function salvarAndamento(){
     if(o.isCartao){o.etapa=_et;if(o.coluna==='aguardando')o.coluna='execucao';}else if(o.prazo){o.prazo.etapa=_et;_syncCompPrazo(o);}else o.qdEtapa=_et;
     if(!o.isCartao&&o.coluna==='aguardando')o.coluna='';
   }
+  const _novas=_ocEdit.filter(x=>!_ocsOS(o).some(y=>y.id===x.id));
   o.oc=_ocEdit.map(({_i,...x})=>x);
+  // Nota devolutiva registrada na OS: oferece marcar o protocolo também (gera o prazo da exigência e os avisos)
+  if(!o.isCartao){
+    const nd=_novas.find(x=>x.tipo!=='sit'&&/nota devolutiva|exig[eê]ncia/i.test(x.texto));
+    const pa=_protsDaOS(o.id).filter(p=>_protAtivo(p)&&p.situacao!=='exigencia');
+    if(nd&&pa.length&&confirm(`Marcar também o protocolo ${pa[0].numero||''} (${pa[0].orgao||''}) como ⚠ Nota devolutiva?\n\nO app agenda o prazo para cumprir a exigência (${_cfgPrazos().exigencia} dias úteis a partir de ${fmtD(nd.data)}) e os avisos.`)){
+      const p=pa[0];
+      _ocs(p).push({id:_novoOcId(),data:nd.data,texto:PROT_SIT.exigencia.t,tipo:'sit'},{id:_novoOcId(),data:nd.data,texto:nd.texto});
+      p.situacao='exigencia';p.prazoExig=addDiasUteis(nd.data,_cfgPrazos().exigencia);p.ultConsulta=today();
+      p.proxEtapa='Cumprir exigências e fazer o reingresso';p.proxData='';
+      _syncFase(p);_syncCompProt(p);
+    }
+  }
   const at=_ocAtiva(o.oc);
   o.andamento=at?at.texto:'';o.andamentoData=at?at.data:'';
   if(!o.isCartao&&o.tipo!=='os'&&_ehServico(o))o.tipo='os';
@@ -6896,6 +6942,7 @@ function gerarEAbrirDrive(){
   aplicarEmpresa();
   verificarLicenca();
   if(INSTANCIA.cliente&&!ST.empresa){nav('configuracoes');setTimeout(()=>alert('Bem-vindo ao Top-Agenda! Comece preenchendo os dados da sua empresa.'),300);}
+  try{if(_migrarPrazoAnalise())save();}catch(e){console.warn(e)}
   renderDash();
   // Abre direto no Quadro de Serviços (o Painel continua no menu, com o resumo financeiro)
   if(!(INSTANCIA.cliente&&!ST.empresa))nav('quadro');
