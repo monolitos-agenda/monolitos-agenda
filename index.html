@@ -175,6 +175,27 @@ select.form-control{cursor:pointer}
 .tipo-toggle{display:flex;background:var(--gray-100);border-radius:var(--radius);padding:3px;gap:3px;margin-bottom:14px}
 .tipo-btn{flex:1;padding:7px 10px;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:500;color:var(--gray-500);background:none;transition:all .2s;text-align:center}
 .tipo-btn.active{background:white;color:var(--navy);box-shadow:0 1px 4px rgba(15,34,64,.12);font-weight:600}
+/* Quadro de Serviços */
+.qd-board{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;scroll-snap-type:x mandatory;align-items:flex-start}
+.qd-col{flex:1 0 255px;min-width:255px;background:var(--gray-100);border-radius:12px;padding:10px;scroll-snap-align:start;border:2px solid transparent}
+.qd-col.qd-over{border-color:var(--gold)}
+.qd-colh{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:600;color:var(--navy);margin:2px 4px 10px}
+.qd-cnt{background:white;border-radius:10px;padding:1px 8px;font-size:11px;color:var(--gray-500)}
+.qd-card{background:white;border:1px solid var(--gray-200);border-radius:8px;padding:9px 11px;margin-bottom:8px;cursor:pointer;transition:box-shadow .15s}
+.qd-card:hover{box-shadow:0 2px 8px rgba(15,34,64,.12)}
+.qd-ct{font-size:13px;font-weight:600;color:var(--navy);line-height:1.3;display:flex;justify-content:space-between;gap:6px}
+.qd-cs{font-size:11px;color:var(--gray-500);margin-top:2px;line-height:1.35}
+.qd-cn{font-size:12px;color:var(--gray-700);margin-top:6px;line-height:1.35}
+.qd-badge{display:inline-block;font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:10px;margin-top:7px}
+.qd-tag{font-size:9.5px;font-weight:500;background:var(--gray-100);color:var(--gray-500);border-radius:6px;padding:1px 6px;white-space:nowrap;height:fit-content}
+.qd-add{width:100%;background:transparent;border:1px dashed var(--gray-300);border-radius:8px;padding:7px;font-size:12px;color:var(--gray-500);cursor:pointer;font-family:inherit}
+.qd-add:hover{background:white;color:var(--navy)}
+.qd-sec{font-size:10.5px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.06em;margin:4px 0 6px}
+.qd-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px;padding-top:12px;border-top:1px solid var(--gray-100)}
+.main{min-width:0}
+#view-quadro{max-width:100%;min-width:0;overflow-x:hidden}
+.qd-board{width:100%;min-width:0}
+@media(max-width:700px){.qd-col{flex:0 0 86%;min-width:86%}.qd-hint{display:none}}
 </style>
 <!-- docx.js para geração de Word nativo -->
 <script>/* docx.js 8.5.0 embutido */
@@ -214,7 +235,8 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
     <button class="nav-item" onclick="nav('custos')"><span class="nav-icon">◷</span>Custos</button>
     <button class="nav-item" onclick="openM('modal-recibo-avulso');initRav()"><span class="nav-icon">🧾</span>Recibo Avulso</button>
     <div class="nav-label">Agenda</div>
-    <button class="nav-item" onclick="nav('agenda')"><span class="nav-icon">📅</span>Agenda de Serviços<span id="nav-prazo-badge" style="display:none;margin-left:auto;background:#c0392b;color:white;border-radius:10px;font-size:10px;padding:1px 7px;font-weight:600"></span></button>
+    <button class="nav-item" onclick="nav('quadro')"><span class="nav-icon">🗂</span>Quadro de Serviços<span id="nav-prazo-badge" style="display:none;margin-left:auto;background:#c0392b;color:white;border-radius:10px;font-size:10px;padding:1px 7px;font-weight:600"></span></button>
+    <button class="nav-item" onclick="nav('agenda')"><span class="nav-icon">📅</span>Pauta e Compromissos</button>
     <button class="nav-item" onclick="nav('protocolos')"><span class="nav-icon">🏛</span>Protocolos<span id="nav-prot-badge" style="display:none;margin-left:auto;background:#c0392b;color:white;border-radius:10px;font-size:10px;padding:1px 7px;font-weight:600"></span></button>
     <button class="nav-item" onclick="nav('sigef')"><span class="nav-icon">📐</span>Vértices SIGEF</button>
     <button class="nav-item" id="btn-notif" onclick="ativarNotificacoes()"><span class="nav-icon">🔕</span>Ativar notificações</button>
@@ -267,7 +289,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
           <div class="metric-value" id="m-agenda">0</div>
           <span class="metric-badge badge-blue">📅 Ver agenda</span>
         </div>
-        <div class="metric-card" onclick="nav('agenda')" style="cursor:pointer">
+        <div class="metric-card" onclick="nav('quadro')" style="cursor:pointer">
           <div class="metric-label">Entregas Previstas</div>
           <div class="metric-value" id="m-prazos">0</div>
           <span class="metric-badge badge-navy" id="m-prazos-sub">🔧 Ver prazos</span>
@@ -371,7 +393,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
     <!-- AGENDA / COMPROMISSOS -->
     <div class="view" id="view-agenda">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:9px">
-        <div style="font-size:13px;color:var(--gray-500)">Prazos de entrega das Ordens de Serviço, compromissos e lembretes</div>
+        <div style="font-size:13px;color:var(--gray-500)">Pauta do dia, compromissos e lembretes — os serviços estão no Quadro de Serviços</div>
         <div style="display:flex;gap:7px;flex-wrap:wrap">
           <button class="btn btn-outline btn-sm" onclick="abrirCfgPrazos()">⚙ Prazos padrão</button>
           <button class="btn btn-gold" onclick="abrirNovoCompromisso()">+ Novo Compromisso</button>
@@ -395,17 +417,6 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
         <div id="pauta-lista"></div>
         <div style="padding:6px 14px;font-size:10.5px;color:var(--gray-400)">Arraste (no PC) ou use ▲▼ para ordenar a sequência. O que não for feito passa sozinho para o dia seguinte.</div>
       </div>
-      <!-- AGENDA DE SERVIÇOS (prazos de entrega das OS) -->
-      <div class="card" style="margin-bottom:16px">
-        <div class="card-header" style="flex-wrap:wrap;gap:8px">
-          <span class="card-title">🔧 Agenda de Serviços — Prazos de Entrega</span>
-          <div style="display:flex;gap:4px" id="agsrv-tabs">
-            <button class="btn btn-sm btn-primary" id="agsrv-tab-pend" onclick="setAgSrvTab('pend')">Pendentes</button>
-            <button class="btn btn-sm btn-outline" id="agsrv-tab-ent" onclick="setAgSrvTab('ent')">Entregues</button>
-          </div>
-        </div>
-        <div id="agenda-servicos" style="padding:0"></div>
-      </div>
       <!-- Hoje -->
       <div id="agenda-hoje" style="margin-bottom:16px"></div>
       <!-- Próximos -->
@@ -415,8 +426,22 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
       </div>
     </div>
 
+    <!-- QUADRO DE SERVIÇOS -->
+    <div class="view" id="view-quadro">
+      <div id="qd-resumo" style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:12px"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+        <div class="search-bar"><span class="search-icon">⌕</span><input class="form-control search-input" id="qd-busca" placeholder="Cliente, OS ou nº de protocolo" oninput="_qdBusca=this.value;renderQuadro()" style="width:250px"></div>
+        <button class="btn btn-gold btn-sm" onclick="abrirCartaoForm()">+ Novo cartão</button>
+        <button class="btn btn-outline btn-sm" onclick="nav('protocolos')">🏛 Protocolos em lista</button>
+        <button class="btn btn-outline btn-sm" onclick="abrirCfgPrazos()">⚙ Prazos padrão</button>
+        <span class="qd-hint" style="font-size:11px;color:var(--gray-400);margin-left:auto">Clique num cartão para ver tudo · no PC, arraste entre as colunas</span>
+      </div>
+      <div id="qd-board" class="qd-board"></div>
+    </div>
+
     <!-- PROTOCOLOS -->
     <div class="view" id="view-protocolos">
+      <div style="margin-bottom:10px"><button class="btn btn-ghost btn-sm" onclick="nav('quadro')">← Voltar ao Quadro de Serviços</button></div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:9px">
         <div id="prot-resumo" style="display:flex;gap:6px;flex-wrap:wrap"></div>
         <button class="btn btn-gold" onclick="abrirProtocolo()">+ Novo Protocolo</button>
@@ -952,6 +977,42 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
 </div>
 
 <!-- MODAL ORÇAMENTO -->
+<!-- MODAL DETALHE DO SERVIÇO (Quadro) -->
+<div class="modal-overlay" id="modal-qd" style="display:none">
+<div class="modal" style="max-width:720px">
+  <div class="modal-header">
+    <div><div class="modal-title" id="mqd-title">Serviço</div><div style="font-size:12px;color:var(--gray-500);margin-top:2px" id="mqd-sub"></div></div>
+    <button class="btn btn-ghost" onclick="closeM('modal-qd')">✕</button>
+  </div>
+  <div class="modal-body" id="qd-det"></div>
+</div></div>
+
+<!-- MODAL CARTÃO LIVRE -->
+<div class="modal-overlay" id="modal-cartao" style="display:none">
+<div class="modal" style="max-width:500px">
+  <div class="modal-header"><div class="modal-title" id="mcart-title">+ Novo cartão</div><button class="btn btn-ghost" onclick="closeM('modal-cartao')">✕</button></div>
+  <div class="modal-body">
+    <input type="hidden" id="cart-id">
+    <div class="form-grid" style="gap:10px">
+      <div class="form-group"><label>Título *</label><input class="form-control" id="cart-titulo" placeholder="Ex: Levantar documentos do imóvel da Rua X"></div>
+      <div class="form-grid form-grid-2" style="gap:10px">
+        <div class="form-group"><label>Cliente</label><input class="form-control" id="cart-cliente" list="dl-cart-cli"><datalist id="dl-cart-cli"></datalist></div>
+        <div class="form-group"><label>Coluna</label><select class="form-control" id="cart-coluna"><option value="execucao">⚙ Em execução</option><option value="aguardando">⏳ Aguardando terceiros</option><option value="cartorio">🏛 No cartório</option><option value="receber">💰 Valores a receber</option></select></div>
+      </div>
+      <div class="form-group"><label>Descrição</label><input class="form-control" id="cart-desc" placeholder="Detalhes do que precisa ser feito"></div>
+      <div class="form-grid form-grid-2" style="gap:10px">
+        <div class="form-group"><label>➡ Próxima ação</label><input class="form-control" id="cart-prox"></div>
+        <div class="form-group"><label>Data prevista</label><input class="form-control" type="date" id="cart-prox-data"></div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-outline btn-sm" id="cart-del" onclick="concluirCartao()" style="margin-right:auto">✓ Concluir cartão</button>
+    <button class="btn btn-outline" onclick="closeM('modal-cartao')">Cancelar</button>
+    <button class="btn btn-gold" onclick="salvarCartao()">Salvar</button>
+  </div>
+</div></div>
+
 <div class="modal-overlay" id="modal-orc" style="display:none">
 <div class="modal">
   <div class="modal-header"><div class="modal-title" id="morc-title">Novo Orçamento</div><button class="btn btn-ghost" onclick="closeM('modal-orc')">✕</button></div>
@@ -1862,6 +1923,7 @@ async function load(){
 
 async function save(){
   try { localStorage.setItem('monolitos_v3', JSON.stringify(ST)); } catch(e){}
+  setTimeout(_qdRefresh,0);
   if(!db){showSyncBadge(true);return;}
   try {
     await db.collection('agenda').doc(DOC_ID).set(ST);
@@ -1909,7 +1971,7 @@ function startRealtimeSync(){
         if(active){
           const id = active.id.replace('view-','');
           const refreshMap = {painel:renderDash,orcamentos:renderOrc,clientes:renderCli,
-            recebimentos:renderRec,custos:renderCus,relatorios:renderRel,agenda:renderAgenda,protocolos:renderProtocolos,sigef:renderSigef};
+            recebimentos:renderRec,custos:renderCus,relatorios:renderRel,agenda:renderAgenda,quadro:renderQuadro,protocolos:renderProtocolos,sigef:renderSigef};
           if(refreshMap[id]) refreshMap[id]();
         }
         showSyncBadge();
@@ -1932,10 +1994,10 @@ function nav(n){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-'+n).classList.add('active');
-  const T={painel:'Painel',orcamentos:'Orçamentos',clientes:'Clientes',recebimentos:'Recebimentos',custos:'Custos',configuracoes:'Empresa e Banco',sincronizar:'Sincronizar',relatorios:'Faturamento',acervo:'Acervo — Serviços Encerrados',agenda:'Agenda de Serviços',protocolos:'Protocolos',sigef:'Vértices SIGEF',vistoria:'Vistoria Cadastral',consulta:'Consulta CPF/CNPJ'};
+  const T={painel:'Painel',orcamentos:'Orçamentos',clientes:'Clientes',recebimentos:'Recebimentos',custos:'Custos',configuracoes:'Empresa e Banco',sincronizar:'Sincronizar',relatorios:'Faturamento',acervo:'Acervo — Serviços Encerrados',agenda:'Pauta e Compromissos',quadro:'Quadro de Serviços',protocolos:'Protocolos',sigef:'Vértices SIGEF',vistoria:'Vistoria Cadastral',consulta:'Consulta CPF/CNPJ'};
   document.getElementById('page-title').textContent=T[n]||n;
   document.querySelectorAll('.nav-item').forEach(b=>{if(b.textContent.trim().startsWith((T[n]||'').slice(0,5)))b.classList.add('active')});
-  const R={painel:renderDash,agenda:renderAgenda,servicos:renderServicos,orcamentos:renderOrc,clientes:renderCli,recebimentos:renderRec,custos:renderCus,relatorios:renderRel,configuracoes:renderCfg,financeiro:()=>{},acervo:renderAcervo,protocolos:renderProtocolos,sigef:renderSigef,vistoria:initVistoria,consulta:initConsulta};
+  const R={painel:renderDash,agenda:renderAgenda,servicos:renderServicos,orcamentos:renderOrc,clientes:renderCli,recebimentos:renderRec,custos:renderCus,relatorios:renderRel,configuracoes:renderCfg,financeiro:()=>{},quadro:renderQuadro,acervo:renderAcervo,protocolos:renderProtocolos,sigef:renderSigef,vistoria:initVistoria,consulta:initConsulta};
   if(R[n])R[n]();
 }
 function closeM(id){document.getElementById(id).style.display='none'}
@@ -4037,7 +4099,7 @@ function renderPainelPrazos(){
   al.innerHTML=`<div style="background:${temAtraso?'var(--red-light)':'var(--amber-light)'};border:1px solid ${temAtraso?'#e8b4b4':'#e8d6a8'};border-radius:var(--radius-lg);padding:12px 16px;margin-bottom:16px">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
       <strong style="font-size:13px;color:${temAtraso?'var(--red)':'var(--amber)'}">${temAtraso?'⚠ Atenção aos prazos':'⏰ Prazos se aproximando'}</strong>
-      <button class="btn btn-sm btn-outline" onclick="nav('agenda')">Abrir Agenda de Serviços →</button>
+      <button class="btn btn-sm btn-outline" onclick="nav('quadro')">Abrir Quadro de Serviços →</button>
     </div>
     ${crit.slice(0,5).map(o=>{const i=prazoInfo(o);return`<div onclick="abrirPrazo('${o.id}')" style="cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:4px 0;border-top:1px dashed rgba(0,0,0,.08)">
       <span style="color:var(--gray-700)"><strong>OS ${escH(o.num)}</strong> — ${escH(o.cliente)}</span>
@@ -4297,6 +4359,7 @@ function salvarProtocolo(){
   p.oc=_ocEdit.map(({_i,...o})=>o);
   _syncFase(p);
   if(!ant)_prots().push(p);
+  if(!ant&&p.orcId){const _o=ST.orcamentos.find(x=>x.id===p.orcId);if(_o)_o.coluna='';}
   _syncCompProt(p);
   save();closeM('modal-protocolo');_refreshControle();
   _toastPrazo(ant?'🏛 Protocolo atualizado':'🏛 Protocolo cadastrado');
@@ -4541,6 +4604,245 @@ function sigefAjustar(){
   if(v===null)return;const n=parseInt(v);if(isNaN(n)||n<0){alert('Número inválido.');return}
   s.hist.push({id:'v'+Date.now().toString(36),data:today(),imovel:'Ajuste manual do último vértice',qtd:0,de:n,ate:n,ajuste:true,antes:s.ultimo});s.ultimo=n;
   save();renderSigef();
+}
+
+// ===== QUADRO DE SERVIÇOS (visão única: OS, protocolos avulsos e cartões livres) =====
+const QD_COLS=[
+  {k:'execucao',t:'Em execução',ic:'⚙'},
+  {k:'aguardando',t:'Aguardando terceiros',ic:'⏳'},
+  {k:'cartorio',t:'No cartório',ic:'🏛'},
+  {k:'receber',t:'Valores a receber',ic:'💰'}
+];
+const QD_TOM={danger:{c:'var(--red)',bg:'var(--red-light)'},warning:{c:'var(--amber)',bg:'var(--amber-light)'},success:{c:'var(--green)',bg:'var(--green-light)'},neutral:{c:'var(--gray-500)',bg:'var(--gray-100)'}};
+let _qdFiltro='',_qdBusca='',_qdAberto=null,_qdDrag=null;
+function _cartoes(){if(!ST.cartoes)ST.cartoes=[];return ST.cartoes}
+function _achaItem(id){return ST.orcamentos.find(x=>x.id===id)||_cartoes().find(x=>x.id===id)}
+function _saldoOS(o){return Math.max(0,parseFloat(o.valor||0)-recPorOrc(o.id))}
+function _osAReceber(o){return !!(o.prazo&&o.prazo.entregueEm&&o.status!=='Cancelado'&&_saldoOS(o)>0.009)}
+function _qdColLabel(k){const c=QD_COLS.find(x=>x.k===k);return c?c.t:''}
+
+// Data prevista genérica (próxima verificação)
+function _qdProx(d){
+  if(!d)return null;
+  const hoje=today();
+  if(d<hoje)return{nivel:'vencido',tom:'danger',txt:`Verificar (desde ${fmtD(d).slice(0,5)})`};
+  if(d===hoje)return{nivel:'hoje',tom:'warning',txt:'Verificar hoje'};
+  const n=_diasCorridos(hoje,d);
+  return{nivel:n<=3?'breve':'ok',tom:'neutral',txt:fmtD(d).slice(0,5)+(n<=3?` (${n} dia${n>1?'s':''})`:'')};
+}
+function _qdColunaOS(o){
+  if(o.prazo&&o.prazo.entregueEm)return'receber';
+  if(o.coluna&&o.coluna!=='receber')return o.coluna;
+  if(_protsDaOS(o.id).some(_protAtivo))return'cartorio';
+  const et=o.prazo&&o.prazo.etapa;
+  if(et==='cliente')return'aguardando';
+  if(et==='cartorio')return'cartorio';
+  return'execucao';
+}
+function _qdItens(){
+  const it=[];
+  ST.orcamentos.filter(_orcValido).forEach(o=>{if(_prazoAtivo(o)||_semPrazoPendente(o)||_osAReceber(o))it.push({k:'o',id:o.id,ref:o})});
+  _prots().filter(p=>!p.orcId&&_protAtivo(p)).forEach(p=>it.push({k:'p',id:p.id,ref:p}));
+  _cartoes().filter(c=>!c.arquivado).forEach(c=>it.push({k:'c',id:c.id,ref:c}));
+  return it.map(_qdEnriquecer);
+}
+function _qdEnriquecer(it){
+  const sinais=[];const fl={atrasado:false,verificar:false,exig:false,receber:false};
+  const addProx=(d,pre)=>{const i=_qdProx(d);if(i){sinais.push({tom:i.tom,txt:(pre||'')+i.txt,d});if(i.nivel==='vencido'||i.nivel==='hoje')fl.verificar=true;}};
+  const addProt=p=>{
+    if(p.proxData)addProx(p.proxData);
+    const ex=protInfoExig(p);
+    if(p.situacao==='exigencia')fl.exig=true;
+    if(ex)sinais.push({tom:ex.nivel==='ok'?'neutral':(ex.nivel==='urgente'?'warning':'danger'),txt:ex.nivel==='atrasado'?'Exigência vencida':ex.nivel==='hoje'?'Exigência vence hoje':'Exigência até '+fmtD(p.prazoExig).slice(0,5),d:p.prazoExig});
+  };
+  let titulo='',sub='',prox='',col='',busca='';
+  if(it.k==='o'){
+    const o=it.ref,pa=_protsDaOS(o.id).filter(_protAtivo);
+    titulo=o.cliente;sub=`OS ${o.num} · ${_srvResumo(o).slice(0,48)}`;
+    prox=o.proxEtapa||(pa[0]&&(pa[0].proxEtapa||pa[0].fase))||(_osAReceber(o)?'Receber o saldo de '+fmtM(_saldoOS(o)):'')||o.andamento||'';
+    col=_qdColunaOS(o);
+    if(_osAReceber(o)){fl.receber=true;sinais.push({tom:'success',txt:'Receber '+fmtM(_saldoOS(o))});}
+    else if(o.prazo&&!o.prazo.entregueEm){
+      const pi=prazoInfo(o);
+      if(pi){const tom=pi.nivel==='atrasado'||pi.nivel==='hoje'?'danger':pi.nivel==='urgente'?'warning':'neutral';
+        if(pi.nivel==='atrasado')fl.atrasado=true;
+        sinais.push({tom,txt:pi.nivel==='atrasado'?pi.txt.replace('⚠ ',''):pi.nivel==='hoje'?'Entrega hoje':'Entrega '+fmtD(o.prazo.prevista).slice(0,5),d:o.prazo.prevista});}
+    }
+    addProx(o.proxData);pa.forEach(addProt);
+    busca=[o.num,o.cliente,_srvResumo(o),prox,...pa.map(p=>p.numero+' '+p.orgao)].join(' ');
+  }else if(it.k==='p'){
+    const p=it.ref;
+    titulo=_protCliente(p);sub=[p.descricao,p.orgao&&(p.orgao+(p.numero?' · Prot. '+p.numero:''))].filter(Boolean).join(' · ');
+    prox=p.proxEtapa||p.fase||(PROT_SIT[p.situacao]||{}).t||'';
+    col=p.coluna||'cartorio';addProt(p);
+    busca=[titulo,sub,prox,p.numero].join(' ');
+  }else{
+    const c=it.ref;
+    titulo=c.titulo;sub=[c.cliente,c.desc].filter(Boolean).join(' · ');
+    prox=c.proxEtapa||c.andamento||'';col=c.coluna||'execucao';addProx(c.proxData);
+    busca=[titulo,sub,prox].join(' ');
+  }
+  const rk={danger:0,warning:1,success:2,neutral:3};
+  sinais.sort((a,b)=>rk[a.tom]-rk[b.tom]||String(a.d||'9').localeCompare(String(b.d||'9')));
+  return{...it,titulo,sub,prox,col,fl,badge:sinais[0]||null,rank:sinais[0]?rk[sinais[0].tom]:4,dataOrd:(sinais[0]&&sinais[0].d)||'9999',busca:norm(busca)};
+}
+function qdSetFiltro(f){_qdFiltro=_qdFiltro===f?'':f;renderQuadro()}
+function renderQuadro(){
+  const board=document.getElementById('qd-board');if(!board)return;
+  const itens=_qdItens();
+  const n=k=>itens.filter(x=>x.fl[k]).length;
+  const chip=(k,ic,txt,tom)=>{const q=n(k);const on=_qdFiltro===k;const t=QD_TOM[tom];
+    return`<button class="btn btn-sm" onclick="qdSetFiltro('${k}')" style="border-radius:20px;${on?`background:${t.c};color:white;border-color:${t.c}`:q?`background:${t.bg};color:${t.c};border:1px solid ${t.c}`:'background:var(--gray-50);color:var(--gray-400);border:1px solid var(--gray-200)'}">${ic} ${q} ${txt}</button>`};
+  document.getElementById('qd-resumo').innerHTML=
+    chip('atrasado','⚠','atrasado(s)','danger')+chip('verificar','☎','para verificar','warning')+
+    chip('exig','📄','nota(s) devolutiva(s)','danger')+chip('receber','💰','a receber','success')+
+    (_qdFiltro?`<button class="btn btn-ghost btn-sm" onclick="qdSetFiltro('${_qdFiltro}')">✕ Limpar filtro</button>`:'')+
+    `<span style="margin-left:auto;font-size:12px;color:var(--gray-400)">${itens.length} serviço(s) no quadro</span>`;
+  const q=norm(_qdBusca||'');
+  const vis=itens.filter(x=>(!_qdFiltro||x.fl[_qdFiltro])&&(!q||x.busca.includes(q)));
+  board.innerHTML=QD_COLS.map(c=>{
+    const cards=vis.filter(x=>x.col===c.k).sort((a,b)=>a.rank-b.rank||a.dataOrd.localeCompare(b.dataOrd));
+    return`<div class="qd-col" ondragover="event.preventDefault();this.classList.add('qd-over')" ondragleave="this.classList.remove('qd-over')" ondrop="qdDrop(event,'${c.k}');this.classList.remove('qd-over')">
+      <div class="qd-colh"><span>${c.ic} ${c.t}</span><span class="qd-cnt">${cards.length}</span></div>
+      ${cards.map(_qdCardHTML).join('')||'<div style="font-size:11.5px;color:var(--gray-400);padding:14px 4px;text-align:center">Nenhum serviço aqui</div>'}
+      ${c.k!=='receber'?`<button class="qd-add" onclick="abrirCartaoForm(null,'${c.k}')">+ Adicionar cartão</button>`:''}
+    </div>`;
+  }).join('');
+}
+function _qdCardHTML(x){
+  const b=x.badge,t=b?QD_TOM[b.tom]:null;
+  const tipo=x.k==='p'?'<span class="qd-tag">Protocolo</span>':x.k==='c'?'<span class="qd-tag">Cartão</span>':'';
+  return`<div class="qd-card" draggable="true" ondragstart="_qdDrag='${x.k}:${x.id}'" onclick="abrirQD('${x.k}','${x.id}')" style="${b&&b.tom==='danger'?'border-left:3px solid var(--red)':''}">
+    <div class="qd-ct">${escH(x.titulo||'—')}${tipo}</div>
+    ${x.sub?`<div class="qd-cs">${escH(x.sub)}</div>`:''}
+    ${x.prox?`<div class="qd-cn">➡ ${escH(x.prox.slice(0,70))}</div>`:'<div class="qd-cn" style="color:var(--gray-400)">Sem próxima ação</div>'}
+    ${b?`<span class="qd-badge" style="background:${t.bg};color:${t.c}">${escH(b.txt)}</span>`:''}
+  </div>`;
+}
+function qdDrop(ev,col){ev.preventDefault();if(!_qdDrag)return;const [k,id]=_qdDrag.split(':');_qdDrag=null;qdMover(k,id,col)}
+function qdMover(k,id,col){
+  if(k==='o'){
+    const o=ST.orcamentos.find(x=>x.id===id);if(!o)return;
+    const entregue=o.prazo&&o.prazo.entregueEm;
+    if(col==='receber'){if(!entregue)marcarEntregue(id);return}
+    if(entregue){_toastPrazo('Este serviço já foi entregue. Para reabrir, use o botão Prazo.');renderQuadro();return}
+    o.coluna=col;
+    if(col==='cartorio'&&!_protsDaOS(id).some(_protAtivo))_toastPrazo('Dica: registre o nº pelo botão "Novo protocolo"');
+  }else if(k==='p'){
+    if(col==='receber'){_toastPrazo('Protocolo avulso não tem valores a receber');return}
+    const p=_prots().find(x=>x.id===id);if(!p)return;p.coluna=col;
+  }else{const c=_cartoes().find(x=>x.id===id);if(!c)return;c.coluna=col;}
+  save();renderQuadro();
+}
+// Atualiza o quadro e o detalhe aberto depois de qualquer gravação
+function _qdRefresh(){
+  try{
+    if(document.getElementById('view-quadro')?.classList.contains('active'))renderQuadro();
+    if(document.getElementById('modal-qd')?.style.display==='flex')renderQDDetalhe();
+  }catch(e){console.warn(e)}
+}
+
+// --- Painel de detalhe ---
+function abrirQD(k,id){_qdAberto={k,id};renderQDDetalhe();openM('modal-qd')}
+function _qdFecharE(fn){closeM('modal-qd');fn()}
+function _qdBtn(txt,js,prim){return`<button class="btn ${prim?'btn-gold':'btn-outline'} btn-sm" onclick="${js}">${txt}</button>`}
+function _qdTimeline(lista){
+  const ord=_ocOrdenadas(lista||[]);
+  if(!ord.length)return'<div style="font-size:12px;color:var(--gray-400)">Nenhuma ocorrência registrada.</div>';
+  return ord.slice(0,6).map((o,i)=>`<div style="display:flex;gap:8px;font-size:12.5px;padding:3px 0;${i?'color:var(--gray-500)':'color:var(--gray-900);font-weight:600'}">
+    <span style="white-space:nowrap;${i?'':'color:var(--navy)'}">${fmtD(o.data).slice(0,5)}</span><span>${o.tipo==='sit'?'Situação: ':''}${escH(o.texto)}</span></div>`).join('')+(ord.length>6?`<div style="font-size:11px;color:var(--gray-400)">+ ${ord.length-6} anteriores</div>`:'');
+}
+function _qdProxBox(texto,data,tom,acao){
+  const t=QD_TOM[tom||'neutral'];
+  return`<div style="margin:12px 0;padding:10px 12px;border-radius:var(--radius);background:${t.bg};display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
+    <div><div style="font-size:11px;color:${t.c};text-transform:uppercase;letter-spacing:.05em">Próxima ação${data?' · '+fmtD(data):''}</div>
+    <div style="font-size:14px;font-weight:600;color:${tom==='neutral'?'var(--navy)':t.c};margin-top:2px">${texto?escH(texto):'<span style="font-weight:400;color:var(--gray-500)">Nenhuma definida</span>'}</div></div>
+    ${acao}</div>`;
+}
+function renderQDDetalhe(){
+  const el=document.getElementById('qd-det');if(!el||!_qdAberto)return;
+  const {k,id}=_qdAberto;
+  const it=_qdItens().find(x=>x.k===k&&x.id===id);
+  const selMover=col=>`<select class="form-control" style="width:auto;font-size:12px;padding:5px 8px" onchange="qdMover('${k}','${id}',this.value)">
+      ${QD_COLS.filter(c=>k==='o'||c.k!=='receber'||k==='c').map(c=>`<option value="${c.k}" ${c.k===col?'selected':''}>${c.ic} ${c.t}</option>`).join('')}</select>`;
+  let h='';
+  if(k==='o'){
+    const o=ST.orcamentos.find(x=>x.id===id);if(!o){closeM('modal-qd');return}
+    const col=it?it.col:_qdColunaOS(o),tom=it&&it.badge?it.badge.tom:'neutral';
+    const tot=parseFloat(o.valor||0),rec=recPorOrc(o.id),saldo=_saldoOS(o),pct=tot>0?Math.round(rec/tot*100):0;
+    const pr=_protsDaOS(o.id);const entregue=o.prazo&&o.prazo.entregueEm;
+    document.getElementById('mqd-title').textContent=`${o.cliente} · OS ${o.num}`;
+    document.getElementById('mqd-sub').textContent=_srvResumo(o).slice(0,120);
+    h+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+      <div style="font-size:12px;color:var(--gray-500)">💰 ${pct}% pago${saldo>0.009?' · falta '+fmtM(saldo):''} · ${o.prazo?(entregue?'✅ Entregue '+fmtD(o.prazo.entregueEm):'📦 Entrega prevista '+fmtD(o.prazo.prevista)):'Sem prazo de entrega'}</div>
+      ${entregue?`<span class="qd-tag" style="font-size:11px">${_qdColLabel(col)}</span>`:selMover(col)}</div>`;
+    h+=_qdProxBox(it?it.prox:(o.proxEtapa||o.andamento),o.proxData,tom,_qdBtn('✏ Alterar',`abrirAndamento('${id}')`));
+    h+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
+      <div><div class="qd-sec">Linha do tempo</div>${_qdTimeline(_ocsOS(o))}</div>
+      <div><div class="qd-sec">Protocolos</div>${pr.length?pr.map(p=>{const s=PROT_SIT[p.situacao]||{};const px=protProxInfo(p);
+        return`<div style="border:1px solid var(--gray-200);border-radius:8px;padding:7px 9px;margin-bottom:6px;font-size:12px">
+          <div style="font-weight:600;color:var(--navy)">${escH(p.orgao||'—')} · ${escH(p.numero||'s/ nº')}</div>
+          <div style="color:var(--gray-500)">${s.t||''}${p.fase?' · '+escH(p.fase):''}</div>
+          ${px?`<div style="color:${px.cor}">${px.txt}</div>`:''}
+          <div style="margin-top:4px;display:flex;gap:4px">${_qdBtn(p.forma==='balcao'?'☎ Consultei':'🌐 Consultei',`protConsultei('${p.id}')`)}${_qdBtn('Abrir',`abrirProtocolo('${p.id}')`)}</div></div>`}).join(''):'<div style="font-size:12px;color:var(--gray-400)">Nenhum protocolo.</div>'}</div></div>`;
+    h+=`<div class="qd-acts">${_qdBtn('+ Registrar andamento',`abrirAndamento('${id}')`,true)}${_qdBtn('🏛 Novo protocolo',`abrirProtocolo(null,'${id}')`)}${_qdBtn('📦 Prazo',`abrirPrazo('${id}')`)}
+      ${!entregue?_qdBtn('✅ Entregue',`marcarEntregue('${id}')`):''}${saldo>0.009?_qdBtn('💰 Receber',`receberDaAgenda('${id}')`):''}
+      ${_qdBtn('📝 Pauta de hoje',`addPautaDe('os','${id}')`)}${_qdBtn('Financeiro',`_qdFecharE(()=>abrirFinanceiro('${id}'))`)}</div>`;
+  }else if(k==='p'){
+    const p=_prots().find(x=>x.id===id);if(!p){closeM('modal-qd');return}
+    const col=p.coluna||'cartorio',tom=it&&it.badge?it.badge.tom:'neutral',s=PROT_SIT[p.situacao]||{};
+    document.getElementById('mqd-title').textContent=_protCliente(p)+(p.descricao?' · '+p.descricao:'');
+    document.getElementById('mqd-sub').textContent=`${p.orgao||''} · Prot. ${p.numero||'s/ nº'} · ${PROT_FORMA[p.forma]||''}`;
+    h+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div style="font-size:12px;color:${s.c||'var(--gray-500)'}">${s.t||''} · entrada ${fmtD(p.dataEntrada)}</div>${selMover(col)}</div>`;
+    h+=_qdProxBox(p.proxEtapa||p.fase,p.proxData,tom,_qdBtn('✏ Alterar',`protConsultei('${id}')`));
+    h+=`<div class="qd-sec">Linha do tempo</div>${_qdTimeline(_ocs(p))}`;
+    h+=`<div class="qd-acts">${_qdBtn('+ Registrar andamento',`protConsultei('${id}')`,true)}${_qdBtn('✏ Editar protocolo',`abrirProtocolo('${id}')`)}${_qdBtn('📝 Pauta de hoje',`addPautaDe('prot','${id}')`)}</div>`;
+  }else{
+    const c=_cartoes().find(x=>x.id===id);if(!c){closeM('modal-qd');return}
+    const tom=it&&it.badge?it.badge.tom:'neutral';
+    document.getElementById('mqd-title').textContent=c.titulo;
+    document.getElementById('mqd-sub').textContent=[c.cliente,c.desc].filter(Boolean).join(' · ');
+    h+=`<div style="display:flex;justify-content:flex-end">${selMover(c.coluna||'execucao')}</div>`;
+    h+=_qdProxBox(c.proxEtapa||c.andamento,c.proxData,tom,_qdBtn('✏ Alterar',`abrirAndamento('${id}')`));
+    h+=`<div class="qd-sec">Linha do tempo</div>${_qdTimeline(_ocsOS(c))}`;
+    h+=`<div class="qd-acts">${_qdBtn('+ Registrar andamento',`abrirAndamento('${id}')`,true)}${_qdBtn('✏ Editar cartão',`abrirCartaoForm('${id}')`)}${_qdBtn('✓ Concluir cartão',`concluirCartao('${id}')`)}</div>`;
+  }
+  el.innerHTML=h;
+}
+
+// --- Cartões livres ---
+function abrirCartaoForm(id,col){
+  const c=id?_cartoes().find(x=>x.id===id):null;
+  document.getElementById('cart-id').value=c?c.id:'';
+  document.getElementById('mcart-title').textContent=c?'✏ Editar cartão':'+ Novo cartão';
+  document.getElementById('cart-titulo').value=c?c.titulo:'';
+  document.getElementById('cart-cliente').value=c?(c.cliente||''):'';
+  document.getElementById('cart-desc').value=c?(c.desc||''):'';
+  document.getElementById('cart-coluna').value=c?(c.coluna||'execucao'):(col||'execucao');
+  document.getElementById('cart-prox').value=c?(c.proxEtapa||''):'';
+  document.getElementById('cart-prox-data').value=c?(c.proxData||''):'';
+  document.getElementById('cart-del').style.display=c?'inline-flex':'none';
+  document.getElementById('dl-cart-cli').innerHTML=[...new Set(ST.clientes.map(x=>x.nome).filter(Boolean))].map(n=>`<option value="${escH(n)}">`).join('');
+  openM('modal-cartao');
+  setTimeout(()=>document.getElementById('cart-titulo').focus(),50);
+}
+function salvarCartao(){
+  const titulo=document.getElementById('cart-titulo').value.trim();
+  if(!titulo){alert('Dê um título ao cartão.');return}
+  const id=document.getElementById('cart-id').value;
+  let c=id?_cartoes().find(x=>x.id===id):null;
+  if(!c){c={id:'k'+Date.now().toString(36),isCartao:true,criadoEm:today(),oc:[]};_cartoes().push(c);}
+  Object.assign(c,{titulo,cliente:document.getElementById('cart-cliente').value.trim(),desc:document.getElementById('cart-desc').value.trim(),
+    coluna:document.getElementById('cart-coluna').value,proxEtapa:document.getElementById('cart-prox').value.trim(),proxData:document.getElementById('cart-prox-data').value});
+  _syncCompOSProx(c);
+  closeM('modal-cartao');save();renderQuadro();
+  _toastPrazo(id?'Cartão atualizado':'Cartão criado');
+}
+function concluirCartao(id){
+  const c=_cartoes().find(x=>x.id===(id||document.getElementById('cart-id').value));if(!c)return;
+  if(!confirm(`Concluir o cartão "${c.titulo}"? Ele sai do quadro.`))return;
+  c.arquivado=true;c.concluidoEm=today();_syncCompOSProx(c);
+  closeM('modal-cartao');closeM('modal-qd');save();renderQuadro();_toastPrazo('✓ Cartão concluído');
 }
 
 // ===== ACERVO =====
@@ -4794,7 +5096,7 @@ function _ocsOS(o){
   }
   return o.oc;
 }
-function _osAtivaNaAgenda(o){return _prazoAtivo(o)||_semPrazoPendente(o)}
+function _osAtivaNaAgenda(o){if(o&&o.isCartao)return !o.arquivado;return _prazoAtivo(o)||_semPrazoPendente(o)}
 function osProxInfo(o){
   if(!o||!o.proxData||!_osAtivaNaAgenda(o))return null;
   const hoje=today();
@@ -4807,8 +5109,8 @@ function _syncCompOSProx(o){
   if(!ST.compromissos)ST.compromissos=[];
   ST.compromissos=ST.compromissos.filter(c=>!(c.auto&&c.orcId===o.id&&String(c.id).startsWith('osx-')));
   if(!o.proxData||o.proxData<today()||!_osAtivaNaAgenda(o))return;
-  ST.compromissos.push({id:'osx-'+o.id+'-'+o.proxData,titulo:`📍 OS ${o.num} — ${o.proxEtapa||o.andamento||'verificar andamento'}`,data:o.proxData,hora:'08:00',
-    cliente:`${o.num} — ${o.cliente}`,obs:o.andamento?'Atual: '+o.andamento:'',lembrete:'60',tipo:'campo',concluido:false,auto:true,orcId:o.id});
+  ST.compromissos.push({id:'osx-'+o.id+'-'+o.proxData,titulo:`📍 ${o.isCartao?o.titulo:'OS '+o.num} — ${o.proxEtapa||o.andamento||'verificar andamento'}`,data:o.proxData,hora:'08:00',
+    cliente:o.isCartao?(o.cliente||''):`${o.num} — ${o.cliente}`,obs:o.andamento?'Atual: '+o.andamento:'',lembrete:'60',tipo:'campo',concluido:false,auto:true,orcId:o.id});
 }
 function _andRenderLista(){
   const el=document.getElementById('and-oc-lista');if(!el)return;
@@ -4824,10 +5126,10 @@ function andOcAdicionar(){
   _andRenderLista();
 }
 function abrirAndamento(id){
-  const o=ST.orcamentos.find(x=>x.id===id);if(!o)return;
+  const o=_achaItem(id);if(!o)return;
   document.getElementById('mand-orc-id').value=id;
-  document.getElementById('mand-title').textContent='📋 Andamento — OS '+o.num;
-  document.getElementById('mand-sub').textContent=o.cliente+(_srvResumo(o)?' · '+_srvResumo(o).slice(0,90):'');
+  document.getElementById('mand-title').textContent=o.isCartao?'📋 Andamento — '+o.titulo:'📋 Andamento — OS '+o.num;
+  document.getElementById('mand-sub').textContent=o.isCartao?[o.cliente,o.desc].filter(Boolean).join(' · '):o.cliente+(_srvResumo(o)?' · '+_srvResumo(o).slice(0,90):'');
   _ocEdit=_ocsOS(o).map(x=>({...x}));
   document.getElementById('and-oc-data').value=today();
   document.getElementById('and-oc-texto').value='';
@@ -4840,12 +5142,12 @@ function abrirAndamento(id){
 }
 function salvarAndamento(){
   const id=document.getElementById('mand-orc-id').value;
-  const o=ST.orcamentos.find(x=>x.id===id);if(!o)return;
+  const o=_achaItem(id);if(!o)return;
   if(document.getElementById('and-oc-texto').value.trim())andOcAdicionar();
   o.oc=_ocEdit.map(({_i,...x})=>x);
   const at=_ocAtiva(o.oc);
   o.andamento=at?at.texto:'';o.andamentoData=at?at.data:'';
-  if(o.tipo!=='os'&&_ehServico(o))o.tipo='os';
+  if(!o.isCartao&&o.tipo!=='os'&&_ehServico(o))o.tipo='os';
   o.proxEtapa=document.getElementById('and-prox').value.trim();
   o.proxData=document.getElementById('and-prox-data').value;
   _syncCompOSProx(o);
