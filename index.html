@@ -4737,7 +4737,8 @@ const QD_COLS=[
   {k:'receber',t:'Valores a receber',ic:'💰'}
 ];
 const QD_TOM={danger:{c:'var(--red)',bg:'var(--red-light)'},warning:{c:'var(--amber)',bg:'var(--amber-light)'},success:{c:'var(--green)',bg:'var(--green-light)'},neutral:{c:'var(--gray-500)',bg:'var(--gray-100)'}};
-const QD_ORC_DIAS=180;   // orçamentos sem resposta há mais tempo saem do quadro (continuam na tela Orçamentos)
+const QD_ORC_DIAS=60;    // orçamentos sem resposta há mais tempo ficam ocultos (botão "mostrar mais antigos"; continuam na tela Orçamentos)
+let _qdOrcTodos=false;
 const QD_ORC_COBRAR=7;   // a partir de quantos dias sem resposta o orçamento fica destacado
 var _qdModo='quadro';    // 'quadro' | 'lista' (lista de protocolos)
 let _qdFiltro='',_qdBusca='',_qdAberto=null,_qdDrag=null;
@@ -4748,14 +4749,16 @@ function _osAReceber(o){return !!(o.prazo&&o.prazo.entregueEm&&o.status!=='Cance
 function _qdColLabel(k){const c=QD_COLS.find(x=>x.k===k);return c?c.t:''}
 
 // --- Orçamentos enviados (aguardando aprovação) ---
-function _orcDataEnvio(o){return o.enviadoEm||o.data||''}
-function _orcEnviado(o){
+function _isoData(d){d=String(d||'');const m=d.match(/^(\d{2})\/(\d{2})\/(\d{4})/);if(m)return`${m[3]}-${m[2]}-${m[1]}`;return/^\d{4}-\d{2}-\d{2}/.test(d)?d.slice(0,10):''}
+function _orcDataEnvio(o){return _isoData(o.enviadoEm)||_isoData(o.data)||''}
+function _orcPendente(o){
   if(!_orcValido(o)||o.tipo==='os'||o.prazo||o.qdOculto)return false;
   if(o.status!=='Aberto'&&o.status!=='Aprovado')return false;
-  if(recPorOrc(o.id)>0)return false;
-  const d=_orcDataEnvio(o);
-  return !d||_diasCorridos(d,today())<=QD_ORC_DIAS;
+  return !(recPorOrc(o.id)>0);
 }
+function _orcRecente(o){const d=_orcDataEnvio(o);return!!d&&_diasCorridos(d,today())<=QD_ORC_DIAS}
+function _orcEnviado(o){return _orcPendente(o)&&(_qdOrcTodos||_orcRecente(o))}
+function qdOrcMostrarTodos(){_qdOrcTodos=!_qdOrcTodos;renderQuadro()}
 function _orcParcelaInicial(o){
   const p=(o.parcelas||[])[0];if(!p)return 0;
   const v=parseFloat(p.val||0)||0;
@@ -4897,7 +4900,9 @@ function renderQuadro(){
   const q=norm(_qdBusca||'');
   const vis=itens.filter(x=>(!_qdFiltro||x.fl[_qdFiltro])&&(!q||x.busca.includes(q)));
   board.innerHTML=QD_COLS.map(c=>{
-    let cards=vis.filter(x=>x.col===c.k).sort((a,b)=>a.rank-b.rank||a.dataOrd.localeCompare(b.dataOrd));
+    let cards=vis.filter(x=>x.col===c.k);
+    if(c.k==='orcamentos')cards.sort((a,b)=>String(_orcDataEnvio(b.ref)).localeCompare(String(_orcDataEnvio(a.ref)))||String(b.ref.num).localeCompare(String(a.ref.num)));
+    else cards.sort((a,b)=>a.rank-b.rank||a.dataOrd.localeCompare(b.dataOrd));
     let corpo='';
     if(c.k==='cartorio'&&cards.length){
       // agrupa pelo local onde foi protocolado (cartório, prefeitura ou autarquia)
@@ -4907,6 +4912,10 @@ function renderQuadro(){
         return`<div class="qd-grp"><span>${(LOCAL_TIPOS[tp]||{}).ic||'📍'} ${escH(g)}</span><span>${grupos[g].length}</span></div>`+grupos[g].map(_qdCardHTML).join('')}).join('');
     }else corpo=cards.map(_qdCardHTML).join('');
     const add=QD_ADD[c.k];
+    if(c.k==='orcamentos'){
+      const antigos=ST.orcamentos.filter(o=>_orcPendente(o)&&!_orcRecente(o)).length;
+      if(antigos)corpo+=`<button class="qd-add" style="margin-bottom:6px" onclick="qdOrcMostrarTodos()">${_qdOrcTodos?'Ocultar os mais antigos':`Mostrar mais antigos que ${QD_ORC_DIAS} dias (${antigos})`}</button>`;
+    }
     return`<div class="qd-col" ondragover="event.preventDefault();this.classList.add('qd-over')" ondragleave="this.classList.remove('qd-over')" ondrop="qdDrop(event,'${c.k}');this.classList.remove('qd-over')">
       <div class="qd-colh"><span>${c.ic} ${c.t}</span><span class="qd-cnt">${cards.length}</span></div>
       ${corpo||'<div style="font-size:11.5px;color:var(--gray-400);padding:14px 4px;text-align:center">Nada aqui</div>'}
@@ -6888,6 +6897,8 @@ function gerarEAbrirDrive(){
   verificarLicenca();
   if(INSTANCIA.cliente&&!ST.empresa){nav('configuracoes');setTimeout(()=>alert('Bem-vindo ao Top-Agenda! Comece preenchendo os dados da sua empresa.'),300);}
   renderDash();
+  // Abre direto no Quadro de Serviços (o Painel continua no menu, com o resumo financeiro)
+  if(!(INSTANCIA.cliente&&!ST.empresa))nav('quadro');
   startRealtimeSync();
   atualizarBotaoNotif();
   setTimeout(avisoDiarioPrazos,1500);
