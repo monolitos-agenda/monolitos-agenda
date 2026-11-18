@@ -179,6 +179,7 @@ select.form-control{cursor:pointer}
 .qd-board{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;scroll-snap-type:x mandatory;align-items:flex-start}
 .qd-col{flex:1 0 228px;min-width:228px;background:var(--gray-100);border-radius:12px;padding:10px;scroll-snap-align:start;border:2px solid transparent}
 .qd-col.qd-over{border-color:var(--gold)}
+.qd-ult{font-size:11px;color:var(--gray-500);margin-top:5px;padding:3px 6px;background:var(--gray-50);border-radius:6px;line-height:1.35}.qd-ult b{color:var(--navy);font-weight:600}.qd-ult.velho b{color:var(--amber)}
 .qd-coled{border:none;background:none;cursor:pointer;color:var(--gray-300);font-size:11px;padding:0 2px;opacity:0;transition:opacity .15s}.qd-col:hover .qd-coled{opacity:1}@media(hover:none){.qd-coled{opacity:1}}
 .qd-colh{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:600;color:var(--navy);margin:2px 4px 10px}
 .qd-cnt{background:white;border-radius:10px;padding:1px 8px;font-size:11px;color:var(--gray-500)}
@@ -4968,10 +4969,17 @@ function _qdEnriquecer(it){
     if(col==='execucao')sit=sitDe(_qdEtapa(c));
     busca=[titulo,sub,prox].join(' ');
   }
+  // último movimento registrado (OS + seus protocolos, protocolo, cartão)
+  let ocsUlt=[];
+  if(it.k==='o')ocsUlt=[..._ocsOS(it.ref),..._protsDaOS(it.ref.id).flatMap(p=>_ocs(p))];
+  else if(it.k==='p')ocsUlt=_ocs(it.ref);
+  else if(it.k==='c')ocsUlt=_ocsOS(it.ref);
+  const ultO=ocsUlt.length?_ocOrdenadas(ocsUlt)[0]:null;
+  const ult=ultO&&ultO.data?{data:ultO.data,texto:(ultO.tipo==='sit'?'Situação: ':'')+ultO.texto,dias:Math.max(0,_diasCorridos(ultO.data,today()))}:null;
   const rk={danger:0,warning:1,success:2,neutral:3};
   sinais.sort((a,b)=>rk[a.tom]-rk[b.tom]||String(a.d||'9').localeCompare(String(b.d||'9'))||(/^Exig/.test(b.txt)-/^Exig/.test(a.txt)));
   const topo=sinais[0],datas=topo?sinais.filter(x=>x.tom===topo.tom&&x.d).map(x=>String(x.d)).sort():[];
-  return{...it,obs:(it.k==='r'?it.ref.obs:it.ref.notas)||'',titulo,sub,prox,proxD,proxProt,col,fl,sit,local,localTxt,badge:topo||null,rank:topo?rk[topo.tom]:4,dataOrd:datas[0]||'9999',busca:norm(busca)};
+  return{...it,ult,obs:(it.k==='r'?it.ref.obs:it.ref.notas)||'',titulo,sub,prox,proxD,proxProt,col,fl,sit,local,localTxt,badge:topo||null,rank:topo?rk[topo.tom]:4,dataOrd:datas[0]||'9999',busca:norm(busca)};
 }
 function qdSetFiltro(f){_qdFiltro=_qdFiltro===f?'':f;if(_qdModo==='lista')_qdModo='quadro';renderQuadro()}
 function qdAlternarModo(){_qdModo=_qdModo==='lista'?'quadro':'lista';renderQuadro()}
@@ -5028,6 +5036,7 @@ function _qdCardHTML(x){
     <div class="qd-ct">${escH(x.titulo||'—')}${tipo}</div>
     ${x.sub?`<div class="qd-cs">${escH(x.sub)}</div>`:''}
     ${x.localTxt&&x.k!=='p'?`<div class="qd-local">🏛 ${escH(x.localTxt)}</div>`:x.k==='p'&&x.localTxt?`<div class="qd-local">${escH(x.localTxt)}</div>`:''}
+    ${x.ult?`<div class="qd-ult${x.ult.dias>15?' velho':''}" title="Último movimento"><b>🕓 ${fmtD(x.ult.data).slice(0,5)}${x.ult.dias>15?` · há ${x.ult.dias} dias`:''}</b> — ${escH(x.ult.texto.slice(0,80))}${x.ult.texto.length>80?'…':''}</div>`:''}
     ${x.prox?`<div class="qd-cn">➡ ${escH(x.prox.slice(0,70))}</div>`:'<div class="qd-cn" style="color:var(--gray-400)">Sem próxima ação</div>'}
     ${x.obs?`<div class="qd-cn" style="color:var(--gray-500);font-style:italic">📝 ${escH(x.obs.slice(0,60))}${x.obs.length>60?'…':''}</div>`:''}
     ${x.sit?`<span class="qd-sit">${escH(x.sit)}</span>`:''}${b?`<span class="qd-badge" style="background:${t.bg};color:${t.c}">${escH(b.txt)}</span>`:''}
