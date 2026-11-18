@@ -179,6 +179,7 @@ select.form-control{cursor:pointer}
 .qd-board{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;scroll-snap-type:x mandatory;align-items:flex-start}
 .qd-col{flex:1 0 228px;min-width:228px;background:var(--gray-100);border-radius:12px;padding:10px;scroll-snap-align:start;border:2px solid transparent}
 .qd-col.qd-over{border-color:var(--gold)}
+.qd-coled{border:none;background:none;cursor:pointer;color:var(--gray-300);font-size:11px;padding:0 2px;opacity:0;transition:opacity .15s}.qd-col:hover .qd-coled{opacity:1}@media(hover:none){.qd-coled{opacity:1}}
 .qd-colh{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:600;color:var(--navy);margin:2px 4px 10px}
 .qd-cnt{background:white;border-radius:10px;padding:1px 8px;font-size:11px;color:var(--gray-500)}
 .qd-card{background:white;border:1px solid var(--gray-200);border-radius:8px;padding:9px 11px;margin-bottom:8px;cursor:pointer;transition:box-shadow .15s}
@@ -441,6 +442,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
         <button class="btn btn-outline btn-sm" onclick="abrirCertidao()">📜 + Certidão</button>
         <button class="btn btn-outline btn-sm" id="qd-modo-btn" onclick="qdAlternarModo()">☰ Protocolos em lista</button>
         <button class="btn btn-outline btn-sm" onclick="abrirLocais()">📍 Locais</button>
+        <button class="btn btn-outline btn-sm" onclick="abrirColunas()">✏ Colunas</button>
         <button class="btn btn-outline btn-sm" onclick="abrirCfgPrazos()">⚙ Prazos padrão</button>
         <span class="qd-hint" style="font-size:11px;color:var(--gray-400);margin-left:auto">Clique num cartão para ver tudo · no PC, arraste entre as colunas</span>
       </div>
@@ -1455,6 +1457,21 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
   <div class="modal-footer" style="flex-wrap:wrap">
     <button class="btn btn-outline" onclick="salvarAndamentoProt(true)" title="Registra só que você consultou hoje">Consultei — sem novidade</button>
     <button class="btn btn-gold" onclick="salvarAndamentoProt(false)">Salvar andamento</button>
+  </div>
+</div></div>
+
+<!-- MODAL PERSONALIZAR COLUNAS DO QUADRO -->
+<div class="modal-overlay" id="modal-colunas" style="display:none;z-index:1100">
+<div class="modal" style="max-width:480px">
+  <div class="modal-header">
+    <div><div class="modal-title">✏ Colunas do Quadro</div><div style="font-size:12px;color:var(--gray-500);margin-top:2px">Mude o nome e a ordem (◀ ▶). O que cada coluna recebe continua igual.</div></div>
+    <button class="btn btn-ghost" onclick="closeM('modal-colunas')">✕</button>
+  </div>
+  <div class="modal-body"><div id="col-lista"></div></div>
+  <div class="modal-footer">
+    <button class="btn btn-outline btn-sm" onclick="colPadrao()" style="margin-right:auto">Restaurar padrão</button>
+    <button class="btn btn-outline" onclick="closeM('modal-colunas')">Cancelar</button>
+    <button class="btn btn-gold" onclick="salvarColunas()">Salvar</button>
   </div>
 </div></div>
 
@@ -4797,13 +4814,20 @@ function sigefAjustar(){
 
 // ===== QUADRO DE SERVIÇOS (visão única: orçamentos enviados, OS, protocolos, certidões RI Digital e cartões livres) =====
 // Fluxo: Orçamento enviado -> (pagamento inicial) Em execução -> (protocolo registrado) Protocolados -> (entregue com saldo) Valores a receber
-const QD_COLS=[
+const QD_COLS_PADRAO=[
   {k:'orcamentos',t:'Orçamentos enviados',ic:'📨'},
   {k:'execucao',t:'Em execução',ic:'⚙'},
   {k:'cartorio',t:'Protocolados',ic:'🏛'},
-  {k:'certidoes',t:'Certidões RI Digital',ic:'📜'},
-  {k:'receber',t:'Valores a receber',ic:'💰'}
+  {k:'receber',t:'Entregues com valores a receber',ic:'💰'},
+  {k:'certidoes',t:'Certidões RI Digital',ic:'📜'}
 ];
+// Nomes e ordem das colunas podem ser personalizados (ST.qdCols = {ordem:[...], nomes:{k:'...'}})
+function _qdColsCfg(){
+  const cfg=ST.qdCols||{},nomes=cfg.nomes||{};
+  const ordem=(cfg.ordem||[]).filter(k=>QD_COLS_PADRAO.some(c=>c.k===k));
+  QD_COLS_PADRAO.forEach(c=>{if(!ordem.includes(c.k))ordem.push(c.k)});
+  return ordem.map(k=>{const c=QD_COLS_PADRAO.find(x=>x.k===k);return{...c,t:(nomes[k]||'').trim()||c.t}});
+}
 const QD_TOM={danger:{c:'var(--red)',bg:'var(--red-light)'},warning:{c:'var(--amber)',bg:'var(--amber-light)'},success:{c:'var(--green)',bg:'var(--green-light)'},neutral:{c:'var(--gray-500)',bg:'var(--gray-100)'}};
 const QD_ORC_DIAS=60;    // orçamentos sem resposta há mais tempo ficam ocultos (botão "mostrar mais antigos"; continuam na tela Orçamentos)
 let _qdOrcTodos=false;
@@ -4814,7 +4838,7 @@ function _cartoes(){if(!ST.cartoes)ST.cartoes=[];return ST.cartoes}
 function _achaItem(id){return ST.orcamentos.find(x=>x.id===id)||_cartoes().find(x=>x.id===id)}
 function _saldoOS(o){return Math.max(0,parseFloat(o.valor||0)-recPorOrc(o.id))}
 function _osAReceber(o){return !!(o.prazo&&o.prazo.entregueEm&&o.status!=='Cancelado'&&_saldoOS(o)>0.009)}
-function _qdColLabel(k){const c=QD_COLS.find(x=>x.k===k);return c?c.t:''}
+function _qdColLabel(k){const c=_qdColsCfg().find(x=>x.k===k);return c?c.t:''}
 
 // --- Orçamentos enviados (aguardando aprovação) ---
 function _isoData(d){d=String(d||'');const m=d.match(/^(\d{2})\/(\d{2})\/(\d{4})/);if(m)return`${m[3]}-${m[2]}-${m[1]}`;return/^\d{4}-\d{2}-\d{2}/.test(d)?d.slice(0,10):''}
@@ -4947,7 +4971,7 @@ function _qdEnriquecer(it){
   const rk={danger:0,warning:1,success:2,neutral:3};
   sinais.sort((a,b)=>rk[a.tom]-rk[b.tom]||String(a.d||'9').localeCompare(String(b.d||'9'))||(/^Exig/.test(b.txt)-/^Exig/.test(a.txt)));
   const topo=sinais[0],datas=topo?sinais.filter(x=>x.tom===topo.tom&&x.d).map(x=>String(x.d)).sort():[];
-  return{...it,titulo,sub,prox,proxD,proxProt,col,fl,sit,local,localTxt,badge:topo||null,rank:topo?rk[topo.tom]:4,dataOrd:datas[0]||'9999',busca:norm(busca)};
+  return{...it,obs:(it.k==='r'?it.ref.obs:it.ref.notas)||'',titulo,sub,prox,proxD,proxProt,col,fl,sit,local,localTxt,badge:topo||null,rank:topo?rk[topo.tom]:4,dataOrd:datas[0]||'9999',busca:norm(busca)};
 }
 function qdSetFiltro(f){_qdFiltro=_qdFiltro===f?'':f;if(_qdModo==='lista')_qdModo='quadro';renderQuadro()}
 function qdAlternarModo(){_qdModo=_qdModo==='lista'?'quadro':'lista';renderQuadro()}
@@ -4973,7 +4997,7 @@ function renderQuadro(){
   if(lista){renderProtocolos();return}
   const q=norm(_qdBusca||'');
   const vis=itens.filter(x=>(!_qdFiltro||x.fl[_qdFiltro])&&(!q||x.busca.includes(q)));
-  board.innerHTML=QD_COLS.map(c=>{
+  board.innerHTML=_qdColsCfg().map(c=>{
     let cards=vis.filter(x=>x.col===c.k);
     if(c.k==='orcamentos')cards.sort((a,b)=>String(_orcDataEnvio(b.ref)).localeCompare(String(_orcDataEnvio(a.ref)))||String(b.ref.num).localeCompare(String(a.ref.num)));
     else cards.sort((a,b)=>a.rank-b.rank||a.dataOrd.localeCompare(b.dataOrd));
@@ -4991,7 +5015,7 @@ function renderQuadro(){
       if(antigos)corpo+=`<button class="qd-add" style="margin-bottom:6px" onclick="qdOrcMostrarTodos()">${_qdOrcTodos?'Ocultar os mais antigos':`Mostrar mais antigos que ${QD_ORC_DIAS} dias (${antigos})`}</button>`;
     }
     return`<div class="qd-col" ondragover="event.preventDefault();this.classList.add('qd-over')" ondragleave="this.classList.remove('qd-over')" ondrop="qdDrop(event,'${c.k}');this.classList.remove('qd-over')">
-      <div class="qd-colh"><span>${c.ic} ${c.t}</span><span class="qd-cnt">${cards.length}</span></div>
+      <div class="qd-colh"><span>${c.ic} ${escH(c.t)}</span><span style="display:flex;gap:4px;align-items:center"><button class="qd-coled" title="Renomear / reordenar colunas" onclick="abrirColunas()">✏</button><span class="qd-cnt">${cards.length}</span></span></div>
       ${corpo||'<div style="font-size:11.5px;color:var(--gray-400);padding:14px 4px;text-align:center">Nada aqui</div>'}
       ${add?`<button class="qd-add" onclick="${add[1]}">${add[0]}</button>`:''}
     </div>`;
@@ -5005,6 +5029,7 @@ function _qdCardHTML(x){
     ${x.sub?`<div class="qd-cs">${escH(x.sub)}</div>`:''}
     ${x.localTxt&&x.k!=='p'?`<div class="qd-local">🏛 ${escH(x.localTxt)}</div>`:x.k==='p'&&x.localTxt?`<div class="qd-local">${escH(x.localTxt)}</div>`:''}
     ${x.prox?`<div class="qd-cn">➡ ${escH(x.prox.slice(0,70))}</div>`:'<div class="qd-cn" style="color:var(--gray-400)">Sem próxima ação</div>'}
+    ${x.obs?`<div class="qd-cn" style="color:var(--gray-500);font-style:italic">📝 ${escH(x.obs.slice(0,60))}${x.obs.length>60?'…':''}</div>`:''}
     ${x.sit?`<span class="qd-sit">${escH(x.sit)}</span>`:''}${b?`<span class="qd-badge" style="background:${t.bg};color:${t.c}">${escH(b.txt)}</span>`:''}
   </div>`;
 }
@@ -5083,7 +5108,7 @@ function renderQDDetalhe(){
   const {k,id}=_qdAberto;
   const it=_qdItens().find(x=>x.k===k&&x.id===id);
   const selMover=col=>_qdCampo('Coluna',`<select class="form-control" style="width:auto;font-size:12px;padding:5px 8px" title="Coluna" onchange="qdMover('${k}','${id}',this.value)">
-      ${QD_COLS.filter(c=>c.k==='execucao'||c.k==='cartorio').map(c=>`<option value="${c.k}" ${c.k===col?'selected':''}>${c.ic} ${c.t}</option>`).join('')}</select>`);
+      ${_qdColsCfg().filter(c=>c.k==='execucao'||c.k==='cartorio').map(c=>`<option value="${c.k}" ${c.k===col?'selected':''}>${c.ic} ${c.t}</option>`).join('')}</select>`);
   let h='';
   if(k==='e'){
     const o=ST.orcamentos.find(x=>x.id===id);if(!o||!_orcEnviado(o)){closeM('modal-qd');return}
@@ -5154,7 +5179,32 @@ function renderQDDetalhe(){
     h+=`<div class="qd-sec">Linha do tempo</div>${_qdTimeline(_ocsOS(c))}`;
     h+=`<div class="qd-acts">${_qdBtn('+ Registrar andamento',`abrirAndamento('${id}')`,true)}${_qdBtn('✏ Editar cartão',`abrirCartaoForm('${id}')`)}${_qdBtn('✓ Concluir cartão',`concluirCartao('${id}')`)}</div>`;
   }
+  if(k!=='r'){
+    const ref=k==='p'?_prots().find(x=>x.id===id):k==='c'?_cartoes().find(x=>x.id===id):ST.orcamentos.find(x=>x.id===id);
+    if(ref)h+=`<div style="margin-top:14px"><div class="qd-sec">📝 Observações</div>
+      <textarea class="form-control" id="qd-obs" rows="3" placeholder="Anotações livres sobre este cliente / serviço (salva sozinho)" style="font-size:12.5px;resize:vertical" onchange="qdSalvarObs('${k}','${id}',this.value)">${escH(ref.notas||'')}</textarea></div>`;
+  }
   el.innerHTML=h;
+}
+function qdSalvarObs(k,id,v){
+  const ref=k==='p'?_prots().find(x=>x.id===id):k==='c'?_cartoes().find(x=>x.id===id):ST.orcamentos.find(x=>x.id===id);
+  if(!ref)return;ref.notas=v.trim();save();_toastPrazo('📝 Observação salva');
+}
+// --- Personalizar colunas (nome e ordem) ---
+let _colEdit=null;
+function abrirColunas(){_colEdit=_qdColsCfg().map(c=>({k:c.k,ic:c.ic,t:c.t,padrao:QD_COLS_PADRAO.find(x=>x.k===c.k).t}));renderColunas();openM('modal-colunas')}
+function renderColunas(){
+  document.getElementById('col-lista').innerHTML=_colEdit.map((c,i)=>`<div style="display:flex;gap:6px;align-items:center;margin-bottom:7px">
+    <span style="width:22px;text-align:center">${c.ic}</span>
+    <input class="form-control" value="${escH(c.t)}" placeholder="${escH(c.padrao)}" oninput="_colEdit[${i}].t=this.value" style="flex:1">
+    <button class="btn btn-ghost btn-sm" ${i===0?'disabled':''} onclick="colMover(${i},-1)" title="Mover para a esquerda">◀</button>
+    <button class="btn btn-ghost btn-sm" ${i===_colEdit.length-1?'disabled':''} onclick="colMover(${i},1)" title="Mover para a direita">▶</button></div>`).join('');
+}
+function colMover(i,d){const j=i+d;if(j<0||j>=_colEdit.length)return;[_colEdit[i],_colEdit[j]]=[_colEdit[j],_colEdit[i]];renderColunas()}
+function colPadrao(){_colEdit=QD_COLS_PADRAO.map(c=>({k:c.k,ic:c.ic,t:c.t,padrao:c.t}));renderColunas()}
+function salvarColunas(){
+  const nomes={};_colEdit.forEach(c=>{const t=(c.t||'').trim();if(t&&t!==c.padrao)nomes[c.k]=t});
+  ST.qdCols={ordem:_colEdit.map(c=>c.k),nomes};save();closeM('modal-colunas');renderQuadro();_toastPrazo('Colunas atualizadas');
 }
 
 // ===== LOCAIS DE TRAMITAÇÃO (cartórios, prefeituras e autarquias) =====
