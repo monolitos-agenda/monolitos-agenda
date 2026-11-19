@@ -4996,7 +4996,7 @@ function qdSetFiltro(f){_qdFiltro=_qdFiltro===f?'':f;if(_qdModo==='lista')_qdMod
 function qdAlternarModo(){_qdModo=_qdModo==='lista'?'quadro':'lista';renderQuadro()}
 const QD_ADD={orcamentos:['+ Novo orçamento','novoOrc()'],execucao:['+ Adicionar cartão',"abrirCartaoForm(null,'execucao')"],
   cartorio:['+ Novo protocolo','abrirProtocolo()'],certidoes:['+ Novo pedido de certidão','abrirCertidao()']};
-// Faixa horizontal de compromissos no topo do Quadro (atrasados, hoje e próximos 7 dias)
+// Card "Agenda de Compromissos" no topo do Quadro — só os agendados manualmente (reuniões, visitas…); os automáticos (protocolos, prazos de OS) já estão nos cartões do Quadro
 function _compAcaoBtn(c){
   if(c.protId&&c.auto)return`<button class="btn btn-ghost btn-sm" onclick="abrirProtocolo('${c.protId}')" title="Protocolo">🏛</button>`;
   if(c.orcId&&c.auto&&String(c.id).startsWith('osx-'))return`<button class="btn btn-ghost btn-sm" onclick="abrirAndamento('${c.orcId}')" title="Andamento da OS">📋</button>`;
@@ -5010,7 +5010,7 @@ function renderQdComp(){
   const ate=lim.getFullYear()+'-'+String(lim.getMonth()+1).padStart(2,'0')+'-'+String(lim.getDate()).padStart(2,'0');
   const ini=_dt(hoje);ini.setDate(ini.getDate()-30);
   const de=ini.getFullYear()+'-'+String(ini.getMonth()+1).padStart(2,'0')+'-'+String(ini.getDate()).padStart(2,'0');
-  const lst=(ST.compromissos||[]).filter(c=>!c.concluido&&c.data&&c.data>=de&&c.data<=ate)
+  const lst=(ST.compromissos||[]).filter(c=>!c.auto&&!c.concluido&&c.data&&c.data>=de&&c.data<=ate)
     .sort((a,b)=>(a.data+(a.hora||'')).localeCompare(b.data+(b.hora||'')));
   const nAt=lst.filter(c=>c.data<hoje).length,nHj=lst.filter(c=>c.data===hoje).length;
   const amanha=_dt(hoje);amanha.setDate(amanha.getDate()+1);
@@ -5025,9 +5025,9 @@ function renderQdComp(){
         <button class="btn btn-ghost btn-sm" onclick="toggleCompromisso('${c.id}')" title="Concluir">✓</button>${_compAcaoBtn(c)}
       </div></div>`).join('');
   const resumo=[nAt?`<span style="color:var(--red)">${nAt} atrasado(s)</span>`:'',`<span style="color:${nHj?'var(--gold)':'var(--gray-400)'}">${nHj||'nenhum'} hoje</span>`].filter(Boolean).join(' · ');
-  el.innerHTML=`<div class="qdc-head">📅 Compromissos <span style="font-weight:500;font-size:11.5px">${resumo}</span>
+  el.innerHTML=`<div class="qdc-head">📅 Agenda de Compromissos <span style="font-weight:500;font-size:11.5px">${resumo}</span>
       <span style="margin-left:auto;display:flex;gap:4px"><button class="btn btn-gold btn-sm" onclick="abrirNovoCompromisso()">+ Agendar</button><button class="btn btn-outline btn-sm" onclick="nav('agenda')">Agenda completa →</button></span></div>
-    ${lst.length?`<div class="qdc-row">${cards}</div>`:'<div style="font-size:12px;color:var(--gray-400);padding:2px 2px 4px">✓ Nenhum compromisso pendente para hoje nem para os próximos 7 dias.</div>'}`;
+    ${lst.length?`<div class="qdc-row">${cards}</div>`:'<div style="font-size:12px;color:var(--gray-400);padding:2px 2px 4px">✓ Nenhuma reunião, visita ou outro compromisso agendado para hoje nem para os próximos 7 dias.</div>'}`;
 }
 function renderQuadro(){
   const board=document.getElementById('qd-board');if(!board)return;
