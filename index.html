@@ -196,6 +196,16 @@ select.form-control{cursor:pointer}
 .qd-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px;padding-top:12px;border-top:1px solid var(--gray-100)}
 .main{min-width:0}
 #view-quadro{max-width:100%;min-width:0;overflow-x:hidden}
+.qdc-wrap{margin-bottom:12px;border:1px solid var(--gray-200);border-radius:var(--radius-lg);background:white;padding:8px 10px}
+.qdc-head{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;margin-bottom:6px;font-size:12px;font-weight:600;color:var(--navy)}
+.qdc-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+.qdc-card{flex:0 0 230px;scroll-snap-align:start;display:flex;gap:6px;align-items:flex-start;border:1px solid var(--gray-200);border-left:4px solid var(--gray-300);border-radius:8px;padding:6px 8px;background:var(--gray-50);min-width:0}
+.qdc-card.hoje{border-left-color:var(--gold);background:#fbf5e3}
+.qdc-card.atras{border-left-color:var(--red);background:var(--red-light)}
+.qdc-card .qdc-t{font-size:12px;font-weight:600;color:var(--navy);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.qdc-card .qdc-s{font-size:10.5px;color:var(--gray-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qdc-card .qdc-q{font-size:10.5px;font-weight:700}
+.qdc-card button{padding:2px 5px;font-size:13px}
 .qd-board{width:100%;min-width:0}
 @media(max-width:700px){.qd-col{flex:0 0 86%;min-width:86%}.qd-hint{display:none}}
 .qd-sit{display:inline-block;font-size:10px;font-weight:500;padding:1px 7px;border-radius:8px;margin-top:5px;margin-right:4px;background:var(--gray-100);color:var(--gray-700)}
@@ -435,6 +445,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
 
     <!-- QUADRO DE SERVIÇOS (inclui a lista de protocolos e as certidões RI Digital) -->
     <div class="view" id="view-quadro">
+      <div id="qd-comp" class="qdc-wrap"></div>
       <div id="qd-resumo" style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:12px"></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
         <div class="search-bar"><span class="search-icon">⌕</span><input class="form-control search-input" id="qd-busca" placeholder="Cliente, OS, nº de protocolo ou pedido" oninput="_qdBusca=this.value;renderQuadro()" style="width:250px"></div>
@@ -4985,8 +4996,42 @@ function qdSetFiltro(f){_qdFiltro=_qdFiltro===f?'':f;if(_qdModo==='lista')_qdMod
 function qdAlternarModo(){_qdModo=_qdModo==='lista'?'quadro':'lista';renderQuadro()}
 const QD_ADD={orcamentos:['+ Novo orçamento','novoOrc()'],execucao:['+ Adicionar cartão',"abrirCartaoForm(null,'execucao')"],
   cartorio:['+ Novo protocolo','abrirProtocolo()'],certidoes:['+ Novo pedido de certidão','abrirCertidao()']};
+// Faixa horizontal de compromissos no topo do Quadro (atrasados, hoje e próximos 7 dias)
+function _compAcaoBtn(c){
+  if(c.protId&&c.auto)return`<button class="btn btn-ghost btn-sm" onclick="abrirProtocolo('${c.protId}')" title="Protocolo">🏛</button>`;
+  if(c.orcId&&c.auto&&String(c.id).startsWith('osx-'))return`<button class="btn btn-ghost btn-sm" onclick="abrirAndamento('${c.orcId}')" title="Andamento da OS">📋</button>`;
+  if(c.orcId&&c.auto)return`<button class="btn btn-ghost btn-sm" onclick="abrirPrazo('${c.orcId}')" title="Prazo da OS">📦</button>`;
+  return`<button class="btn btn-ghost btn-sm" onclick="editarCompromisso('${c.id}')" title="Editar">✏</button>`;
+}
+function renderQdComp(){
+  const el=document.getElementById('qd-comp');if(!el)return;
+  const hoje=today();
+  const lim=_dt(hoje);lim.setDate(lim.getDate()+7);
+  const ate=lim.getFullYear()+'-'+String(lim.getMonth()+1).padStart(2,'0')+'-'+String(lim.getDate()).padStart(2,'0');
+  const ini=_dt(hoje);ini.setDate(ini.getDate()-30);
+  const de=ini.getFullYear()+'-'+String(ini.getMonth()+1).padStart(2,'0')+'-'+String(ini.getDate()).padStart(2,'0');
+  const lst=(ST.compromissos||[]).filter(c=>!c.concluido&&c.data&&c.data>=de&&c.data<=ate)
+    .sort((a,b)=>(a.data+(a.hora||'')).localeCompare(b.data+(b.hora||'')));
+  const nAt=lst.filter(c=>c.data<hoje).length,nHj=lst.filter(c=>c.data===hoje).length;
+  const amanha=_dt(hoje);amanha.setDate(amanha.getDate()+1);
+  const amStr=amanha.getFullYear()+'-'+String(amanha.getMonth()+1).padStart(2,'0')+'-'+String(amanha.getDate()).padStart(2,'0');
+  const quando=c=>c.data<hoje?`<span class="qdc-q" style="color:var(--red)">Atrasado · ${fmtD(c.data).slice(0,5)}</span>`:
+    c.data===hoje?`<span class="qdc-q" style="color:var(--gold)">HOJE${c.hora?' · '+c.hora:''}</span>`:
+    `<span class="qdc-q" style="color:var(--gray-500)">${c.data===amStr?'Amanhã':_dt(c.data).toLocaleDateString('pt-BR',{weekday:'short',day:'numeric'})}${c.hora?' · '+c.hora:''}</span>`;
+  const cards=lst.slice(0,20).map(c=>`<div class="qdc-card ${c.data<hoje?'atras':c.data===hoje?'hoje':''}">
+      <div style="font-size:17px;line-height:1.2;flex-shrink:0">${TIPO_ICON[c.tipo]||'📌'}</div>
+      <div style="flex:1;min-width:0">${quando(c)}<div class="qdc-t" title="${escH(c.titulo||'')}">${escH(c.titulo||'')}</div>${c.cliente?`<div class="qdc-s" title="${escH(c.cliente)}">${escH(c.cliente)}</div>`:''}</div>
+      <div style="display:flex;flex-direction:column;flex-shrink:0">
+        <button class="btn btn-ghost btn-sm" onclick="toggleCompromisso('${c.id}')" title="Concluir">✓</button>${_compAcaoBtn(c)}
+      </div></div>`).join('');
+  const resumo=[nAt?`<span style="color:var(--red)">${nAt} atrasado(s)</span>`:'',`<span style="color:${nHj?'var(--gold)':'var(--gray-400)'}">${nHj||'nenhum'} hoje</span>`].filter(Boolean).join(' · ');
+  el.innerHTML=`<div class="qdc-head">📅 Compromissos <span style="font-weight:500;font-size:11.5px">${resumo}</span>
+      <span style="margin-left:auto;display:flex;gap:4px"><button class="btn btn-gold btn-sm" onclick="abrirNovoCompromisso()">+ Agendar</button><button class="btn btn-outline btn-sm" onclick="nav('agenda')">Agenda completa →</button></span></div>
+    ${lst.length?`<div class="qdc-row">${cards}</div>`:'<div style="font-size:12px;color:var(--gray-400);padding:2px 2px 4px">✓ Nenhum compromisso pendente para hoje nem para os próximos 7 dias.</div>'}`;
+}
 function renderQuadro(){
   const board=document.getElementById('qd-board');if(!board)return;
+  try{renderQdComp()}catch(e){console.warn(e)}
   const itens=_qdItens();
   const n=k=>itens.filter(x=>x.fl[k]).length;
   const chip=(k,ic,txt,tom)=>{const q=n(k);const on=_qdFiltro===k;const t=QD_TOM[tom];
