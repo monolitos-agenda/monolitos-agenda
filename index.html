@@ -243,29 +243,27 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
   </div>
   <nav class="sidebar-nav">
     <div class="nav-label">Principal</div>
-    <button class="nav-item active" onclick="nav('painel')"><span class="nav-icon">◈</span>Painel</button>
+    <button class="nav-item active" onclick="nav('quadro')"><span class="nav-icon">🗂</span>Quadro de Serviços<span id="nav-prazo-badge" style="display:none;margin-left:auto;background:#c0392b;color:white;border-radius:10px;font-size:10px;padding:1px 7px;font-weight:600"></span></button>
+    <button class="nav-item" onclick="nav('agenda')"><span class="nav-icon">📅</span>Pauta e Compromissos</button>
     <button class="nav-item" onclick="nav('orcamentos')"><span class="nav-icon">◷</span>Orçamentos</button>
-    <button class="nav-item" onclick="nav('acervo')"><span class="nav-icon">🗄</span>Acervo (encerrados)</button>
     <button class="nav-item" onclick="nav('clientes')"><span class="nav-icon">◉</span>Clientes</button>
+    <button class="nav-item" onclick="nav('acervo')"><span class="nav-icon">🗄</span>Acervo (encerrados)</button>
     <div class="nav-label">Financeiro</div>
+    <button class="nav-item" onclick="nav('painel')"><span class="nav-icon">◈</span>Painel financeiro</button>
     <button class="nav-item" onclick="nav('recebimentos')"><span class="nav-icon">◈</span>Recebimentos</button>
     <button class="nav-item" onclick="nav('financeiro')"><span class="nav-icon">◉</span>Por Orçamento</button>
     <button class="nav-item" onclick="nav('custos')"><span class="nav-icon">◷</span>Custos</button>
+    <button class="nav-item" onclick="nav('relatorios')"><span class="nav-icon">◈</span>Faturamento</button>
     <button class="nav-item" onclick="openM('modal-recibo-avulso');initRav()"><span class="nav-icon">🧾</span>Recibo Avulso</button>
-    <div class="nav-label">Agenda</div>
-    <button class="nav-item" onclick="nav('quadro')"><span class="nav-icon">🗂</span>Quadro de Serviços<span id="nav-prazo-badge" style="display:none;margin-left:auto;background:#c0392b;color:white;border-radius:10px;font-size:10px;padding:1px 7px;font-weight:600"></span></button>
-    <button class="nav-item" onclick="nav('agenda')"><span class="nav-icon">📅</span>Pauta e Compromissos</button>
-    <button class="nav-item" onclick="nav('sigef')"><span class="nav-icon">📐</span>Vértices SIGEF</button>
-    <button class="nav-item" id="btn-notif" onclick="ativarNotificacoes()"><span class="nav-icon">🔕</span>Ativar notificações</button>
-    <div class="nav-label">Configurações</div>
-    <button class="nav-item" onclick="nav('configuracoes')"><span class="nav-icon">🏢</span>Empresa e Banco</button>
-    <button class="nav-item" onclick="nav('sincronizar')"><span class="nav-icon">↕</span>Sincronizar</button>
-    <button class="nav-item" onclick="nav('servicos')"><span class="nav-icon">◈</span>Serviços</button>
     <div class="nav-label">Ferramentas</div>
+    <button class="nav-item" onclick="nav('sigef')"><span class="nav-icon">📐</span>Vértices SIGEF</button>
     <button class="nav-item" onclick="nav('vistoria')"><span class="nav-icon">🏠</span>Vistoria Cadastral</button>
     <button class="nav-item" onclick="nav('consulta')"><span class="nav-icon">🔍</span>Consulta CPF/CNPJ</button>
-    <div class="nav-label">Relatórios</div>
-    <button class="nav-item" onclick="nav('relatorios')"><span class="nav-icon">◈</span>Faturamento</button>
+    <div class="nav-label">Configurações</div>
+    <button class="nav-item" onclick="nav('configuracoes')"><span class="nav-icon">🏢</span>Empresa e Banco</button>
+    <button class="nav-item" onclick="nav('servicos')"><span class="nav-icon">◈</span>Serviços</button>
+    <button class="nav-item" onclick="nav('sincronizar')"><span class="nav-icon">↕</span>Sincronizar</button>
+    <button class="nav-item" id="btn-notif" onclick="ativarNotificacoes()"><span class="nav-icon">🔕</span>Ativar notificações</button>
   </nav>
 </aside>
 
@@ -273,7 +271,7 @@ var docx=function(e){"use strict";var t=Object.defineProperty,r=Object.definePro
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:10px">
       <button class="mob-toggle" onclick="toggleSB()">☰</button>
-      <div class="page-title" id="page-title">Painel</div>
+      <div class="page-title" id="page-title">Quadro de Serviços</div>
     </div>
     <div class="topbar-right">
       <div class="search-bar hide-mob" id="global-search-wrap" style="position:relative">
@@ -2109,7 +2107,7 @@ function nav(n){
   document.getElementById('view-'+n).classList.add('active');
   const T={painel:'Painel',orcamentos:'Orçamentos',clientes:'Clientes',recebimentos:'Recebimentos',custos:'Custos',configuracoes:'Empresa e Banco',sincronizar:'Sincronizar',relatorios:'Faturamento',acervo:'Acervo — Serviços Encerrados',agenda:'Pauta e Compromissos',quadro:'Quadro de Serviços',protocolos:'Protocolos',sigef:'Vértices SIGEF',vistoria:'Vistoria Cadastral',consulta:'Consulta CPF/CNPJ'};
   document.getElementById('page-title').textContent=T[n]||n;
-  document.querySelectorAll('.nav-item').forEach(b=>{if(b.textContent.trim().startsWith((T[n]||'').slice(0,5)))b.classList.add('active')});
+  document.querySelectorAll('.nav-item').forEach(b=>{if((b.getAttribute('onclick')||'').trim()===`nav('${n}')`)b.classList.add('active')});
   const R={painel:renderDash,agenda:renderAgenda,servicos:renderServicos,orcamentos:renderOrc,clientes:renderCli,recebimentos:renderRec,custos:renderCus,relatorios:renderRel,configuracoes:renderCfg,financeiro:()=>{},quadro:renderQuadro,acervo:renderAcervo,protocolos:renderProtocolos,sigef:renderSigef,vistoria:initVistoria,consulta:initConsulta};
   if(R[n])R[n]();
 }
